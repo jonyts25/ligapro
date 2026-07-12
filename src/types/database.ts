@@ -186,6 +186,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "field_reservations_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "field_reservations_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
@@ -235,6 +242,142 @@ export type Database = {
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      match_officials: {
+        Row: {
+          created_at: string
+          id: string
+          match_id: string
+          organization_id: string
+          profile_id: string
+          role: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          match_id: string
+          organization_id: string
+          profile_id: string
+          role: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          match_id?: string
+          organization_id?: string
+          profile_id?: string
+          role?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_officials_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_officials_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_officials_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      matches: {
+        Row: {
+          away_score: number | null
+          away_season_team_id: string
+          created_at: string
+          field_reservation_id: string | null
+          home_score: number | null
+          home_season_team_id: string
+          id: string
+          organization_id: string
+          round_label: string | null
+          season_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          away_score?: number | null
+          away_season_team_id: string
+          created_at?: string
+          field_reservation_id?: string | null
+          home_score?: number | null
+          home_season_team_id: string
+          id?: string
+          organization_id: string
+          round_label?: string | null
+          season_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          away_score?: number | null
+          away_season_team_id?: string
+          created_at?: string
+          field_reservation_id?: string | null
+          home_score?: number | null
+          home_season_team_id?: string
+          id?: string
+          organization_id?: string
+          round_label?: string | null
+          season_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "matches_away_season_team_id_fkey"
+            columns: ["away_season_team_id"]
+            isOneToOne: false
+            referencedRelation: "season_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matches_field_reservation_id_fkey"
+            columns: ["field_reservation_id"]
+            isOneToOne: false
+            referencedRelation: "field_reservations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matches_home_season_team_id_fkey"
+            columns: ["home_season_team_id"]
+            isOneToOne: false
+            referencedRelation: "season_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matches_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matches_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
             referencedColumns: ["id"]
           },
         ]

@@ -4,7 +4,7 @@
 
 **Diseño v0 congelado.**
 
-Schema SQL: Migrations 001–005 aplicadas en `ligapro-dev` (identidad, venues/fields, competitions/seasons, teams/players, field_reservations). El resto de entidades sigue pendiente.
+Schema SQL: Migrations 001–006a aplicadas en `ligapro-dev` (hasta matches + match_officials + FK de field_reservations.match_id). Pendiente: match_events, discipline, season_roles, etc.
 
 ## Entidades aprobadas (22)
 
@@ -23,8 +23,8 @@ Schema SQL: Migrations 001–005 aplicadas en `ligapro-dev` (identidad, venues/f
 13. `players` — **implementada (004)**
 14. `season_teams` — **implementada (004)**
 15. `season_team_players` — **implementada (004)**
-16. `matches`
-17. `match_officials`
+16. `matches` — **implementada (006a)**
+17. `match_officials` — **implementada (006a)**
 18. `match_events`
 19. `discipline_suspensions`
 20. `team_charges`
@@ -226,7 +226,7 @@ UNIQUE `(season_team_id, player_id)`. Cambio de capitán: RPC `set_season_team_c
 
 **Única fuente de verdad** del calendario físico de canchas (ADR 0004). Todo lo que ocupa un field (partido, mantenimiento, renta, cierre, bloqueo) vive aquí. Protegida por constraint `EXCLUDE` (`no_overlapping_reservations`) sobre `field_id` + `tstzrange(starts_at, ends_at)` **solo cuando** `status = 'confirmed'`. Rangos adyacentes (`[)`) no chocan.
 
-`match_id` es uuid nullable **sin FK todavía** — se agregará en Migration 006 vía `ALTER TABLE` cuando exista `matches`. Pendiente 006 también: CHECK de que `match_id` no sea NULL cuando `reservation_type = 'match'`.
+`match_id` tiene FK real → `matches(id)` (cerrado en Migration 006a) y CHECK `reservation_type <> 'match' OR match_id IS NOT NULL`.
 
 ### `field_reservations`
 
@@ -236,7 +236,7 @@ UNIQUE `(season_team_id, player_id)`. Cambio de capitán: RPC `set_season_team_c
 | `organization_id` | uuid NOT NULL | FK → `organizations`; trigger exige igualdad con field padre |
 | `field_id` | uuid NOT NULL | FK → `fields(id)` ON DELETE CASCADE |
 | `reservation_type` | text NOT NULL | CHECK: `match` \| `maintenance` \| `private_rental` \| `closed` \| `manual_block` |
-| `match_id` | uuid nullable | **sin FK en 005**; FK → `matches` en 006 |
+| `match_id` | uuid nullable | FK → `matches(id)` ON DELETE SET NULL (006a); requerido si type = `match` |
 | `starts_at` | timestamptz NOT NULL | |
 | `ends_at` | timestamptz NOT NULL | CHECK `ends_at > starts_at` |
 | `title` | text nullable | útil para tipos distintos de `match` |
@@ -244,7 +244,40 @@ UNIQUE `(season_team_id, player_id)`. Cambio de capitán: RPC `set_season_team_c
 | `created_at` | timestamptz | |
 | `updated_at` | timestamptz | trigger `set_updated_at` |
 
-### Relaciones (001–005)
+## Bloque 006a — matches + match_officials
+
+Captura de resultado por oficiales / `match_events` **no** está en este bloque (006b). Matches solo se crean/editan por owner/admin. `field_reservation_id` es opcional (fixture antes que horario).
+
+### `matches`
+
+| Columna | Tipo | Notas |
+|--------|------|--------|
+| `id` | uuid PK | |
+| `season_id` | uuid NOT NULL | FK → `seasons` |
+| `organization_id` | uuid NOT NULL | trigger vs season padre |
+| `home_season_team_id` | uuid NOT NULL | FK → `season_teams`; trigger exige misma `season_id` |
+| `away_season_team_id` | uuid NOT NULL | FK → `season_teams`; ≠ home; misma season |
+| `field_reservation_id` | uuid nullable | FK → `field_reservations` ON DELETE SET NULL |
+| `status` | text NOT NULL | default `scheduled`; CHECK scheduled/in_progress/finished/cancelled/walkover |
+| `home_score` / `away_score` | integer nullable | ≥ 0; ambos NULL o ambos NOT NULL |
+| `round_label` | text nullable | ej. "Jornada 3", "Semifinal" |
+| `created_at` / `updated_at` | timestamptz | |
+
+### `match_officials`
+
+| Columna | Tipo | Notas |
+|--------|------|--------|
+| `id` | uuid PK | |
+| `match_id` | uuid NOT NULL | FK → `matches` |
+| `organization_id` | uuid NOT NULL | trigger vs match padre |
+| `profile_id` | uuid NOT NULL | FK → `profiles` |
+| `role` | text NOT NULL | CHECK referee/assistant/delegate/scorekeeper |
+| `status` | text NOT NULL | default `assigned`; CHECK assigned/confirmed/declined |
+| `created_at` / `updated_at` | timestamptz | |
+
+UNIQUE `(match_id, profile_id, role)`.
+
+### Relaciones (001–006a)
 
 ```text
 auth.users 1──1 profiles
@@ -258,6 +291,7 @@ fields 1──* field_availability_rules
 organizations 1──* field_availability_rules (denormalizado)
 fields 1──* field_reservations
 organizations 1──* field_reservations (denormalizado)
+matches 0..1──* field_reservations (match_id)
 organizations 1──* competitions
 competitions 1──* seasons
 organizations 1──* seasons (denormalizado)
@@ -272,6 +306,12 @@ organizations 1──* season_teams (denormalizado)
 season_teams 1──* season_team_players
 players 1──* season_team_players
 organizations 1──* season_team_players (denormalizado)
+seasons 1──* matches
+season_teams 1──* matches (home/away)
+field_reservations 0..1──* matches (field_reservation_id)
+matches 1──* match_officials
+profiles 1──* match_officials
+organizations 1──* match_officials (denormalizado)
 ```
 
 ## Notas
