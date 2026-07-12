@@ -57,6 +57,38 @@ export type Database = {
         }
         Relationships: []
       }
+      competitions: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competitions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       field_availability_rules: {
         Row: {
           created_at: string
@@ -247,6 +279,126 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      season_rules: {
+        Row: {
+          allow_draws: boolean
+          created_at: string
+          id: string
+          match_duration_minutes: number
+          minimum_rest_minutes: number
+          organization_id: string
+          points_draw: number
+          points_loss: number
+          points_win: number
+          season_id: string
+          suspension_matches: number
+          updated_at: string
+          yellow_card_limit: number
+        }
+        Insert: {
+          allow_draws?: boolean
+          created_at?: string
+          id?: string
+          match_duration_minutes?: number
+          minimum_rest_minutes?: number
+          organization_id: string
+          points_draw?: number
+          points_loss?: number
+          points_win?: number
+          season_id: string
+          suspension_matches?: number
+          updated_at?: string
+          yellow_card_limit?: number
+        }
+        Update: {
+          allow_draws?: boolean
+          created_at?: string
+          id?: string
+          match_duration_minutes?: number
+          minimum_rest_minutes?: number
+          organization_id?: string
+          points_draw?: number
+          points_loss?: number
+          points_win?: number
+          season_id?: string
+          suspension_matches?: number
+          updated_at?: string
+          yellow_card_limit?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "season_rules_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "season_rules_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: true
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seasons: {
+        Row: {
+          competition_id: string
+          created_at: string
+          ends_on: string | null
+          format_type: string
+          id: string
+          name: string
+          organization_id: string
+          slug: string
+          starts_on: string | null
+          updated_at: string
+          visibility: string
+        }
+        Insert: {
+          competition_id: string
+          created_at?: string
+          ends_on?: string | null
+          format_type: string
+          id?: string
+          name: string
+          organization_id: string
+          slug: string
+          starts_on?: string | null
+          updated_at?: string
+          visibility?: string
+        }
+        Update: {
+          competition_id?: string
+          created_at?: string
+          ends_on?: string | null
+          format_type?: string
+          id?: string
+          name?: string
+          organization_id?: string
+          slug?: string
+          starts_on?: string | null
+          updated_at?: string
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seasons_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seasons_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       venues: {
         Row: {

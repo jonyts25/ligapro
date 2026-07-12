@@ -4,7 +4,7 @@
 
 **Diseño v0 congelado.**
 
-Schema SQL: Migration 001 (identidad) + Migration 002 (venues/fields/reglas) aplicadas en `ligapro-dev`. El resto de entidades sigue pendiente.
+Schema SQL: Migrations 001 (identidad) + 002 (venues/fields) + 003 (competitions/seasons/rules) aplicadas en `ligapro-dev`. El resto de entidades sigue pendiente.
 
 ## Entidades aprobadas (22)
 
@@ -15,9 +15,9 @@ Schema SQL: Migration 001 (identidad) + Migration 002 (venues/fields/reglas) apl
 5. `fields` — **implementada (002)**
 6. `field_availability_rules` — **implementada (002)**
 7. `field_reservations`
-8. `competitions`
-9. `seasons`
-10. `season_rules`
+8. `competitions` — **implementada (003)**
+9. `seasons` — **implementada (003)**
+10. `season_rules` — **implementada (003)**
 11. `season_roles`
 12. `teams`
 13. `players`
@@ -112,7 +112,60 @@ Visibilidad pública **NO** aplica todavía a estas tablas: solo miembros autent
 
 Informativo (horarios habituales). **No** detecta traslapes entre reglas; la ocupación dura vive en `field_reservations` (bloque futuro).
 
-### Relaciones (001 + 002)
+## Bloque 003 — competitions, seasons, season_rules
+
+`visibility` en `seasons` **todavía no** controla acceso público real: los miembros de la organización leen todas las seasons de su org vía RLS. El acceso anon/público llegará con vistas explícitas (ADR 0005). `format_type` admite `groups_knockout` / `knockout` como etiquetas; no existen tablas de groups/stages/brackets en este bloque. `season_roles` / `tournament_admin` quedan para un bloque futuro.
+
+### `competitions`
+
+| Columna | Tipo | Notas |
+|--------|------|--------|
+| `id` | uuid PK | default `gen_random_uuid()` |
+| `organization_id` | uuid NOT NULL | FK → `organizations(id)` ON DELETE CASCADE |
+| `name` | text NOT NULL | ej. "Liga Dominical Miura" |
+| `created_at` | timestamptz | |
+| `updated_at` | timestamptz | trigger `set_updated_at` |
+
+### `seasons`
+
+| Columna | Tipo | Notas |
+|--------|------|--------|
+| `id` | uuid PK | default `gen_random_uuid()` |
+| `competition_id` | uuid NOT NULL | FK → `competitions(id)` ON DELETE CASCADE |
+| `organization_id` | uuid NOT NULL | denormalizado; trigger exige igualdad con competition padre |
+| `name` | text NOT NULL | ej. "Apertura 2026" |
+| `slug` | text NOT NULL | UNIQUE `(organization_id, slug)` |
+| `format_type` | text NOT NULL | CHECK: `round_robin` \| `round_robin_double` \| `groups_knockout` \| `knockout` |
+| `visibility` | text NOT NULL | default `draft`; CHECK: `draft` \| `private` \| `unlisted` \| `public` \| `archived` |
+| `starts_on` | date nullable | |
+| `ends_on` | date nullable | CHECK `ends_on >= starts_on` cuando ambos no null |
+| `created_at` | timestamptz | |
+| `updated_at` | timestamptz | trigger `set_updated_at` |
+
+Al insertar una season, un trigger AFTER INSERT crea automáticamente la fila `season_rules` con defaults.
+
+### `season_rules`
+
+| Columna | Tipo | Notas |
+|--------|------|--------|
+| `id` | uuid PK | default `gen_random_uuid()` |
+| `season_id` | uuid NOT NULL | FK → `seasons(id)` ON DELETE CASCADE; UNIQUE (1:1) |
+| `organization_id` | uuid NOT NULL | denormalizado; trigger exige igualdad con season padre |
+| `points_win` | integer NOT NULL | default 3; CHECK ≥ 0 |
+| `points_draw` | integer NOT NULL | default 1; CHECK ≥ 0 |
+| `points_loss` | integer NOT NULL | default 0; CHECK ≥ 0 |
+| | | CHECK `points_win >= points_draw >= points_loss` |
+| `allow_draws` | boolean NOT NULL | default true |
+| `match_duration_minutes` | integer NOT NULL | default 90; CHECK > 0 |
+| `minimum_rest_minutes` | integer NOT NULL | default 0; CHECK ≥ 0 |
+| `yellow_card_limit` | integer NOT NULL | default 5; CHECK > 0 |
+| `suspension_matches` | integer NOT NULL | default 1; CHECK > 0 |
+| `created_at` | timestamptz | |
+| `updated_at` | timestamptz | trigger `set_updated_at` |
+
+Columnas tipadas (no JSON). Sin `season_rule_templates`.
+
+### Relaciones (001 + 002 + 003)
 
 ```text
 auth.users 1──1 profiles
@@ -124,6 +177,11 @@ venues 1──* fields
 organizations 1──* fields (denormalizado)
 fields 1──* field_availability_rules
 organizations 1──* field_availability_rules (denormalizado)
+organizations 1──* competitions
+competitions 1──* seasons
+organizations 1──* seasons (denormalizado)
+seasons 1──1 season_rules
+organizations 1──* season_rules (denormalizado)
 ```
 
 ## Notas
