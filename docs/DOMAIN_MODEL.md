@@ -4,16 +4,16 @@
 
 **Diseño v0 congelado.**
 
-Schema SQL iniciado: Migration 001 (`profiles`, `organizations`, `organization_members`) aplicada en `ligapro-dev`. El resto de entidades sigue pendiente de migración.
+Schema SQL: Migration 001 (identidad) + Migration 002 (venues/fields/reglas) aplicadas en `ligapro-dev`. El resto de entidades sigue pendiente.
 
 ## Entidades aprobadas (22)
 
 1. `profiles` — **implementada (001)**
 2. `organizations` — **implementada (001)**
 3. `organization_members` — **implementada (001)**
-4. `venues`
-5. `fields`
-6. `field_availability_rules`
+4. `venues` — **implementada (002)**
+5. `fields` — **implementada (002)**
+6. `field_availability_rules` — **implementada (002)**
 7. `field_reservations`
 8. `competitions`
 9. `seasons`
@@ -70,16 +70,64 @@ Alta de organización: RPC `create_organization_with_owner(name, slug)` (transac
 
 UNIQUE `(organization_id, profile_id)`. Varios owners permitidos; trigger impide quedar en cero owners (con bypass controlado al borrar la organización).
 
-### Relaciones
+## Bloque 002 — infraestructura física de canchas
+
+Visibilidad pública **NO** aplica todavía a estas tablas: solo miembros autenticados de la organización (RLS). Las vistas públicas llegan en un bloque posterior (ADR 0005).
+
+### `venues`
+
+| Columna | Tipo | Notas |
+|--------|------|--------|
+| `id` | uuid PK | default `gen_random_uuid()` |
+| `organization_id` | uuid NOT NULL | FK → `organizations(id)` ON DELETE CASCADE |
+| `name` | text NOT NULL | |
+| `address` | text nullable | |
+| `created_at` | timestamptz | |
+| `updated_at` | timestamptz | trigger `set_updated_at` |
+
+### `fields`
+
+| Columna | Tipo | Notas |
+|--------|------|--------|
+| `id` | uuid PK | default `gen_random_uuid()` |
+| `venue_id` | uuid NOT NULL | FK → `venues(id)` ON DELETE CASCADE |
+| `organization_id` | uuid NOT NULL | FK → `organizations(id)` ON DELETE CASCADE; denormalizado para RLS; trigger exige igualdad con el venue padre |
+| `name` | text NOT NULL | ej. "Campo 1" |
+| `surface_type` | text nullable | texto libre (pasto, sintético, …); sin ENUM en MVP |
+| `created_at` | timestamptz | |
+| `updated_at` | timestamptz | trigger `set_updated_at` |
+
+### `field_availability_rules`
+
+| Columna | Tipo | Notas |
+|--------|------|--------|
+| `id` | uuid PK | default `gen_random_uuid()` |
+| `field_id` | uuid NOT NULL | FK → `fields(id)` ON DELETE CASCADE |
+| `organization_id` | uuid NOT NULL | FK → `organizations(id)` ON DELETE CASCADE; trigger exige igualdad con el field padre |
+| `day_of_week` | integer NOT NULL | CHECK 0–6 |
+| `starts_at` | time NOT NULL | |
+| `ends_at` | time NOT NULL | CHECK `ends_at > starts_at` |
+| `created_at` | timestamptz | |
+| `updated_at` | timestamptz | trigger `set_updated_at` |
+
+Informativo (horarios habituales). **No** detecta traslapes entre reglas; la ocupación dura vive en `field_reservations` (bloque futuro).
+
+### Relaciones (001 + 002)
 
 ```text
 auth.users 1──1 profiles
 profiles 1──* organizations (created_by)
 organizations 1──* organization_members
 profiles 1──* organization_members
+organizations 1──* venues
+venues 1──* fields
+organizations 1──* fields (denormalizado)
+fields 1──* field_availability_rules
+organizations 1──* field_availability_rules (denormalizado)
 ```
 
 ## Notas
 
 - El dominio puro vive en `src/lib/domain/` como TypeScript sin dependencias de framework.
 - Tipos generados: `src/types/database.ts`.
+- Helpers RLS reutilizados desde 001: `is_member_of`, `has_role_in_org`.
