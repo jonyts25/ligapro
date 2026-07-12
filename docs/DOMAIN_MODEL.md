@@ -4,7 +4,7 @@
 
 **Diseño v0 congelado.**
 
-Schema SQL: Migrations 001–008 aplicadas en `ligapro-dev` (hasta season_roles + captura controlada). Pendiente: team_charges, vistas públicas, descuento automático de suspensiones, etc.
+Schema SQL: Migrations 001–009 aplicadas en `ligapro-dev` (hasta finanzas básicas por equipo/temporada). Pendiente: audit_log, vistas públicas, descuento automático de suspensiones, etc.
 
 ## Entidades aprobadas (22)
 
@@ -27,8 +27,8 @@ Schema SQL: Migrations 001–008 aplicadas en `ligapro-dev` (hasta season_roles 
 17. `match_officials` — **implementada (006a)**
 18. `match_events` — **implementada (006b)**
 19. `discipline_suspensions` — **implementada (007)**
-20. `team_charges`
-21. `team_payments`
+20. `team_charges` — **implementada (009)**
+21. `team_payments` — **implementada (009)**
 22. `audit_log`
 
 ## Bloque 001 — identidad y multi-tenancy
@@ -353,7 +353,72 @@ Helpers: `has_season_role`, `can_capture_match`, RPC `update_match_result`.
 
 **Pendiente:** RPC segura para corregir/anular eventos con reconciliación de `discipline_suspensions` (007 solo genera en INSERT).
 
-### Relaciones (001–008)
+## Bloque 009 — finanzas básicas por equipo/temporada
+
+Registros **manuales** de cargos y pagos asociados a un `season_team`. LigaPro **no procesa dinero** ni integra pasarelas de pago en este bloque. No existe estado `paid`/`pending`: el saldo se **calcula** a partir de cargos y pagos activos (no anulados).
+
+Solo `organization_owner` y `organization_admin` pueden ver y administrar finanzas. Captains, `organization_member`, `tournament_admin`, árbitros y delegados **no** tienen acceso todavía.
+
+### `team_charges`
+
+| Columna | Tipo | Notas |
+|--------|------|--------|
+| `id` | uuid PK | default `gen_random_uuid()` |
+| `organization_id` | uuid NOT NULL | FK → `organizations(id)` ON DELETE CASCADE; trigger exige igualdad con `season_teams.organization_id` |
+| `season_team_id` | uuid NOT NULL | FK → `season_teams(id)` ON DELETE RESTRICT |
+| `charge_type` | text NOT NULL | CHECK: `registration` \| `referee_fee` \| `fine` \| `other` |
+| `description` | text nullable | |
+| `amount` | numeric(12,2) NOT NULL | CHECK `> 0` |
+| `currency` | text NOT NULL | default `MXN`; CHECK `currency = 'MXN'` (MVP); otras monedas requieren migración explícita |
+| `due_date` | date nullable | |
+| `created_by_profile_id` | uuid NOT NULL | FK → `profiles(id)` ON DELETE RESTRICT; trigger exige `= auth.uid()` y membresía en la org |
+| `voided_at` | timestamptz nullable | anulación vía RPC `void_team_charge` |
+| `voided_by_profile_id` | uuid nullable | FK → `profiles(id)` ON DELETE RESTRICT |
+| `void_reason` | text nullable | all-or-none con campos de anulación |
+| `created_at` | timestamptz | |
+| `updated_at` | timestamptz | trigger `set_updated_at` |
+
+Inmutable tras INSERT (sin UPDATE/DELETE directo). Corrección de errores: anular con motivo y crear registro nuevo.
+
+### `team_payments`
+
+| Columna | Tipo | Notas |
+|--------|------|--------|
+| `id` | uuid PK | default `gen_random_uuid()` |
+| `organization_id` | uuid NOT NULL | FK → `organizations(id)` ON DELETE CASCADE; trigger tenant |
+| `season_team_id` | uuid NOT NULL | FK → `season_teams(id)` ON DELETE RESTRICT |
+| `amount` | numeric(12,2) NOT NULL | CHECK `> 0` |
+| `currency` | text NOT NULL | default `MXN`; CHECK `currency = 'MXN'` (MVP); otras monedas requieren migración explícita |
+| `payment_method` | text NOT NULL | CHECK: `cash` \| `transfer` \| `card` \| `other` |
+| `reference` | text nullable | **privado** (solo owner/admin) |
+| `notes` | text nullable | **privado** |
+| `paid_at` | timestamptz NOT NULL | default `now()` |
+| `recorded_by_profile_id` | uuid NOT NULL | FK → `profiles(id)` ON DELETE RESTRICT; trigger exige `= auth.uid()` y membresía |
+| `voided_at` | timestamptz nullable | anulación vía RPC `void_team_payment` |
+| `voided_by_profile_id` | uuid nullable | |
+| `void_reason` | text nullable | all-or-none |
+| `created_at` | timestamptz | |
+| `updated_at` | timestamptz | trigger `set_updated_at` |
+
+Mismas reglas de inmutabilidad y anulación que `team_charges`.
+
+### Modelo de saldo
+
+Vista privada `season_team_financial_summary` (`security_invoker = true`):
+
+| Columna | Definición |
+|--------|------------|
+| `total_active_charges` | SUM(`team_charges.amount`) WHERE `voided_at IS NULL` |
+| `total_active_payments` | SUM(`team_payments.amount`) WHERE `voided_at IS NULL` |
+| `balance_due` | cargos − pagos (negativo = saldo a favor; permitido) |
+| `currency` | agrupada por moneda; en MVP solo existe `MXN` |
+| `next_due_date` | MIN(`due_date`) de cargos activos con fecha |
+
+Incluye `season_teams` sin movimientos (ceros en MXN). **MVP: únicamente MXN.** La columna `currency` se conserva para ampliación futura; habilitar otras monedas requiere una migración explícita que amplíe el CHECK. La vista agrupa por `currency` para no mezclar monedas si eso ocurre más adelante.
+
+RPCs: `void_team_charge(p_charge_id, p_reason)`, `void_team_payment(p_payment_id, p_reason)` — solo owner/admin; motivo obligatorio; sin restauración.
+
+### Relaciones (001–009)
 
 ```text
 auth.users 1──1 profiles
@@ -397,6 +462,13 @@ organizations 1──* discipline_suspensions (denormalizado)
 seasons 1──* season_roles
 profiles 1──* season_roles
 organizations 1──* season_roles (denormalizado)
+season_teams 1──* team_charges
+organizations 1──* team_charges (denormalizado)
+profiles 1──* team_charges (created_by / voided_by)
+season_teams 1──* team_payments
+organizations 1──* team_payments (denormalizado)
+profiles 1──* team_payments (recorded_by / voided_by)
+season_teams 0..1──* season_team_financial_summary (vista)
 ```
 
 ## Notas

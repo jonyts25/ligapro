@@ -111,6 +111,24 @@ export type Database = {
         }
         Relationships: []
       }
+      __mig009_test_results: {
+        Row: {
+          details: string | null
+          passed: boolean
+          test_name: string
+        }
+        Insert: {
+          details?: string | null
+          passed: boolean
+          test_name: string
+        }
+        Update: {
+          details?: string | null
+          passed?: boolean
+          test_name?: string
+        }
+        Relationships: []
+      }
       competitions: {
         Row: {
           created_at: string
@@ -993,6 +1011,169 @@ export type Database = {
           },
         ]
       }
+      team_charges: {
+        Row: {
+          amount: number
+          charge_type: string
+          created_at: string
+          created_by_profile_id: string
+          currency: string
+          description: string | null
+          due_date: string | null
+          id: string
+          organization_id: string
+          season_team_id: string
+          updated_at: string
+          void_reason: string | null
+          voided_at: string | null
+          voided_by_profile_id: string | null
+        }
+        Insert: {
+          amount: number
+          charge_type: string
+          created_at?: string
+          created_by_profile_id: string
+          currency?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          organization_id: string
+          season_team_id: string
+          updated_at?: string
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by_profile_id?: string | null
+        }
+        Update: {
+          amount?: number
+          charge_type?: string
+          created_at?: string
+          created_by_profile_id?: string
+          currency?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          organization_id?: string
+          season_team_id?: string
+          updated_at?: string
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by_profile_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_charges_created_by_profile_id_fkey"
+            columns: ["created_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_charges_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_charges_season_team_id_fkey"
+            columns: ["season_team_id"]
+            isOneToOne: false
+            referencedRelation: "season_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_charges_voided_by_profile_id_fkey"
+            columns: ["voided_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          notes: string | null
+          organization_id: string
+          paid_at: string
+          payment_method: string
+          recorded_by_profile_id: string
+          reference: string | null
+          season_team_id: string
+          updated_at: string
+          void_reason: string | null
+          voided_at: string | null
+          voided_by_profile_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          id?: string
+          notes?: string | null
+          organization_id: string
+          paid_at?: string
+          payment_method: string
+          recorded_by_profile_id: string
+          reference?: string | null
+          season_team_id: string
+          updated_at?: string
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by_profile_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          paid_at?: string
+          payment_method?: string
+          recorded_by_profile_id?: string
+          reference?: string | null
+          season_team_id?: string
+          updated_at?: string
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by_profile_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_payments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_payments_recorded_by_profile_id_fkey"
+            columns: ["recorded_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_payments_season_team_id_fkey"
+            columns: ["season_team_id"]
+            isOneToOne: false
+            referencedRelation: "season_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_payments_voided_by_profile_id_fkey"
+            columns: ["voided_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       teams: {
         Row: {
           created_at: string
@@ -1062,7 +1243,18 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      season_team_financial_summary: {
+        Row: {
+          balance_due: number | null
+          currency: string | null
+          next_due_date: string | null
+          organization_id: string | null
+          season_team_id: string | null
+          total_active_charges: number | null
+          total_active_payments: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       can_capture_match: { Args: { p_match_id: string }; Returns: boolean }
@@ -1136,6 +1328,57 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "matches"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      void_team_charge: {
+        Args: { p_charge_id: string; p_reason: string }
+        Returns: {
+          amount: number
+          charge_type: string
+          created_at: string
+          created_by_profile_id: string
+          currency: string
+          description: string | null
+          due_date: string | null
+          id: string
+          organization_id: string
+          season_team_id: string
+          updated_at: string
+          void_reason: string | null
+          voided_at: string | null
+          voided_by_profile_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "team_charges"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      void_team_payment: {
+        Args: { p_payment_id: string; p_reason: string }
+        Returns: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          notes: string | null
+          organization_id: string
+          paid_at: string
+          payment_method: string
+          recorded_by_profile_id: string
+          reference: string | null
+          season_team_id: string
+          updated_at: string
+          void_reason: string | null
+          voided_at: string | null
+          voided_by_profile_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "team_payments"
           isOneToOne: true
           isSetofReturn: false
         }
