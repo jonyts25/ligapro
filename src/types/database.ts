@@ -75,6 +75,24 @@ export type Database = {
         }
         Relationships: []
       }
+      __mig007_test_results: {
+        Row: {
+          details: string | null
+          passed: boolean
+          test_name: string
+        }
+        Insert: {
+          details?: string | null
+          passed: boolean
+          test_name: string
+        }
+        Update: {
+          details?: string | null
+          passed?: boolean
+          test_name?: string
+        }
+        Relationships: []
+      }
       competitions: {
         Row: {
           created_at: string
@@ -103,6 +121,70 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      discipline_suspensions: {
+        Row: {
+          created_at: string
+          id: string
+          matches_remaining: number
+          matches_served: number
+          notes: string | null
+          organization_id: string
+          season_team_player_id: string
+          source_match_event_id: string | null
+          status: string
+          suspension_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          matches_remaining: number
+          matches_served?: number
+          notes?: string | null
+          organization_id: string
+          season_team_player_id: string
+          source_match_event_id?: string | null
+          status?: string
+          suspension_type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          matches_remaining?: number
+          matches_served?: number
+          notes?: string | null
+          organization_id?: string
+          season_team_player_id?: string
+          source_match_event_id?: string | null
+          status?: string
+          suspension_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discipline_suspensions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "discipline_suspensions_season_team_player_id_fkey"
+            columns: ["season_team_player_id"]
+            isOneToOne: false
+            referencedRelation: "season_team_players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "discipline_suspensions_source_match_event_id_fkey"
+            columns: ["source_match_event_id"]
+            isOneToOne: false
+            referencedRelation: "match_events"
             referencedColumns: ["id"]
           },
         ]

@@ -4,7 +4,7 @@
 
 **Diseño v0 congelado.**
 
-Schema SQL: Migrations 001–006b aplicadas en `ligapro-dev` (hasta match_events). Pendiente: discipline_suspensions, season_roles, captura por oficiales, etc.
+Schema SQL: Migrations 001–007 aplicadas en `ligapro-dev` (hasta discipline_suspensions). Pendiente: season_roles, captura por oficiales, team_charges, vistas públicas, etc.
 
 ## Entidades aprobadas (22)
 
@@ -26,7 +26,7 @@ Schema SQL: Migrations 001–006b aplicadas en `ligapro-dev` (hasta match_events
 16. `matches` — **implementada (006a)**
 17. `match_officials` — **implementada (006a)**
 18. `match_events` — **implementada (006b)**
-19. `discipline_suspensions`
+19. `discipline_suspensions` — **implementada (007)**
 20. `team_charges`
 21. `team_payments`
 22. `audit_log`
@@ -296,7 +296,32 @@ FK a `season_team_players` (no a `players`) para anclar el evento al roster temp
 | `notes` | text nullable | texto libre |
 | `created_at` / `updated_at` | timestamptz | |
 
-### Relaciones (001–006b)
+## Bloque 007 — discipline_suspensions
+
+Suspensiones por tarjeta roja directa, acumulación de amarillas, o administrativas.  
+`matches_remaining` es informativo/manual en este bloque: el descuento automático por partido jugado queda pendiente del generador de fixture.
+
+**Generación automática** (`AFTER INSERT ON match_events`, SECURITY DEFINER):
+- `red_card` → fila `direct_red` con `matches_remaining = season_rules.suspension_matches`
+- `yellow_card` → si el conteo de amarillas de ese `season_team_player` en la misma season es múltiplo exacto de `season_rules.yellow_card_limit` → fila `accumulation` (source = la tarjeta que cruzó el umbral)
+- Otros `event_type` → no-op
+
+### `discipline_suspensions`
+
+| Columna | Tipo | Notas |
+|--------|------|--------|
+| `id` | uuid PK | |
+| `organization_id` | uuid NOT NULL | trigger vs season_team_player padre |
+| `season_team_player_id` | uuid NOT NULL | FK → `season_team_players` |
+| `source_match_event_id` | uuid nullable | FK → `match_events`; obligatorio salvo `administrative`; mismo jugador |
+| `suspension_type` | text NOT NULL | CHECK direct_red/accumulation/administrative |
+| `matches_remaining` | integer NOT NULL | ≥ 0; ajuste manual por admin |
+| `matches_served` | integer NOT NULL | default 0; ≥ 0 |
+| `status` | text NOT NULL | default `active`; CHECK active/served/waived |
+| `notes` | text nullable | |
+| `created_at` / `updated_at` | timestamptz | |
+
+### Relaciones (001–007)
 
 ```text
 auth.users 1──1 profiles
@@ -334,6 +359,9 @@ organizations 1──* match_officials (denormalizado)
 matches 1──* match_events
 season_team_players 1──* match_events
 organizations 1──* match_events (denormalizado)
+season_team_players 1──* discipline_suspensions
+match_events 0..1──* discipline_suspensions (source)
+organizations 1──* discipline_suspensions (denormalizado)
 ```
 
 ## Notas
