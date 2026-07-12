@@ -4,7 +4,7 @@
 
 **Diseño v0 congelado.**
 
-Schema SQL: Migrations 001–006a aplicadas en `ligapro-dev` (hasta matches + match_officials + FK de field_reservations.match_id). Pendiente: match_events, discipline, season_roles, etc.
+Schema SQL: Migrations 001–006b aplicadas en `ligapro-dev` (hasta match_events). Pendiente: discipline_suspensions, season_roles, captura por oficiales, etc.
 
 ## Entidades aprobadas (22)
 
@@ -25,7 +25,7 @@ Schema SQL: Migrations 001–006a aplicadas en `ligapro-dev` (hasta matches + ma
 15. `season_team_players` — **implementada (004)**
 16. `matches` — **implementada (006a)**
 17. `match_officials` — **implementada (006a)**
-18. `match_events`
+18. `match_events` — **implementada (006b)**
 19. `discipline_suspensions`
 20. `team_charges`
 21. `team_payments`
@@ -277,7 +277,26 @@ Captura de resultado por oficiales / `match_events` **no** está en este bloque 
 
 UNIQUE `(match_id, profile_id, role)`.
 
-### Relaciones (001–006a)
+## Bloque 006b — match_events
+
+Solo registro de eventos en cancha. Sin conteo de tarjetas ni generación de suspensiones (bloque discipline). Sin permiso de captura para `match_officials` (depende de `season_roles`).
+
+FK a `season_team_players` (no a `players`) para anclar el evento al roster temporada/equipo. El catálogo incluye `substitution_in` / `substitution_out` **sin** validación de alineación — decisión deliberada; se revisará tras entrevistas reales.
+
+### `match_events`
+
+| Columna | Tipo | Notas |
+|--------|------|--------|
+| `id` | uuid PK | |
+| `match_id` | uuid NOT NULL | FK → `matches` |
+| `organization_id` | uuid NOT NULL | trigger vs match padre |
+| `season_team_player_id` | uuid NOT NULL | FK → `season_team_players`; trigger exige home o away del match |
+| `event_type` | text NOT NULL | CHECK goal/own_goal/yellow_card/red_card/substitution_in/substitution_out/injury |
+| `minute` | integer NOT NULL | CHECK 0–130 |
+| `notes` | text nullable | texto libre |
+| `created_at` / `updated_at` | timestamptz | |
+
+### Relaciones (001–006b)
 
 ```text
 auth.users 1──1 profiles
@@ -312,6 +331,9 @@ field_reservations 0..1──* matches (field_reservation_id)
 matches 1──* match_officials
 profiles 1──* match_officials
 organizations 1──* match_officials (denormalizado)
+matches 1──* match_events
+season_team_players 1──* match_events
+organizations 1──* match_events (denormalizado)
 ```
 
 ## Notas

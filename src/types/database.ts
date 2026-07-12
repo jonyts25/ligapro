@@ -57,6 +57,24 @@ export type Database = {
         }
         Relationships: []
       }
+      __mig006b_test_results: {
+        Row: {
+          details: string | null
+          passed: boolean
+          test_name: string
+        }
+        Insert: {
+          details?: string | null
+          passed: boolean
+          test_name: string
+        }
+        Update: {
+          details?: string | null
+          passed?: boolean
+          test_name?: string
+        }
+        Relationships: []
+      }
       competitions: {
         Row: {
           created_at: string
@@ -242,6 +260,64 @@ export type Database = {
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      match_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          match_id: string
+          minute: number
+          notes: string | null
+          organization_id: string
+          season_team_player_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          match_id: string
+          minute: number
+          notes?: string | null
+          organization_id: string
+          season_team_player_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          match_id?: string
+          minute?: number
+          notes?: string | null
+          organization_id?: string
+          season_team_player_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_events_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_events_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_events_season_team_player_id_fkey"
+            columns: ["season_team_player_id"]
+            isOneToOne: false
+            referencedRelation: "season_team_players"
             referencedColumns: ["id"]
           },
         ]
