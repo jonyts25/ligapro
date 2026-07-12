@@ -129,6 +129,81 @@ export type Database = {
         }
         Relationships: []
       }
+      __mig010_test_results: {
+        Row: {
+          details: string | null
+          passed: boolean
+          test_name: string
+        }
+        Insert: {
+          details?: string | null
+          passed: boolean
+          test_name: string
+        }
+        Update: {
+          details?: string | null
+          passed?: boolean
+          test_name?: string
+        }
+        Relationships: []
+      }
+      audit_log: {
+        Row: {
+          action: string
+          actor_profile_id: string | null
+          after_data: Json | null
+          before_data: Json | null
+          changed_fields: string[]
+          created_at: string
+          entity_id: string
+          entity_type: string
+          id: string
+          organization_id: string
+          source: string
+        }
+        Insert: {
+          action: string
+          actor_profile_id?: string | null
+          after_data?: Json | null
+          before_data?: Json | null
+          changed_fields?: string[]
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          id?: string
+          organization_id: string
+          source?: string
+        }
+        Update: {
+          action?: string
+          actor_profile_id?: string | null
+          after_data?: Json | null
+          before_data?: Json | null
+          changed_fields?: string[]
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          organization_id?: string
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_log_actor_profile_id_fkey"
+            columns: ["actor_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "audit_log_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       competitions: {
         Row: {
           created_at: string

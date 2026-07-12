@@ -30,9 +30,12 @@ organización
 → tabla/goleo/disciplina
 → consulta pública
 → registro manual de cargos y pagos por equipo/temporada
+→ audit log interno (triggers de base de datos)
 ```
 
 Registrar pagos manuales (efectivo, transferencia, etc.) **sí** pertenece al MVP. Procesar pagos dentro de la aplicación (Mercado Pago, Stripe, etc.) **no** pertenece al MVP.
+
+El **audit log interno** (trazabilidad automática vía triggers) **sí** pertenece al MVP. Analytics avanzados y vistas públicas de auditoría **no**.
 
 ## Fuera del MVP
 

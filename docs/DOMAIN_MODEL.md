@@ -4,7 +4,7 @@
 
 **Diseño v0 congelado.**
 
-Schema SQL: Migrations 001–009 aplicadas en `ligapro-dev` (hasta finanzas básicas por equipo/temporada). Pendiente: audit_log, vistas públicas, descuento automático de suspensiones, etc.
+Schema SQL: Migrations 001–010 aplicadas en `ligapro-dev` (modelo conceptual v0 completo, incluyendo `audit_log`). Pendiente post-v0: vistas públicas, descuento automático de suspensiones, UI, etc.
 
 ## Entidades aprobadas (22)
 
@@ -29,7 +29,7 @@ Schema SQL: Migrations 001–009 aplicadas en `ligapro-dev` (hasta finanzas bás
 19. `discipline_suspensions` — **implementada (007)**
 20. `team_charges` — **implementada (009)**
 21. `team_payments` — **implementada (009)**
-22. `audit_log`
+22. `audit_log` — **implementada (010)**
 
 ## Bloque 001 — identidad y multi-tenancy
 
@@ -469,7 +469,55 @@ season_teams 1──* team_payments
 organizations 1──* team_payments (denormalizado)
 profiles 1──* team_payments (recorded_by / voided_by)
 season_teams 0..1──* season_team_financial_summary (vista)
+organizations 1──* audit_log
+profiles 0..1──* audit_log (actor_profile_id)
 ```
+
+## Bloque 010 — audit_log inmutable
+
+Trazabilidad automática de cambios administrativos, deportivos, disciplinarios y financieros. Escrita **solo** por triggers Postgres (`audit_row_change`); la UI no crea auditorías. Append-only: sin UPDATE/DELETE de aplicación.
+
+### `audit_log`
+
+| Columna | Tipo | Notas |
+|--------|------|--------|
+| `id` | uuid PK | default `gen_random_uuid()` |
+| `organization_id` | uuid NOT NULL | FK → `organizations(id)` ON DELETE **RESTRICT** (orgs con historial no se borran físicamente; archivar en el futuro) |
+| `actor_profile_id` | uuid nullable | FK → `profiles(id)` ON DELETE SET NULL; `auth.uid()` o NULL |
+| `entity_type` | text NOT NULL | `TG_TABLE_NAME` |
+| `entity_id` | uuid NOT NULL | `id` de la fila afectada |
+| `action` | text NOT NULL | CHECK: `insert` \| `update` \| `delete` |
+| `before_data` | jsonb nullable | NULL en INSERT |
+| `after_data` | jsonb nullable | NULL en DELETE |
+| `changed_fields` | text[] NOT NULL | default `{}`; excluye `updated_at`; UPDATE sin cambios reales no genera fila |
+| `source` | text NOT NULL | default `database_trigger`; CHECK también `system_trigger` (reservado) |
+| `created_at` | timestamptz | sin `updated_at` |
+
+Para `organizations`, `organization_id = organizations.id`.
+
+### Entidades auditadas
+
+`organizations`, `organization_members`, `venues`, `fields`, `field_availability_rules`, `field_reservations`, `competitions`, `seasons`, `season_rules`, `season_roles`, `teams`, `players`, `season_teams`, `season_team_players`, `matches`, `match_officials`, `match_events`, `discipline_suspensions`, `team_charges`, `team_payments`.
+
+**No auditadas:** `profiles` (identidad global sin tenancy org), `audit_log` (sin recursión).
+
+### Exclusiones de snapshots (privacidad)
+
+| Tabla | Columnas excluidas |
+|-------|-------------------|
+| `team_payments` | `reference`, `notes` |
+| `team_charges` | `description` |
+| `discipline_suspensions` | `notes` |
+| `players` | ninguna adicional (schema actual sin teléfono/email/DOB/docs) |
+| `organization_members` | ninguna adicional (solo ids/role) |
+
+### RLS
+
+SELECT solo `organization_owner` / `organization_admin`. Sin policies INSERT/UPDATE/DELETE. `GRANT SELECT` a `authenticated`; `REVOKE ALL` de PUBLIC/anon.
+
+**Guarantee (010b):** Un usuario de aplicación no puede omitir, modificar ni eliminar auditorías, aunque establezca `app.skip_audit` o `app.audit_allow_delete`. Esas variables ya no tienen efecto en código productivo.
+
+Teardown de pruebas (runner privilegiado únicamente): `DISABLE TRIGGER USER` en tablas auditadas + `audit_log_prevent_mutation`; sin flags de sesión ni RPCs de cleanup.
 
 ## Notas
 

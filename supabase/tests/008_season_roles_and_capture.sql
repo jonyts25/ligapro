@@ -66,18 +66,69 @@ DECLARE
   v_fn_ok boolean;
   event_id2 uuid;
 BEGIN
+  -- Privileged test teardown (010b): explicit DISABLE TRIGGER USER; no session bypass flags.
+  ALTER TABLE public.audit_log DISABLE TRIGGER audit_log_prevent_mutation;
+  ALTER TABLE public.organizations DISABLE TRIGGER USER;
+  ALTER TABLE public.organization_members DISABLE TRIGGER USER;
+  ALTER TABLE public.venues DISABLE TRIGGER USER;
+  ALTER TABLE public.fields DISABLE TRIGGER USER;
+  ALTER TABLE public.field_availability_rules DISABLE TRIGGER USER;
+  ALTER TABLE public.field_reservations DISABLE TRIGGER USER;
+  ALTER TABLE public.competitions DISABLE TRIGGER USER;
+  ALTER TABLE public.seasons DISABLE TRIGGER USER;
+  ALTER TABLE public.season_rules DISABLE TRIGGER USER;
+  ALTER TABLE public.season_roles DISABLE TRIGGER USER;
+  ALTER TABLE public.teams DISABLE TRIGGER USER;
+  ALTER TABLE public.players DISABLE TRIGGER USER;
+  ALTER TABLE public.season_teams DISABLE TRIGGER USER;
+  ALTER TABLE public.season_team_players DISABLE TRIGGER USER;
+  ALTER TABLE public.matches DISABLE TRIGGER USER;
+  ALTER TABLE public.match_officials DISABLE TRIGGER USER;
+  ALTER TABLE public.match_events DISABLE TRIGGER USER;
+  ALTER TABLE public.discipline_suspensions DISABLE TRIGGER USER;
+  ALTER TABLE public.team_charges DISABLE TRIGGER USER;
+  ALTER TABLE public.team_payments DISABLE TRIGGER USER;
+  DELETE FROM public.audit_log
+  WHERE organization_id IN (
+    SELECT id FROM public.organizations
+    WHERE created_by IN (
+      uid_owner_a, uid_admin_a, uid_member_a, uid_tourn_a, uid_tourn_b,
+      uid_referee, uid_delegate, uid_official_only, uid_owner_b
+    )
+       OR slug IN ('org-a-mig008', 'org-b-mig008')
+  );
   DELETE FROM public.organizations
   WHERE created_by IN (
     uid_owner_a, uid_admin_a, uid_member_a, uid_tourn_a, uid_tourn_b,
     uid_referee, uid_delegate, uid_official_only, uid_owner_b
   )
      OR slug IN ('org-a-mig008', 'org-b-mig008');
-
   DELETE FROM auth.users
   WHERE id IN (
     uid_owner_a, uid_admin_a, uid_member_a, uid_tourn_a, uid_tourn_b,
     uid_referee, uid_delegate, uid_official_only, uid_nomember, uid_owner_b
   );
+  ALTER TABLE public.audit_log ENABLE TRIGGER audit_log_prevent_mutation;
+  ALTER TABLE public.organizations ENABLE TRIGGER USER;
+  ALTER TABLE public.organization_members ENABLE TRIGGER USER;
+  ALTER TABLE public.venues ENABLE TRIGGER USER;
+  ALTER TABLE public.fields ENABLE TRIGGER USER;
+  ALTER TABLE public.field_availability_rules ENABLE TRIGGER USER;
+  ALTER TABLE public.field_reservations ENABLE TRIGGER USER;
+  ALTER TABLE public.competitions ENABLE TRIGGER USER;
+  ALTER TABLE public.seasons ENABLE TRIGGER USER;
+  ALTER TABLE public.season_rules ENABLE TRIGGER USER;
+  ALTER TABLE public.season_roles ENABLE TRIGGER USER;
+  ALTER TABLE public.teams ENABLE TRIGGER USER;
+  ALTER TABLE public.players ENABLE TRIGGER USER;
+  ALTER TABLE public.season_teams ENABLE TRIGGER USER;
+  ALTER TABLE public.season_team_players ENABLE TRIGGER USER;
+  ALTER TABLE public.matches ENABLE TRIGGER USER;
+  ALTER TABLE public.match_officials ENABLE TRIGGER USER;
+  ALTER TABLE public.match_events ENABLE TRIGGER USER;
+  ALTER TABLE public.discipline_suspensions ENABLE TRIGGER USER;
+  ALTER TABLE public.team_charges ENABLE TRIGGER USER;
+  ALTER TABLE public.team_payments ENABLE TRIGGER USER;
 
   INSERT INTO auth.users (
     instance_id, id, aud, role, email, encrypted_password,
