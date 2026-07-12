@@ -4,7 +4,7 @@
 
 **Diseño v0 congelado.**
 
-Schema SQL: Migrations 001–007 aplicadas en `ligapro-dev` (hasta discipline_suspensions). Pendiente: season_roles, captura por oficiales, team_charges, vistas públicas, etc.
+Schema SQL: Migrations 001–008 aplicadas en `ligapro-dev` (hasta season_roles + captura controlada). Pendiente: team_charges, vistas públicas, descuento automático de suspensiones, etc.
 
 ## Entidades aprobadas (22)
 
@@ -18,7 +18,7 @@ Schema SQL: Migrations 001–007 aplicadas en `ligapro-dev` (hasta discipline_su
 8. `competitions` — **implementada (003)**
 9. `seasons` — **implementada (003)**
 10. `season_rules` — **implementada (003)**
-11. `season_roles`
+11. `season_roles` — **implementada (008)**
 12. `teams` — **implementada (004)**
 13. `players` — **implementada (004)**
 14. `season_teams` — **implementada (004)**
@@ -114,7 +114,7 @@ Informativo (horarios habituales). **No** detecta traslapes entre reglas; la ocu
 
 ## Bloque 003 — competitions, seasons, season_rules
 
-`visibility` en `seasons` **todavía no** controla acceso público real: los miembros de la organización leen todas las seasons de su org vía RLS. El acceso anon/público llegará con vistas explícitas (ADR 0005). `format_type` admite `groups_knockout` / `knockout` como etiquetas; no existen tablas de groups/stages/brackets en este bloque. `season_roles` / `tournament_admin` quedan para un bloque futuro.
+`visibility` en `seasons` **todavía no** controla acceso público real: los miembros de la organización leen todas las seasons de su org vía RLS. El acceso anon/público llegará con vistas explícitas (ADR 0005). `format_type` admite `groups_knockout` / `knockout` como etiquetas; no existen tablas de groups/stages/brackets en este bloque. Permisos de captura por `season_roles` implementados en Migration 008.
 
 ### `competitions`
 
@@ -279,7 +279,7 @@ UNIQUE `(match_id, profile_id, role)`.
 
 ## Bloque 006b — match_events
 
-Solo registro de eventos en cancha. Sin conteo de tarjetas ni generación de suspensiones (bloque discipline). Sin permiso de captura para `match_officials` (depende de `season_roles`).
+Solo registro de eventos en cancha. Generación de suspensiones vía trigger (007). **Captura controlada (008):** owner/admin conservan CRUD completo; captura aditiva para tournament_admin y oficiales confirmados (ver Bloque 008).
 
 FK a `season_team_players` (no a `players`) para anclar el evento al roster temporada/equipo. El catálogo incluye `substitution_in` / `substitution_out` **sin** validación de alineación — decisión deliberada; se revisará tras entrevistas reales.
 
@@ -321,7 +321,39 @@ Suspensiones por tarjeta roja directa, acumulación de amarillas, o administrati
 | `notes` | text nullable | |
 | `created_at` / `updated_at` | timestamptz | |
 
-### Relaciones (001–007)
+## Bloque 008 — season_roles y captura controlada
+
+**Elegibilidad de temporada ≠ asignación a partido.** Un `season_role` solo habilita captura en conjunción con `match_officials.status = 'confirmed'` para referee/delegate. Membership en `organization_members` es obligatoria antes de recibir un season_role (trigger).
+
+### Matriz de captura (Migration 008)
+
+| Rol | match_events | matches (marcador/status) | match_officials |
+|-----|--------------|---------------------------|-----------------|
+| organization_owner / organization_admin | CRUD completo (policies 006b) | UPDATE completo (006a) | CRUD (006a) |
+| tournament_admin | **INSERT** en cualquier match de su season; sin UPDATE/DELETE directo | `update_match_result()` RPC únicamente | sin cambios |
+| referee / delegate | **INSERT** en su match si season_role + confirmed; sin UPDATE/DELETE directo | **no** (RPC rechaza) | sin cambios |
+| assistant / scorekeeper | sin permisos nuevos | sin permisos nuevos | sin cambios |
+
+`discipline_suspensions`: sin cambios; trigger SECURITY DEFINER de 007 sigue generando suspensiones aunque el evento lo inserte un capturador autorizado.
+
+### `season_roles`
+
+| Columna | Tipo | Notas |
+|--------|------|--------|
+| `id` | uuid PK | |
+| `organization_id` | uuid NOT NULL | trigger vs season padre |
+| `season_id` | uuid NOT NULL | FK → `seasons` |
+| `profile_id` | uuid NOT NULL | FK → `profiles`; debe existir en `organization_members` |
+| `role` | text NOT NULL | CHECK tournament_admin / referee / delegate |
+| `created_at` / `updated_at` | timestamptz | |
+
+FK compuesta → `organization_members(organization_id, profile_id)` ON DELETE CASCADE. `has_season_role` exige membresía vigente (JOIN a `organization_members`).
+
+Helpers: `has_season_role`, `can_capture_match`, RPC `update_match_result`.
+
+**Pendiente:** RPC segura para corregir/anular eventos con reconciliación de `discipline_suspensions` (007 solo genera en INSERT).
+
+### Relaciones (001–008)
 
 ```text
 auth.users 1──1 profiles
@@ -362,6 +394,9 @@ organizations 1──* match_events (denormalizado)
 season_team_players 1──* discipline_suspensions
 match_events 0..1──* discipline_suspensions (source)
 organizations 1──* discipline_suspensions (denormalizado)
+seasons 1──* season_roles
+profiles 1──* season_roles
+organizations 1──* season_roles (denormalizado)
 ```
 
 ## Notas

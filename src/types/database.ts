@@ -93,6 +93,24 @@ export type Database = {
         }
         Relationships: []
       }
+      __mig008_test_results: {
+        Row: {
+          details: string | null
+          passed: boolean
+          test_name: string
+        }
+        Insert: {
+          details?: string | null
+          passed: boolean
+          test_name: string
+        }
+        Update: {
+          details?: string | null
+          passed?: boolean
+          test_name?: string
+        }
+        Relationships: []
+      }
       competitions: {
         Row: {
           created_at: string
@@ -680,6 +698,65 @@ export type Database = {
         }
         Relationships: []
       }
+      season_roles: {
+        Row: {
+          created_at: string
+          id: string
+          organization_id: string
+          profile_id: string
+          role: string
+          season_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          organization_id: string
+          profile_id: string
+          role: string
+          season_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          organization_id?: string
+          profile_id?: string
+          role?: string
+          season_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "season_roles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "season_roles_organization_member_fkey"
+            columns: ["organization_id", "profile_id"]
+            isOneToOne: false
+            referencedRelation: "organization_members"
+            referencedColumns: ["organization_id", "profile_id"]
+          },
+          {
+            foreignKeyName: "season_roles_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "season_roles_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       season_rules: {
         Row: {
           allow_draws: boolean
@@ -988,6 +1065,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_capture_match: { Args: { p_match_id: string }; Returns: boolean }
       create_organization_with_owner: {
         Args: { p_name: string; p_slug: string }
         Returns: {
@@ -1009,6 +1087,10 @@ export type Database = {
         Args: { p_org_id: string; p_roles: string[] }
         Returns: boolean
       }
+      has_season_role: {
+        Args: { p_roles: string[]; p_season_id: string }
+        Returns: boolean
+      }
       is_member_of: { Args: { p_org_id: string }; Returns: boolean }
       set_season_team_captain: {
         Args: { p_player_id: string; p_season_team_id: string }
@@ -1026,6 +1108,34 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "season_team_players"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      update_match_result: {
+        Args: {
+          p_away_score: number
+          p_home_score: number
+          p_match_id: string
+          p_status: string
+        }
+        Returns: {
+          away_score: number | null
+          away_season_team_id: string
+          created_at: string
+          field_reservation_id: string | null
+          home_score: number | null
+          home_season_team_id: string
+          id: string
+          organization_id: string
+          round_label: string | null
+          season_id: string
+          status: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "matches"
           isOneToOne: true
           isSetofReturn: false
         }
