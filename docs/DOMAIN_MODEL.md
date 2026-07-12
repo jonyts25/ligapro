@@ -4,7 +4,7 @@
 
 **Diseño v0 congelado.**
 
-Schema SQL: Migrations 001 (identidad) + 002 (venues/fields) + 003 (competitions/seasons/rules) aplicadas en `ligapro-dev`. El resto de entidades sigue pendiente.
+Schema SQL: Migrations 001–005 aplicadas en `ligapro-dev` (identidad, venues/fields, competitions/seasons, teams/players, field_reservations). El resto de entidades sigue pendiente.
 
 ## Entidades aprobadas (22)
 
@@ -14,15 +14,15 @@ Schema SQL: Migrations 001 (identidad) + 002 (venues/fields) + 003 (competitions
 4. `venues` — **implementada (002)**
 5. `fields` — **implementada (002)**
 6. `field_availability_rules` — **implementada (002)**
-7. `field_reservations`
+7. `field_reservations` — **implementada (005)**
 8. `competitions` — **implementada (003)**
 9. `seasons` — **implementada (003)**
 10. `season_rules` — **implementada (003)**
 11. `season_roles`
-12. `teams`
-13. `players`
-14. `season_teams`
-15. `season_team_players`
+12. `teams` — **implementada (004)**
+13. `players` — **implementada (004)**
+14. `season_teams` — **implementada (004)**
+15. `season_team_players` — **implementada (004)**
 16. `matches`
 17. `match_officials`
 18. `match_events`
@@ -165,7 +165,86 @@ Al insertar una season, un trigger AFTER INSERT crea automáticamente la fila `s
 
 Columnas tipadas (no JSON). Sin `season_rule_templates`.
 
-### Relaciones (001 + 002 + 003)
+## Bloque 004 — teams, players, season_teams, season_team_players
+
+El **capitán** vive únicamente en `season_team_players.is_captain` (máximo uno por `season_team` vía UNIQUE parcial). No existe `season_role` de captain. `profile_id` en `players` es opcional; no es requisito de BD para ser capitán. Permisos de capitán a nivel RLS / `season_roles` son un bloque futuro. Sin acceso anon/público todavía.
+
+### `teams`
+
+| Columna | Tipo | Notas |
+|--------|------|--------|
+| `id` | uuid PK | default `gen_random_uuid()` |
+| `organization_id` | uuid NOT NULL | FK → `organizations(id)` ON DELETE CASCADE |
+| `name` | text NOT NULL | identidad persistente (no ligada a una season) |
+| `created_at` | timestamptz | |
+| `updated_at` | timestamptz | trigger `set_updated_at` |
+
+### `players`
+
+| Columna | Tipo | Notas |
+|--------|------|--------|
+| `id` | uuid PK | default `gen_random_uuid()` |
+| `organization_id` | uuid NOT NULL | FK → `organizations(id)` ON DELETE CASCADE |
+| `profile_id` | uuid nullable | FK → `profiles(id)` ON DELETE SET NULL; UNIQUE parcial `(organization_id, profile_id)` WHERE NOT NULL |
+| `full_name` | text NOT NULL | |
+| `created_at` | timestamptz | |
+| `updated_at` | timestamptz | trigger `set_updated_at` |
+
+### `season_teams`
+
+| Columna | Tipo | Notas |
+|--------|------|--------|
+| `id` | uuid PK | default `gen_random_uuid()` |
+| `season_id` | uuid NOT NULL | FK → `seasons(id)` ON DELETE CASCADE |
+| `team_id` | uuid NOT NULL | FK → `teams(id)` ON DELETE CASCADE |
+| `organization_id` | uuid NOT NULL | denormalizado; trigger exige igualdad con season Y team |
+| `display_name` | text nullable | si NULL, la app usa `teams.name` |
+| `group_name` | text nullable | manual para `groups_knockout` |
+| `registration_status` | text NOT NULL | default `registered`; CHECK `registered` \| `confirmed` \| `withdrawn` |
+| `created_at` | timestamptz | |
+| `updated_at` | timestamptz | trigger `set_updated_at` |
+
+UNIQUE `(season_id, team_id)`.
+
+### `season_team_players`
+
+| Columna | Tipo | Notas |
+|--------|------|--------|
+| `id` | uuid PK | default `gen_random_uuid()` |
+| `season_team_id` | uuid NOT NULL | FK → `season_teams(id)` ON DELETE CASCADE |
+| `player_id` | uuid NOT NULL | FK → `players(id)` ON DELETE CASCADE |
+| `organization_id` | uuid NOT NULL | denormalizado; trigger exige igualdad con season_team Y player |
+| `jersey_number` | integer nullable | CHECK > 0; UNIQUE parcial por `season_team_id` |
+| `is_captain` | boolean NOT NULL | default false; UNIQUE parcial un capitán por team; CHECK debe ser `active` |
+| `registration_status` | text NOT NULL | default `active`; CHECK `active` \| `inactive` \| `suspended` |
+| `created_at` | timestamptz | |
+| `updated_at` | timestamptz | trigger `set_updated_at` |
+
+UNIQUE `(season_team_id, player_id)`. Cambio de capitán: RPC `set_season_team_captain` (atómico).
+
+## Bloque 005 — field_reservations
+
+**Única fuente de verdad** del calendario físico de canchas (ADR 0004). Todo lo que ocupa un field (partido, mantenimiento, renta, cierre, bloqueo) vive aquí. Protegida por constraint `EXCLUDE` (`no_overlapping_reservations`) sobre `field_id` + `tstzrange(starts_at, ends_at)` **solo cuando** `status = 'confirmed'`. Rangos adyacentes (`[)`) no chocan.
+
+`match_id` es uuid nullable **sin FK todavía** — se agregará en Migration 006 vía `ALTER TABLE` cuando exista `matches`. Pendiente 006 también: CHECK de que `match_id` no sea NULL cuando `reservation_type = 'match'`.
+
+### `field_reservations`
+
+| Columna | Tipo | Notas |
+|--------|------|--------|
+| `id` | uuid PK | default `gen_random_uuid()` |
+| `organization_id` | uuid NOT NULL | FK → `organizations`; trigger exige igualdad con field padre |
+| `field_id` | uuid NOT NULL | FK → `fields(id)` ON DELETE CASCADE |
+| `reservation_type` | text NOT NULL | CHECK: `match` \| `maintenance` \| `private_rental` \| `closed` \| `manual_block` |
+| `match_id` | uuid nullable | **sin FK en 005**; FK → `matches` en 006 |
+| `starts_at` | timestamptz NOT NULL | |
+| `ends_at` | timestamptz NOT NULL | CHECK `ends_at > starts_at` |
+| `title` | text nullable | útil para tipos distintos de `match` |
+| `status` | text NOT NULL | default `confirmed`; CHECK `confirmed` \| `cancelled` |
+| `created_at` | timestamptz | |
+| `updated_at` | timestamptz | trigger `set_updated_at` |
+
+### Relaciones (001–005)
 
 ```text
 auth.users 1──1 profiles
@@ -177,11 +256,22 @@ venues 1──* fields
 organizations 1──* fields (denormalizado)
 fields 1──* field_availability_rules
 organizations 1──* field_availability_rules (denormalizado)
+fields 1──* field_reservations
+organizations 1──* field_reservations (denormalizado)
 organizations 1──* competitions
 competitions 1──* seasons
 organizations 1──* seasons (denormalizado)
 seasons 1──1 season_rules
 organizations 1──* season_rules (denormalizado)
+organizations 1──* teams
+organizations 1──* players
+profiles 0..1──* players (opcional, por org)
+seasons 1──* season_teams
+teams 1──* season_teams
+organizations 1──* season_teams (denormalizado)
+season_teams 1──* season_team_players
+players 1──* season_team_players
+organizations 1──* season_team_players (denormalizado)
 ```
 
 ## Notas

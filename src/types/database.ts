@@ -137,6 +137,63 @@ export type Database = {
           },
         ]
       }
+      field_reservations: {
+        Row: {
+          created_at: string
+          ends_at: string
+          field_id: string
+          id: string
+          match_id: string | null
+          organization_id: string
+          reservation_type: string
+          starts_at: string
+          status: string
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          ends_at: string
+          field_id: string
+          id?: string
+          match_id?: string | null
+          organization_id: string
+          reservation_type: string
+          starts_at: string
+          status?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          ends_at?: string
+          field_id?: string
+          id?: string
+          match_id?: string | null
+          organization_id?: string
+          reservation_type?: string
+          starts_at?: string
+          status?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "field_reservations_field_id_fkey"
+            columns: ["field_id"]
+            isOneToOne: false
+            referencedRelation: "fields"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "field_reservations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fields: {
         Row: {
           created_at: string
@@ -256,6 +313,48 @@ export type Database = {
           },
         ]
       }
+      players: {
+        Row: {
+          created_at: string
+          full_name: string
+          id: string
+          organization_id: string
+          profile_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          full_name: string
+          id?: string
+          organization_id: string
+          profile_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          full_name?: string
+          id?: string
+          organization_id?: string
+          profile_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "players_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "players_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -343,6 +442,122 @@ export type Database = {
           },
         ]
       }
+      season_team_players: {
+        Row: {
+          created_at: string
+          id: string
+          is_captain: boolean
+          jersey_number: number | null
+          organization_id: string
+          player_id: string
+          registration_status: string
+          season_team_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_captain?: boolean
+          jersey_number?: number | null
+          organization_id: string
+          player_id: string
+          registration_status?: string
+          season_team_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_captain?: boolean
+          jersey_number?: number | null
+          organization_id?: string
+          player_id?: string
+          registration_status?: string
+          season_team_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "season_team_players_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "season_team_players_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "season_team_players_season_team_id_fkey"
+            columns: ["season_team_id"]
+            isOneToOne: false
+            referencedRelation: "season_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      season_teams: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          group_name: string | null
+          id: string
+          organization_id: string
+          registration_status: string
+          season_id: string
+          team_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          group_name?: string | null
+          id?: string
+          organization_id: string
+          registration_status?: string
+          season_id: string
+          team_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          group_name?: string | null
+          id?: string
+          organization_id?: string
+          registration_status?: string
+          season_id?: string
+          team_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "season_teams_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "season_teams_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "season_teams_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       seasons: {
         Row: {
           competition_id: string
@@ -393,6 +608,38 @@ export type Database = {
           },
           {
             foreignKeyName: "seasons_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      teams: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "teams_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -462,6 +709,26 @@ export type Database = {
         Returns: boolean
       }
       is_member_of: { Args: { p_org_id: string }; Returns: boolean }
+      set_season_team_captain: {
+        Args: { p_player_id: string; p_season_team_id: string }
+        Returns: {
+          created_at: string
+          id: string
+          is_captain: boolean
+          jersey_number: number | null
+          organization_id: string
+          player_id: string
+          registration_status: string
+          season_team_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "season_team_players"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
     }
     Enums: {
       [_ in never]: never
