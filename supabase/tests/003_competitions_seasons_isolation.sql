@@ -27,12 +27,33 @@ DECLARE
   season_a2 uuid;
   v_count int;
 BEGIN
+  -- Cleanup compatible with Migration 010 audit_log FK + prevent_mutation.
+  ALTER TABLE public.audit_log DISABLE TRIGGER audit_log_prevent_mutation;
+  ALTER TABLE public.organization_members DISABLE TRIGGER USER;
+  ALTER TABLE public.organizations DISABLE TRIGGER USER;
+  ALTER TABLE public.competitions DISABLE TRIGGER USER;
+  ALTER TABLE public.seasons DISABLE TRIGGER USER;
+  ALTER TABLE public.season_rules DISABLE TRIGGER USER;
+
+  DELETE FROM public.audit_log
+  WHERE organization_id IN (
+    SELECT id FROM public.organizations
+    WHERE created_by IN (uid_owner_a, uid_admin_a, uid_member_a, uid_owner_b)
+       OR slug IN ('org-a-mig003', 'org-b-mig003')
+  );
   DELETE FROM public.organizations
   WHERE created_by IN (uid_owner_a, uid_admin_a, uid_member_a, uid_owner_b)
      OR slug IN ('org-a-mig003', 'org-b-mig003');
 
   DELETE FROM auth.users
   WHERE id IN (uid_owner_a, uid_admin_a, uid_member_a, uid_owner_b);
+
+  ALTER TABLE public.season_rules ENABLE TRIGGER USER;
+  ALTER TABLE public.seasons ENABLE TRIGGER USER;
+  ALTER TABLE public.competitions ENABLE TRIGGER USER;
+  ALTER TABLE public.organizations ENABLE TRIGGER USER;
+  ALTER TABLE public.organization_members ENABLE TRIGGER USER;
+  ALTER TABLE public.audit_log ENABLE TRIGGER audit_log_prevent_mutation;
 
   INSERT INTO auth.users (
     instance_id, id, aud, role, email, encrypted_password,
@@ -403,12 +424,32 @@ BEGIN
     );
   END;
 
+  ALTER TABLE public.audit_log DISABLE TRIGGER audit_log_prevent_mutation;
+  ALTER TABLE public.organization_members DISABLE TRIGGER USER;
+  ALTER TABLE public.organizations DISABLE TRIGGER USER;
+  ALTER TABLE public.competitions DISABLE TRIGGER USER;
+  ALTER TABLE public.seasons DISABLE TRIGGER USER;
+  ALTER TABLE public.season_rules DISABLE TRIGGER USER;
+
+  DELETE FROM public.audit_log
+  WHERE organization_id IN (
+    SELECT id FROM public.organizations
+    WHERE created_by IN (uid_owner_a, uid_admin_a, uid_member_a, uid_owner_b)
+       OR slug IN ('org-a-mig003', 'org-b-mig003')
+  );
   DELETE FROM public.organizations
   WHERE created_by IN (uid_owner_a, uid_admin_a, uid_member_a, uid_owner_b)
      OR slug IN ('org-a-mig003', 'org-b-mig003');
 
   DELETE FROM auth.users
   WHERE id IN (uid_owner_a, uid_admin_a, uid_member_a, uid_owner_b);
+
+  ALTER TABLE public.season_rules ENABLE TRIGGER USER;
+  ALTER TABLE public.seasons ENABLE TRIGGER USER;
+  ALTER TABLE public.competitions ENABLE TRIGGER USER;
+  ALTER TABLE public.organizations ENABLE TRIGGER USER;
+  ALTER TABLE public.organization_members ENABLE TRIGGER USER;
+  ALTER TABLE public.audit_log ENABLE TRIGGER audit_log_prevent_mutation;
 END $$;
 
 SELECT test_name, passed, details

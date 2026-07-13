@@ -2,9 +2,9 @@
 
 ## Estado
 
-**Diseño v0 congelado** + onboarding/branding (011) + sedes/canchas/disponibilidad (012 / Frontend F3).
+**Diseño v0 congelado** + onboarding/branding (011) + sedes/canchas/disponibilidad (012 / Frontend F3) + torneos/temporadas/reglas (Frontend F4 sobre Migration 003).
 
-Schema SQL: Migrations 001–012 aplicadas en `ligapro-dev`. Pendiente: reservas en UI, torneos, etc.
+Schema SQL: Migrations 001–012 (+ hardening) aplicadas en `ligapro-dev`. Pendiente: equipos en UI (F5), reservas, fixture, etc.
 
 ## Entidades aprobadas (22)
 
@@ -126,6 +126,10 @@ Informativo (horarios habituales). Migration 012: exclusion constraint anti-sola
 ## Bloque 003 — competitions, seasons, season_rules
 
 `visibility` en `seasons` **todavía no** controla acceso público real: los miembros de la organización leen todas las seasons de su org vía RLS. El acceso anon/público llegará con vistas explícitas (ADR 0005). `format_type` admite `groups_knockout` / `knockout` como etiquetas; no existen tablas de groups/stages/brackets en este bloque. Permisos de captura por `season_roles` implementados en Migration 008.
+
+**UI (Frontend F4):** módulo Torneos — CRUD competitions/seasons y edición de `season_rules` para owner/admin; members solo lectura. Categorías = competitions independientes (sin tabla `categories`). “Pendiente de equipos” es badge de presentación cuando no hay `season_teams`. Ver `docs/COMPETITIONS_AND_SEASONS.md`.
+
+**Atomicidad (Migration 013):** `create_season_with_rules` y `update_season_with_rules` — season + rules en una sola transacción PostgreSQL. Sin compensación DELETE en la app.
 
 ### `competitions`
 

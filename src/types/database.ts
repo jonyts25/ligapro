@@ -1385,6 +1385,26 @@ export type Database = {
         Args: { p_brand_color?: string; p_name: string }
         Returns: string
       }
+      create_season_with_rules: {
+        Args: {
+          p_allow_draws: boolean
+          p_competition_id: string
+          p_ends_on: string | null
+          p_format_type: string
+          p_match_duration_minutes: number
+          p_minimum_rest_minutes: number
+          p_name: string
+          p_points_draw: number
+          p_points_loss: number
+          p_points_win: number
+          p_slug: string
+          p_starts_on: string | null
+          p_suspension_matches: number
+          p_visibility: string
+          p_yellow_card_limit: number
+        }
+        Returns: string
+      }
       has_role_in_org: {
         Args: { p_org_id: string; p_roles: string[] }
         Returns: boolean
@@ -1477,6 +1497,25 @@ export type Database = {
           p_brand_color?: string
           p_name: string
           p_organization_id: string
+        }
+        Returns: undefined
+      }
+      update_season_with_rules: {
+        Args: {
+          p_allow_draws: boolean
+          p_ends_on: string | null
+          p_format_type: string
+          p_match_duration_minutes: number
+          p_minimum_rest_minutes: number
+          p_name: string
+          p_points_draw: number
+          p_points_loss: number
+          p_points_win: number
+          p_season_id: string
+          p_starts_on: string | null
+          p_suspension_matches: number
+          p_visibility: string
+          p_yellow_card_limit: number
         }
         Returns: undefined
       }

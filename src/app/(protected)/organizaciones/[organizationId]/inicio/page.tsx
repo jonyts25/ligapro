@@ -3,6 +3,7 @@ import { requireOrganizationMembership } from "@/lib/auth/require-organization-m
 import { getOrganizationById } from "@/lib/organizations/get-organization";
 import { mapOrganizationBranding } from "@/lib/branding/map-organization-branding";
 import { getOrganizationVenueStats } from "@/lib/venues/queries";
+import { getOrganizationCompetitionStats } from "@/lib/competitions/queries";
 import { OrganizationDashboardDemo } from "@/features/dashboard/OrganizationDashboardDemo";
 import { notFound } from "next/navigation";
 
@@ -13,19 +14,34 @@ type PageProps = {
 export default async function OrganizationHomePage({ params }: PageProps) {
   const { organizationId } = await params;
   const user = await requireUser();
-  await requireOrganizationMembership(user.id, organizationId);
+  const membership = await requireOrganizationMembership(
+    user.id,
+    organizationId
+  );
 
   const organization = await getOrganizationById(organizationId);
   if (!organization) notFound();
 
   const branding = mapOrganizationBranding(organization);
-  const stats = await getOrganizationVenueStats(organizationId);
+  const [venueStats, competitionStats] = await Promise.all([
+    getOrganizationVenueStats(organizationId),
+    getOrganizationCompetitionStats(organizationId),
+  ]);
+
+  const canManage =
+    membership.role === "organization_owner" ||
+    membership.role === "organization_admin";
 
   return (
     <OrganizationDashboardDemo
       branding={branding}
       organizationId={organizationId}
-      stats={stats}
+      canManage={canManage}
+      stats={{
+        ...venueStats,
+        competitions: competitionStats.competitions,
+        seasons: competitionStats.seasons,
+      }}
     />
   );
 }

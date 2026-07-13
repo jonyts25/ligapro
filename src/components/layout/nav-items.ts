@@ -27,7 +27,7 @@ const MODULES: Array<{
 }> = [
   { slug: "inicio", label: "Inicio", icon: Home, available: true },
   { slug: "sedes", label: "Sedes", icon: MapPin, available: true },
-  { slug: "torneos", label: "Torneos", icon: Trophy, available: false },
+  { slug: "torneos", label: "Torneos", icon: Trophy, available: true },
   { slug: "equipos", label: "Equipos", icon: Users, available: false },
   { slug: "partidos", label: "Partidos", icon: Swords, available: false },
   {

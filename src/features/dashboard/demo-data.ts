@@ -1,10 +1,10 @@
 /**
  * Datos ficticios locales para la demo del shell (Frontend F0).
  * No consultar Supabase ni usar en producción.
+ * Torneos/temporadas ya son métricas reales en el dashboard (F4).
  */
 
 export const DEMO_STATS = [
-  { label: "Torneos activos", value: "2", hint: "Temporada 2026" },
   { label: "Equipos", value: "18", hint: "Inscritos confirmados" },
   { label: "Partidos esta semana", value: "9", hint: "Jornada 6" },
   { label: "Adeudos", value: "$4,250", hint: "MXN pendientes" },

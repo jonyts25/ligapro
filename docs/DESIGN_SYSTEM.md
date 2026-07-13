@@ -86,14 +86,17 @@ Convenciones:
 - Sin consultas a Supabase ni lógica de negocio.
 - Sin UI kit externo (solo React + Tailwind + componentes propios).
 
-## Navegación provisional
+## Navegación
 
-Áreas: Inicio, Torneos, Equipos, Partidos, Calendario, Disciplina, Finanzas, Configuración.
+Áreas: Inicio, **Sedes**, **Torneos**, Equipos, Partidos, Calendario, Disciplina, Finanzas, Configuración.
 
+- Disponibles (F4): Inicio, Sedes, Torneos; Configuración solo owner/admin.
+- Resto marcado “Próximamente” sin navegación activa.
 - Desktop: sidebar completo (`lg+`).
-- Mobile: barra inferior con 5 ítems principales; resto visible en desktop.
+- Mobile: barra inferior con 5 ítems principales; resto en menú “Más”.
 - Ruta activa con `aria-current="page"`.
 - Iconos: `lucide-react` (dependencia pequeña y estándar).
+- Enlaces conservan `organizationId` en la ruta.
 
 ## Responsive
 

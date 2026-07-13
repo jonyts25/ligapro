@@ -36,13 +36,17 @@ type OrganizationDashboardDemoProps = {
     activeVenues: number;
     effectiveActiveFields: number;
     totalVenues: number;
+    competitions: number;
+    seasons: number;
   };
+  canManage?: boolean;
 };
 
 export function OrganizationDashboardDemo({
   branding,
   organizationId,
   stats,
+  canManage = false,
 }: OrganizationDashboardDemoProps) {
   return (
     <>
@@ -59,14 +63,29 @@ export function OrganizationDashboardDemo({
       </div>
 
       <section aria-labelledby="real-stats-heading" className="mb-8">
-        <SectionHeader
-          title="Infraestructura"
-          description="Métricas reales de sedes y canchas."
-        />
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <SectionHeader
+            title="Datos reales"
+            description="Métricas de sedes, canchas, torneos y temporadas."
+          />
+          <StatusBadge label="Datos reales" variant="success" />
+        </div>
         <h2 id="real-stats-heading" className="sr-only">
-          Infraestructura
+          Datos reales
         </h2>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <StatCard
+            label="Torneos"
+            value={String(stats.competitions)}
+            hint="Competencias configuradas"
+            icon={Trophy}
+          />
+          <StatCard
+            label="Temporadas"
+            value={String(stats.seasons)}
+            hint="Ediciones registradas"
+            icon={Trophy}
+          />
           <StatCard
             label="Sedes activas"
             value={String(stats.activeVenues)}
@@ -96,22 +115,46 @@ export function OrganizationDashboardDemo({
             />
           </div>
         )}
+        {stats.competitions === 0 && canManage && (
+          <div className="mt-4">
+            <EmptyState
+              title="Crea tu primer torneo"
+              description="Define la competencia y una temporada antes de registrar equipos."
+              action={
+                <Link
+                  href={`/organizaciones/${organizationId}/torneos/nuevo`}
+                  className="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand px-4 text-sm font-semibold text-brand-foreground"
+                >
+                  Crear primer torneo
+                </Link>
+              }
+            />
+          </div>
+        )}
+        {stats.competitions === 0 && !canManage && (
+          <div className="mt-4">
+            <EmptyState
+              title="Sin torneos todavía"
+              description="Cuando un administrador cree competencias, aparecerán aquí."
+            />
+          </div>
+        )}
       </section>
 
       <section aria-labelledby="stats-heading" className="mb-8">
         <div className="mb-3 flex flex-wrap items-center gap-2">
           <SectionHeader
-            title="Indicadores de competencia"
-            description="Métricas de demostración. No representan datos reales."
+            title="Datos de demostración"
+            description="Equipos, partidos y adeudos aún no son datos reales."
           />
           <StatusBadge label="Datos de demostración" variant="warning" />
         </div>
         <h2 id="stats-heading" className="sr-only">
-          Indicadores de demostración
+          Datos de demostración
         </h2>
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {DEMO_STATS.map((stat, index) => {
-            const icons = [Trophy, Users, CalendarDays, Wallet] as const;
+            const icons = [Users, CalendarDays, Wallet] as const;
             return (
               <StatCard
                 key={stat.label}
