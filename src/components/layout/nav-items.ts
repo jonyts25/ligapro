@@ -2,6 +2,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   CalendarDays,
   Home,
+  MapPin,
   Settings,
   Shield,
   Swords,
@@ -25,6 +26,7 @@ const MODULES: Array<{
   available: boolean;
 }> = [
   { slug: "inicio", label: "Inicio", icon: Home, available: true },
+  { slug: "sedes", label: "Sedes", icon: MapPin, available: true },
   { slug: "torneos", label: "Torneos", icon: Trophy, available: false },
   { slug: "equipos", label: "Equipos", icon: Users, available: false },
   { slug: "partidos", label: "Partidos", icon: Swords, available: false },

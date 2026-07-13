@@ -2,9 +2,9 @@
 
 ## Estado
 
-**Diseño v0 congelado** + onboarding/branding de organización (Migration 011).
+**Diseño v0 congelado** + onboarding/branding (011) + sedes/canchas/disponibilidad (012 / Frontend F3).
 
-Schema SQL: Migrations 001–011 aplicadas en `ligapro-dev` (modelo conceptual v0 + branding org). Pendiente post-v0: vistas públicas, descuento automático de suspensiones, CRUD de sedes/torneos en UI, etc.
+Schema SQL: Migrations 001–012 aplicadas en `ligapro-dev`. Pendiente: reservas en UI, torneos, etc.
 
 ## Entidades aprobadas (22)
 
@@ -91,6 +91,7 @@ Visibilidad pública **NO** aplica todavía a estas tablas: solo miembros autent
 | `organization_id` | uuid NOT NULL | FK → `organizations(id)` ON DELETE CASCADE |
 | `name` | text NOT NULL | |
 | `address` | text nullable | |
+| `is_active` | boolean NOT NULL | default `true` (Migration 012); sin DELETE físico en UI |
 | `created_at` | timestamptz | |
 | `updated_at` | timestamptz | trigger `set_updated_at` |
 
@@ -103,6 +104,7 @@ Visibilidad pública **NO** aplica todavía a estas tablas: solo miembros autent
 | `organization_id` | uuid NOT NULL | FK → `organizations(id)` ON DELETE CASCADE; denormalizado para RLS; trigger exige igualdad con el venue padre |
 | `name` | text NOT NULL | ej. "Campo 1" |
 | `surface_type` | text nullable | texto libre (pasto, sintético, …); sin ENUM en MVP |
+| `is_active` | boolean NOT NULL | default `true` (Migration 012) |
 | `created_at` | timestamptz | |
 | `updated_at` | timestamptz | trigger `set_updated_at` |
 
@@ -119,7 +121,7 @@ Visibilidad pública **NO** aplica todavía a estas tablas: solo miembros autent
 | `created_at` | timestamptz | |
 | `updated_at` | timestamptz | trigger `set_updated_at` |
 
-Informativo (horarios habituales). **No** detecta traslapes entre reglas; la ocupación dura vive en `field_reservations` (bloque futuro).
+Informativo (horarios habituales). Migration 012: exclusion constraint anti-solape (`no_overlapping_field_availability`, bounds `[)` → contiguos OK) + RPC `replace_field_availability` para reemplazo semanal atómico. La ocupación dura de partidos vive en `field_reservations` (aún sin UI). Ver `docs/VENUES_AND_FIELDS.md`.
 
 ## Bloque 003 — competitions, seasons, season_rules
 

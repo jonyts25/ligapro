@@ -165,6 +165,24 @@ export type Database = {
         }
         Relationships: []
       }
+      __mig012_test_results: {
+        Row: {
+          details: string | null
+          passed: boolean
+          test_name: string
+        }
+        Insert: {
+          details?: string | null
+          passed: boolean
+          test_name: string
+        }
+        Update: {
+          details?: string | null
+          passed?: boolean
+          test_name?: string
+        }
+        Relationships: []
+      }
       audit_log: {
         Row: {
           action: string
@@ -434,6 +452,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          is_active: boolean
           name: string
           organization_id: string
           surface_type: string | null
@@ -443,6 +462,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          is_active?: boolean
           name: string
           organization_id: string
           surface_type?: string | null
@@ -452,6 +472,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          is_active?: boolean
           name?: string
           organization_id?: string
           surface_type?: string | null
@@ -1310,6 +1331,7 @@ export type Database = {
           address: string | null
           created_at: string
           id: string
+          is_active: boolean
           name: string
           organization_id: string
           updated_at: string
@@ -1318,6 +1340,7 @@ export type Database = {
           address?: string | null
           created_at?: string
           id?: string
+          is_active?: boolean
           name: string
           organization_id: string
           updated_at?: string
@@ -1326,6 +1349,7 @@ export type Database = {
           address?: string | null
           created_at?: string
           id?: string
+          is_active?: boolean
           name?: string
           organization_id?: string
           updated_at?: string
@@ -1376,6 +1400,25 @@ export type Database = {
       }
       is_valid_uuid_text: { Args: { p_value: string }; Returns: boolean }
       normalize_brand_color: { Args: { p_color: string }; Returns: string }
+      replace_field_availability: {
+        Args: { p_field_id: string; p_intervals: Json }
+        Returns: {
+          created_at: string
+          day_of_week: number
+          ends_at: string
+          field_id: string
+          id: string
+          organization_id: string
+          starts_at: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "field_availability_rules"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       set_organization_logo: {
         Args: { p_logo_path: string; p_organization_id: string }
         Returns: undefined

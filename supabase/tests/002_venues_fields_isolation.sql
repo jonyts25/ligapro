@@ -14,10 +14,10 @@ CREATE TABLE public.__mig002_test_results (
 
 DO $$
 DECLARE
-  uid_owner_a uuid := 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa01';
-  uid_admin_a uuid := 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa02';
-  uid_member_a uuid := 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa03';
-  uid_owner_b uuid := 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbb01';
+  uid_owner_a uuid := 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0021';
+  uid_admin_a uuid := 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0022';
+  uid_member_a uuid := 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaa0023';
+  uid_owner_b uuid := 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbb0021';
   org_a uuid;
   org_b uuid;
   venue_a uuid;
@@ -27,12 +27,37 @@ DECLARE
   v_venue public.venues;
   v_field public.fields;
 BEGIN
+  -- Cleanup may hit post-002 tables (finance/audit) when UIDs collide with later suites.
+  ALTER TABLE public.audit_log DISABLE TRIGGER audit_log_prevent_mutation;
+  ALTER TABLE public.team_charges DISABLE TRIGGER USER;
+  ALTER TABLE public.team_payments DISABLE TRIGGER USER;
+  ALTER TABLE public.field_availability_rules DISABLE TRIGGER USER;
+  ALTER TABLE public.fields DISABLE TRIGGER USER;
+  ALTER TABLE public.venues DISABLE TRIGGER USER;
+  ALTER TABLE public.organizations DISABLE TRIGGER USER;
+  ALTER TABLE public.organization_members DISABLE TRIGGER USER;
+
+  DELETE FROM public.audit_log
+  WHERE organization_id IN (
+    SELECT id FROM public.organizations
+    WHERE created_by IN (uid_owner_a, uid_admin_a, uid_member_a, uid_owner_b)
+       OR slug IN ('org-a-mig002', 'org-b-mig002')
+  );
   DELETE FROM public.organizations
   WHERE created_by IN (uid_owner_a, uid_admin_a, uid_member_a, uid_owner_b)
      OR slug IN ('org-a-mig002', 'org-b-mig002');
 
   DELETE FROM auth.users
   WHERE id IN (uid_owner_a, uid_admin_a, uid_member_a, uid_owner_b);
+
+  ALTER TABLE public.organization_members ENABLE TRIGGER USER;
+  ALTER TABLE public.organizations ENABLE TRIGGER USER;
+  ALTER TABLE public.venues ENABLE TRIGGER USER;
+  ALTER TABLE public.fields ENABLE TRIGGER USER;
+  ALTER TABLE public.field_availability_rules ENABLE TRIGGER USER;
+  ALTER TABLE public.team_payments ENABLE TRIGGER USER;
+  ALTER TABLE public.team_charges ENABLE TRIGGER USER;
+  ALTER TABLE public.audit_log ENABLE TRIGGER audit_log_prevent_mutation;
 
   INSERT INTO auth.users (
     instance_id, id, aud, role, email, encrypted_password,
@@ -253,12 +278,32 @@ BEGIN
     );
   END;
 
+  ALTER TABLE public.audit_log DISABLE TRIGGER audit_log_prevent_mutation;
+  ALTER TABLE public.team_charges DISABLE TRIGGER USER;
+  ALTER TABLE public.team_payments DISABLE TRIGGER USER;
+  ALTER TABLE public.field_availability_rules DISABLE TRIGGER USER;
+  ALTER TABLE public.fields DISABLE TRIGGER USER;
+  ALTER TABLE public.venues DISABLE TRIGGER USER;
+  ALTER TABLE public.organizations DISABLE TRIGGER USER;
+  ALTER TABLE public.organization_members DISABLE TRIGGER USER;
+
+  DELETE FROM public.audit_log
+  WHERE organization_id IN (org_a, org_b);
   DELETE FROM public.organizations
   WHERE created_by IN (uid_owner_a, uid_admin_a, uid_member_a, uid_owner_b)
      OR slug IN ('org-a-mig002', 'org-b-mig002');
 
   DELETE FROM auth.users
   WHERE id IN (uid_owner_a, uid_admin_a, uid_member_a, uid_owner_b);
+
+  ALTER TABLE public.organization_members ENABLE TRIGGER USER;
+  ALTER TABLE public.organizations ENABLE TRIGGER USER;
+  ALTER TABLE public.venues ENABLE TRIGGER USER;
+  ALTER TABLE public.fields ENABLE TRIGGER USER;
+  ALTER TABLE public.field_availability_rules ENABLE TRIGGER USER;
+  ALTER TABLE public.team_payments ENABLE TRIGGER USER;
+  ALTER TABLE public.team_charges ENABLE TRIGGER USER;
+  ALTER TABLE public.audit_log ENABLE TRIGGER audit_log_prevent_mutation;
 END $$;
 
 SELECT test_name, passed, details
