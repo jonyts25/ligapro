@@ -1,0 +1,65 @@
+{
+  "consoleErrors": [],
+  "hydrationErrors": [],
+  "horizontalScroll": {
+    "375x812": false,
+    "768x1024": false,
+    "1024x768": false,
+    "1440x900": false
+  },
+  "manifest": {
+    "name": "LigaPro",
+    "short_name": "LigaPro",
+    "description": "Plataforma de administración de ligas amateur",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#070b14",
+    "theme_color": "#14b8a6",
+    "orientation": "portrait-primary",
+    "lang": "es-MX",
+    "icons": [
+      {
+        "src": "/icons/icon-192",
+        "sizes": "192x192",
+        "type": "image/png"
+      },
+      {
+        "src": "/icons/icon-512",
+        "sizes": "512x512",
+        "type": "image/png"
+      },
+      {
+        "src": "/icons/icon-512?maskable=1",
+        "sizes": "512x512",
+        "type": "image/png",
+        "purpose": "maskable"
+      }
+    ]
+  },
+  "icons": {
+    "/icons/icon-192": {
+      "status": 200,
+      "contentType": "image/png"
+    },
+    "/icons/icon-512": {
+      "status": 200,
+      "contentType": "image/png"
+    },
+    "/icons/icon-512?maskable=1": {
+      "status": 200,
+      "contentType": "image/png"
+    }
+  },
+  "screenshots": [
+    "docs\\reports\\assets\\frontend-f0\\375x812.png",
+    "docs\\reports\\assets\\frontend-f0\\768x1024.png",
+    "docs\\reports\\assets\\frontend-f0\\1024x768.png",
+    "docs\\reports\\assets\\frontend-f0\\1440x900.png",
+    "docs\\reports\\assets\\frontend-f0\\375x812-drawer-open.png"
+  ],
+  "drawerTest": {
+    "opened": true,
+    "closedWithEscape": true,
+    "ariaExpandedAfterClose": "false"
+  }
+}
