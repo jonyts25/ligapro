@@ -12,6 +12,7 @@ type MobileMoreDrawerProps = {
   organizationId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  canManageSettings?: boolean;
 };
 
 export function MobileMoreDrawer({
@@ -19,11 +20,12 @@ export function MobileMoreDrawer({
   organizationId,
   open,
   onOpenChange,
+  canManageSettings = false,
 }: MobileMoreDrawerProps) {
   const pathname = usePathname();
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
-  const items = getMobileMoreNavItems(organizationId);
+  const items = getMobileMoreNavItems(organizationId, { canManageSettings });
 
   useEffect(() => {
     if (!open) return;

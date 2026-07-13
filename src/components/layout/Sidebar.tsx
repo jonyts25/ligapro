@@ -14,6 +14,7 @@ type SidebarProps = {
   organizationId: string;
   user: CurrentUser;
   roleLabel?: string | null;
+  canManageSettings?: boolean;
   className?: string;
 };
 
@@ -22,10 +23,11 @@ export function Sidebar({
   organizationId,
   user,
   roleLabel,
+  canManageSettings = false,
   className,
 }: SidebarProps) {
   const pathname = usePathname();
-  const items = getOrganizationNavItems(organizationId);
+  const items = getOrganizationNavItems(organizationId, { canManageSettings });
 
   return (
     <aside

@@ -2,9 +2,9 @@
 
 ## Estado
 
-**Diseño v0 congelado.**
+**Diseño v0 congelado** + onboarding/branding de organización (Migration 011).
 
-Schema SQL: Migrations 001–010 aplicadas en `ligapro-dev` (modelo conceptual v0 completo, incluyendo `audit_log`). Pendiente post-v0: vistas públicas, descuento automático de suspensiones, UI, etc.
+Schema SQL: Migrations 001–011 aplicadas en `ligapro-dev` (modelo conceptual v0 + branding org). Pendiente post-v0: vistas públicas, descuento automático de suspensiones, CRUD de sedes/torneos en UI, etc.
 
 ## Entidades aprobadas (22)
 
@@ -56,7 +56,16 @@ Creación: trigger `AFTER INSERT ON auth.users` (`handle_new_user`), no desde el
 | `updated_at` | timestamptz | trigger `set_updated_at` |
 | `created_by` | uuid NOT NULL | FK → `profiles(id)` |
 
-Alta de organización: RPC `create_organization_with_owner(name, slug)` (transacción atómica + primer owner).
+Alta de organización (Migration 011): RPC `create_organization_with_owner(p_name, p_brand_color DEFAULT NULL)` — transacción atómica, genera `slug` automáticamente, crea membresía `organization_owner` y exige **cero** membresías previas. Retorna `organization_id`.
+
+| Columna branding (011) | Tipo | Notas |
+|--------|------|--------|
+| `brand_color` | text NULL | `#RRGGBB` mayúsculas o NULL (fallback LigaPro) |
+| `logo_path` | text NULL | `<organization_id>/<uuid>.{png\|jpg\|jpeg\|webp}` — nunca URL completa |
+
+Branding editable solo por owner/admin vía `update_organization_branding` / `set_organization_logo`. Logos en bucket público `organization-logos`. Ver `docs/ORGANIZATION_BRANDING.md`.
+
+**Organization ≠ venue.** La organización es el cliente que opera LigaPro (complejo, liga, organizador). Las sedes físicas son `venues` / `fields`.
 
 ### `organization_members`
 

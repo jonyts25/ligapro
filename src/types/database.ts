@@ -147,6 +147,24 @@ export type Database = {
         }
         Relationships: []
       }
+      __mig011_test_results: {
+        Row: {
+          details: string | null
+          passed: boolean
+          test_name: string
+        }
+        Insert: {
+          details?: string | null
+          passed: boolean
+          test_name: string
+        }
+        Update: {
+          details?: string | null
+          passed?: boolean
+          test_name?: string
+        }
+        Relationships: []
+      }
       audit_log: {
         Row: {
           action: string
@@ -692,25 +710,31 @@ export type Database = {
       }
       organizations: {
         Row: {
+          brand_color: string | null
           created_at: string
           created_by: string
           id: string
+          logo_path: string | null
           name: string
           slug: string
           updated_at: string
         }
         Insert: {
+          brand_color?: string | null
           created_at?: string
           created_by: string
           id?: string
+          logo_path?: string | null
           name: string
           slug: string
           updated_at?: string
         }
         Update: {
+          brand_color?: string | null
           created_at?: string
           created_by?: string
           id?: string
+          logo_path?: string | null
           name?: string
           slug?: string
           updated_at?: string
@@ -1334,21 +1358,8 @@ export type Database = {
     Functions: {
       can_capture_match: { Args: { p_match_id: string }; Returns: boolean }
       create_organization_with_owner: {
-        Args: { p_name: string; p_slug: string }
-        Returns: {
-          created_at: string
-          created_by: string
-          id: string
-          name: string
-          slug: string
-          updated_at: string
-        }
-        SetofOptions: {
-          from: "*"
-          to: "organizations"
-          isOneToOne: true
-          isSetofReturn: false
-        }
+        Args: { p_brand_color?: string; p_name: string }
+        Returns: string
       }
       has_role_in_org: {
         Args: { p_org_id: string; p_roles: string[] }
@@ -1359,6 +1370,16 @@ export type Database = {
         Returns: boolean
       }
       is_member_of: { Args: { p_org_id: string }; Returns: boolean }
+      is_valid_organization_logo_path: {
+        Args: { p_logo_path: string; p_organization_id: string }
+        Returns: boolean
+      }
+      is_valid_uuid_text: { Args: { p_value: string }; Returns: boolean }
+      normalize_brand_color: { Args: { p_color: string }; Returns: string }
+      set_organization_logo: {
+        Args: { p_logo_path: string; p_organization_id: string }
+        Returns: undefined
+      }
       set_season_team_captain: {
         Args: { p_player_id: string; p_season_team_id: string }
         Returns: {
@@ -1379,6 +1400,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      slugify_organization_name: { Args: { p_name: string }; Returns: string }
       update_match_result: {
         Args: {
           p_away_score: number
@@ -1406,6 +1428,14 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      update_organization_branding: {
+        Args: {
+          p_brand_color?: string
+          p_name: string
+          p_organization_id: string
+        }
+        Returns: undefined
       }
       void_team_charge: {
         Args: { p_charge_id: string; p_reason: string }

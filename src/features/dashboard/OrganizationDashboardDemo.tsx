@@ -40,7 +40,7 @@ export function OrganizationDashboardDemo({
     <>
       <PageHeader
         title="Resumen de la liga"
-        description="Panel operativo de tu organización. Los indicadores numéricos siguen siendo demostración temporal hasta F2/F3."
+        description="Panel operativo de tu organización. Los indicadores numéricos siguen siendo demostración temporal."
         actions={
           <StatusBadge label="Datos de demostración" variant="warning" />
         }

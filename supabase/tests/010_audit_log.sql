@@ -144,7 +144,7 @@ BEGIN
     json_build_object('sub', uid_owner_a::text, 'role', 'authenticated')::text,
     true
   );
-  org_a := (public.create_organization_with_owner('Org A Mig010', 'org-a-mig010')).id;
+  org_a := public.create_organization_with_owner('Org A Mig010');
 
   -- Test 10: organization create audit
   SELECT action, organization_id, entity_type, entity_id, before_data, after_data, actor_profile_id
@@ -193,7 +193,7 @@ BEGIN
     json_build_object('sub', uid_owner_b::text, 'role', 'authenticated')::text,
     true
   );
-  org_b := (public.create_organization_with_owner('Org B Mig010', 'org-b-mig010')).id;
+  org_b := public.create_organization_with_owner('Org B Mig010');
 
   -- Test 1: owner can read own org logs
   PERFORM set_config('request.jwt.claim.sub', uid_owner_a::text, true);

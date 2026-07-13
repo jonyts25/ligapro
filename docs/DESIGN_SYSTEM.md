@@ -54,10 +54,13 @@ export type OrganizationBranding = {
 };
 ```
 
-- Default LigaPro: `src/lib/branding/defaults.ts`
+- Mapper server-side: `mapOrganizationBranding` (`logo_path` → URL pública del bucket; `brand_color` sanitizado).
+- Persistencia: columnas `organizations.brand_color` / `organizations.logo_path` (Migration 011).
+- Default LigaPro: `src/lib/branding/defaults.ts` cuando falta color o logo.
 - Componente: `OrganizationBrand` — variantes `full` y `compact`, fallback con iniciales.
-- `AppShell` aplica `--organization-accent` cuando `accentColor` está definido.
-- No hay upload ni columnas en base de datos todavía.
+- `AppShell` aplica `--organization-accent` solo tras sanitizar `#RRGGBB`.
+- El acento de organización **no** sustituye danger, warning, success ni tarjetas amarilla/roja.
+- Edición: owner/admin en `/organizaciones/{id}/configuracion`. Detalle en `docs/ORGANIZATION_BRANDING.md`.
 
 ## Componentes base
 

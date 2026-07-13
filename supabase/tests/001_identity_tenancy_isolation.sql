@@ -28,8 +28,7 @@ DECLARE
 BEGIN
   -- Orgs reference profiles via created_by (no cascade); delete orgs first.
   DELETE FROM public.organizations
-  WHERE created_by IN (uid_owner_a, uid_admin_a, uid_member_a, uid_owner_b)
-     OR slug IN ('org-a-mig001', 'org-b-mig001');
+  WHERE created_by IN (uid_owner_a, uid_admin_a, uid_member_a, uid_owner_b);
 
   DELETE FROM auth.users
   WHERE id IN (uid_owner_a, uid_admin_a, uid_member_a, uid_owner_b);
@@ -60,8 +59,8 @@ BEGIN
     json_build_object('sub', uid_owner_a::text, 'role', 'authenticated')::text,
     true
   );
-  v_org := public.create_organization_with_owner('Org A Test', 'org-a-mig001');
-  org_a := v_org.id;
+  org_a := public.create_organization_with_owner('Org A Test');
+  SELECT * INTO v_org FROM public.organizations WHERE id = org_a;
 
   SELECT count(*) INTO v_count
   FROM public.organization_members
@@ -80,8 +79,8 @@ BEGIN
     json_build_object('sub', uid_owner_b::text, 'role', 'authenticated')::text,
     true
   );
-  v_org := public.create_organization_with_owner('Org B Test', 'org-b-mig001');
-  org_b := v_org.id;
+  org_b := public.create_organization_with_owner('Org B Test');
+  SELECT * INTO v_org FROM public.organizations WHERE id = org_b;
 
   -- Owner A adds admin + member under RLS
   PERFORM set_config('request.jwt.claim.sub', uid_owner_a::text, true);

@@ -140,7 +140,7 @@ BEGIN
     json_build_object('sub', uid_owner_a::text, 'role', 'authenticated')::text,
     true
   );
-  org_a := (public.create_organization_with_owner('Org A Mig009', 'org-a-mig009')).id;
+  org_a := public.create_organization_with_owner('Org A Mig009');
 
   EXECUTE 'SET LOCAL ROLE authenticated';
   INSERT INTO public.organization_members (organization_id, profile_id, role)
@@ -157,7 +157,7 @@ BEGIN
     json_build_object('sub', uid_owner_b::text, 'role', 'authenticated')::text,
     true
   );
-  org_b := (public.create_organization_with_owner('Org B Mig009', 'org-b-mig009')).id;
+  org_b := public.create_organization_with_owner('Org B Mig009');
   EXECUTE 'SET LOCAL ROLE authenticated';
   INSERT INTO public.organization_members (organization_id, profile_id, role)
   VALUES (org_b, uid_admin_b, 'organization_admin');

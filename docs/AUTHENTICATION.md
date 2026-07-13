@@ -48,9 +48,10 @@ No existe service role en el frontend. Ninguna clave sensible usa `NEXT_PUBLIC_`
 
 ### Privadas
 
-- `/onboarding`
+- `/onboarding` — solo con **0** membresías; con 1+ redirige fuera
 - `/seleccionar-organizacion`
 - `/organizaciones/[organizationId]/inicio`
+- `/organizaciones/[organizationId]/configuracion` — solo owner/admin (`notFound()` para member/externo)
 
 ## Flujos
 
@@ -150,8 +151,10 @@ El correo por defecto de Supabase basta para desarrollo; producción necesitará
 
 ## Limitaciones actuales
 
-- Sin creación de organizaciones (F2).
-- Sin branding persistido.
-- Dashboard org muestra datos demo etiquetados.
+- Creación de organización desde onboarding (F2) — una sola; no segunda org desde UI.
+- Branding: nombre, color de acento, logo (bucket `organization-logos`).
+- Dashboard org muestra métricas demo etiquetadas.
+- Sin CRUD de sedes/torneos/equipos todavía.
 - Sin reenvío de correo de confirmación.
 - Sin documentos legales reales (checkbox informativo).
+- Auth y branding requieren internet (PWA sin SW / sin cache privado).

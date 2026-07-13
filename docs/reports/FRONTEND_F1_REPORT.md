@@ -150,10 +150,14 @@ Fuente: `docs/reports/assets/frontend-f1/smoke-results.json` + probes Auth API.
 | 1 | `/` sin sesión → login | PASS |
 | 2 | Privada sin sesión → login | PASS |
 | 3 | Login inválido mensaje genérico | PASS |
-| 4–7 | Login válido / refresh / logout / auth gate | **No verificadas** (sin cuenta de prueba usable + rate limit email) |
+| 4 | Login válido | **PASS** (validación product owner) |
+| 5 | Sesión reconocida | **PASS** (validación product owner) |
+| 6 | Refresh conserva sesión | Parcial / no re-verificado en automatización |
+| 7 | Cerrar sesión elimina acceso | Parcial / no re-verificado en automatización |
 | 8–10 | Validaciones registro UI | Parcial (formulario visible; submit email rate-limited) |
 | 11–13 | Confirmación / no revelar email | Código listo; email **no verificado** (429) |
-| 14–18 | Multi-tenant real | **No verificadas** (requieren usuarios/membresías controladas) |
+| 14 | Usuario con 0 membresías → `/onboarding` | **PASS** (validación product owner) |
+| 15–18 | 1/N membresías y aislamiento multi-tenant | **No verificadas** (requieren cuentas adicionales) |
 | 19 | Reset respuesta genérica | Código listo; envío email **no verificado** |
 | 20–21 | Callback next interno/externo | PASS (externo / `//` → login) |
 | 22–23 | Update password / link expirado | **No verificadas** (dependen de email) |
@@ -163,15 +167,22 @@ Fuente: `docs/reports/assets/frontend-f1/smoke-results.json` + probes Auth API.
 | 28 | Manifest | PASS |
 | 29 | 404 auth flow | PASS en rutas del flujo |
 
+### Validación product owner (post-entrega)
+
+| Caso | Resultado |
+| --- | --- |
+| Login válido | PASS |
+| Sesión reconocida | PASS |
+| Usuario con cero membresías → `/onboarding` | PASS |
+
 ---
 
 ## 11. Pruebas no verificadas
 
 - Registro completo con correo (rate limit hosted)
 - Confirmación de correo end-to-end
-- Login válido + refresh cookies
-- Logout tras sesión real
-- 0/1/N membresías con usuarios reales
+- Refresh/logout exhaustivos en automatización (login/sesión/onboarding validados por product owner)
+- 1/N membresías con usuarios reales
 - Aislamiento org A vs org B con dos cuentas
 - Update password vía link de recuperación
 

@@ -15,6 +15,7 @@ type TopBarProps = {
   user: CurrentUser;
   roleLabel?: string | null;
   title?: string;
+  canManageSettings?: boolean;
   className?: string;
 };
 
@@ -24,6 +25,7 @@ export function TopBar({
   user,
   roleLabel,
   title,
+  canManageSettings = false,
   className,
 }: TopBarProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -68,6 +70,7 @@ export function TopBar({
         organizationId={organizationId}
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
+        canManageSettings={canManageSettings}
       />
     </>
   );

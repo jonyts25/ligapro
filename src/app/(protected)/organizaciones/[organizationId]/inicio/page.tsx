@@ -1,8 +1,9 @@
 import { requireUser } from "@/lib/auth/require-user";
 import { requireOrganizationMembership } from "@/lib/auth/require-organization-membership";
+import { getOrganizationById } from "@/lib/organizations/get-organization";
+import { mapOrganizationBranding } from "@/lib/branding/map-organization-branding";
 import { OrganizationDashboardDemo } from "@/features/dashboard/OrganizationDashboardDemo";
-import { LIGAPRO_DEFAULT_BRANDING } from "@/lib/branding/defaults";
-import type { OrganizationBranding } from "@/types/branding";
+import { notFound } from "next/navigation";
 
 type PageProps = {
   params: Promise<{ organizationId: string }>;
@@ -11,17 +12,12 @@ type PageProps = {
 export default async function OrganizationHomePage({ params }: PageProps) {
   const { organizationId } = await params;
   const user = await requireUser();
-  const membership = await requireOrganizationMembership(
-    user.id,
-    organizationId
-  );
+  await requireOrganizationMembership(user.id, organizationId);
 
-  const branding: OrganizationBranding = {
-    name: membership.organizationName,
-    shortName: membership.organizationName,
-    logoUrl: null,
-    accentColor: LIGAPRO_DEFAULT_BRANDING.accentColor,
-  };
+  const organization = await getOrganizationById(organizationId);
+  if (!organization) notFound();
+
+  const branding = mapOrganizationBranding(organization);
 
   return <OrganizationDashboardDemo branding={branding} />;
 }

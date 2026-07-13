@@ -44,21 +44,52 @@ const MODULES: Array<{
   },
 ];
 
-export function getOrganizationNavItems(organizationId: string): NavItem[] {
-  return MODULES.map((module) => ({
-    href: `/organizaciones/${organizationId}/${module.slug}`,
-    label: module.label,
-    icon: module.icon,
-    available: module.available,
-  }));
+export type OrganizationNavOptions = {
+  canManageSettings?: boolean;
+};
+
+export function getOrganizationNavItems(
+  organizationId: string,
+  options: OrganizationNavOptions = {}
+): NavItem[] {
+  const { canManageSettings = false } = options;
+
+  return MODULES.flatMap((module) => {
+    if (module.slug === "configuracion") {
+      if (!canManageSettings) return [];
+      return [
+        {
+          href: `/organizaciones/${organizationId}/${module.slug}`,
+          label: module.label,
+          icon: module.icon,
+          available: true,
+        },
+      ];
+    }
+
+    return [
+      {
+        href: `/organizaciones/${organizationId}/${module.slug}`,
+        label: module.label,
+        icon: module.icon,
+        available: module.available,
+      },
+    ];
+  });
 }
 
-export function getMobilePrimaryNavItems(organizationId: string): NavItem[] {
-  return getOrganizationNavItems(organizationId).slice(0, 5);
+export function getMobilePrimaryNavItems(
+  organizationId: string,
+  options: OrganizationNavOptions = {}
+): NavItem[] {
+  return getOrganizationNavItems(organizationId, options).slice(0, 5);
 }
 
-export function getMobileMoreNavItems(organizationId: string): NavItem[] {
-  return getOrganizationNavItems(organizationId).slice(5);
+export function getMobileMoreNavItems(
+  organizationId: string,
+  options: OrganizationNavOptions = {}
+): NavItem[] {
+  return getOrganizationNavItems(organizationId, options).slice(5);
 }
 
 export function isActiveRoute(pathname: string, href: string): boolean {

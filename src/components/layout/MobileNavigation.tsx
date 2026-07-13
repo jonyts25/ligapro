@@ -10,11 +10,17 @@ import {
 
 type MobileNavigationProps = {
   organizationId: string;
+  canManageSettings?: boolean;
 };
 
-export function MobileNavigation({ organizationId }: MobileNavigationProps) {
+export function MobileNavigation({
+  organizationId,
+  canManageSettings = false,
+}: MobileNavigationProps) {
   const pathname = usePathname();
-  const primaryItems = getMobilePrimaryNavItems(organizationId);
+  const primaryItems = getMobilePrimaryNavItems(organizationId, {
+    canManageSettings,
+  });
 
   return (
     <nav
