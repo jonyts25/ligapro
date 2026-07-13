@@ -4,12 +4,17 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils/cn";
 import {
-  MOBILE_PRIMARY_NAV_ITEMS,
+  getMobilePrimaryNavItems,
   isActiveRoute,
 } from "@/components/layout/nav-items";
 
-export function MobileNavigation() {
+type MobileNavigationProps = {
+  organizationId: string;
+};
+
+export function MobileNavigation({ organizationId }: MobileNavigationProps) {
   const pathname = usePathname();
+  const primaryItems = getMobilePrimaryNavItems(organizationId);
 
   return (
     <nav
@@ -18,7 +23,7 @@ export function MobileNavigation() {
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
     >
       <ul className="grid grid-cols-5">
-        {MOBILE_PRIMARY_NAV_ITEMS.map(({ href, label, icon: Icon, available }) => {
+        {primaryItems.map(({ href, label, icon: Icon, available }) => {
           const active = available && isActiveRoute(pathname, href);
 
           if (!available) {

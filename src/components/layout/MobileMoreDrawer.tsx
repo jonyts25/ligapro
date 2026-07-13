@@ -3,20 +3,27 @@
 import { useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
-import { MOBILE_MORE_NAV_ITEMS } from "@/components/layout/nav-items";
+import { getMobileMoreNavItems } from "@/components/layout/nav-items";
 import { NavItemLink } from "@/components/layout/NavItemLink";
 import { usePathname } from "next/navigation";
 
 type MobileMoreDrawerProps = {
   id: string;
+  organizationId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 };
 
-export function MobileMoreDrawer({ id, open, onOpenChange }: MobileMoreDrawerProps) {
+export function MobileMoreDrawer({
+  id,
+  organizationId,
+  open,
+  onOpenChange,
+}: MobileMoreDrawerProps) {
   const pathname = usePathname();
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
+  const items = getMobileMoreNavItems(organizationId);
 
   useEffect(() => {
     if (!open) return;
@@ -91,7 +98,7 @@ export function MobileMoreDrawer({ id, open, onOpenChange }: MobileMoreDrawerPro
         </div>
         <nav aria-label="Módulos adicionales" className="px-3 py-3">
           <ul className="space-y-1">
-            {MOBILE_MORE_NAV_ITEMS.map((item) => (
+            {items.map((item) => (
               <li key={item.href}>
                 <NavItemLink
                   {...item}

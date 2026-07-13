@@ -18,27 +18,52 @@ export type NavItem = {
   available: boolean;
 };
 
-export const NAV_ITEMS: NavItem[] = [
-  { href: "/", label: "Inicio", icon: Home, available: true },
-  { href: "/torneos", label: "Torneos", icon: Trophy, available: false },
-  { href: "/equipos", label: "Equipos", icon: Users, available: false },
-  { href: "/partidos", label: "Partidos", icon: Swords, available: false },
-  { href: "/calendario", label: "Calendario", icon: CalendarDays, available: false },
-  { href: "/disciplina", label: "Disciplina", icon: Shield, available: false },
-  { href: "/finanzas", label: "Finanzas", icon: Wallet, available: false },
+const MODULES: Array<{
+  slug: string;
+  label: string;
+  icon: LucideIcon;
+  available: boolean;
+}> = [
+  { slug: "inicio", label: "Inicio", icon: Home, available: true },
+  { slug: "torneos", label: "Torneos", icon: Trophy, available: false },
+  { slug: "equipos", label: "Equipos", icon: Users, available: false },
+  { slug: "partidos", label: "Partidos", icon: Swords, available: false },
   {
-    href: "/configuracion",
+    slug: "calendario",
+    label: "Calendario",
+    icon: CalendarDays,
+    available: false,
+  },
+  { slug: "disciplina", label: "Disciplina", icon: Shield, available: false },
+  { slug: "finanzas", label: "Finanzas", icon: Wallet, available: false },
+  {
+    slug: "configuracion",
     label: "Configuración",
     icon: Settings,
     available: false,
   },
 ];
 
-export const MOBILE_PRIMARY_NAV_ITEMS = NAV_ITEMS.slice(0, 5);
+export function getOrganizationNavItems(organizationId: string): NavItem[] {
+  return MODULES.map((module) => ({
+    href: `/organizaciones/${organizationId}/${module.slug}`,
+    label: module.label,
+    icon: module.icon,
+    available: module.available,
+  }));
+}
 
-export const MOBILE_MORE_NAV_ITEMS = NAV_ITEMS.slice(5);
+export function getMobilePrimaryNavItems(organizationId: string): NavItem[] {
+  return getOrganizationNavItems(organizationId).slice(0, 5);
+}
+
+export function getMobileMoreNavItems(organizationId: string): NavItem[] {
+  return getOrganizationNavItems(organizationId).slice(5);
+}
 
 export function isActiveRoute(pathname: string, href: string): boolean {
-  if (href === "/") return pathname === "/";
+  if (href.endsWith("/inicio")) {
+    return pathname === href;
+  }
   return pathname === href || pathname.startsWith(`${href}/`);
 }

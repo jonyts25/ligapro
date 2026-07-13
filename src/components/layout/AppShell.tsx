@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
 import type { OrganizationBranding } from "@/types/branding";
+import type { CurrentUser } from "@/lib/auth/types";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TopBar } from "@/components/layout/TopBar";
 import { MobileNavigation } from "@/components/layout/MobileNavigation";
@@ -7,6 +8,9 @@ import { cn } from "@/lib/utils/cn";
 
 type AppShellProps = {
   branding: OrganizationBranding;
+  organizationId: string;
+  user: CurrentUser;
+  roleLabel?: string | null;
   children: ReactNode;
   pageTitle?: string;
   className?: string;
@@ -14,6 +18,9 @@ type AppShellProps = {
 
 export function AppShell({
   branding,
+  organizationId,
+  user,
+  roleLabel,
   children,
   pageTitle,
   className,
@@ -28,9 +35,20 @@ export function AppShell({
       style={accentStyle}
     >
       <div className="mx-auto flex min-h-dvh max-w-[90rem]">
-        <Sidebar branding={branding} />
+        <Sidebar
+          branding={branding}
+          organizationId={organizationId}
+          user={user}
+          roleLabel={roleLabel}
+        />
         <div className="flex min-w-0 flex-1 flex-col">
-          <TopBar branding={branding} title={pageTitle} />
+          <TopBar
+            branding={branding}
+            organizationId={organizationId}
+            title={pageTitle}
+            user={user}
+            roleLabel={roleLabel}
+          />
           <main
             id="main-content"
             className={cn(
@@ -42,7 +60,7 @@ export function AppShell({
           </main>
         </div>
       </div>
-      <MobileNavigation />
+      <MobileNavigation organizationId={organizationId} />
     </div>
   );
 }
