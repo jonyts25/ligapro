@@ -5,9 +5,11 @@ import {
   AUTH_CALLBACK_ALLOWED_NEXT,
   getSafeInternalPath,
 } from "@/lib/auth/validation";
+import { getRequestPublicOrigin } from "@/lib/site-url";
 
 export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url);
+  const { searchParams } = new URL(request.url);
+  const origin = getRequestPublicOrigin(request);
   const code = searchParams.get("code");
   const nextParam = searchParams.get("next");
   const safeNext = getSafeInternalPath(nextParam, AUTH_CALLBACK_ALLOWED_NEXT);
