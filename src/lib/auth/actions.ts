@@ -1,7 +1,6 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { resolveAuthDestination } from "@/lib/auth/resolve-auth-destination";
 import type { AuthActionState } from "@/lib/auth/types";
@@ -11,15 +10,10 @@ import {
   isValidEmail,
   normalizeEmail,
 } from "@/lib/auth/validation";
+import { getPublicSiteUrl } from "@/lib/site-url";
 
-async function getSiteOrigin(): Promise<string> {
-  const headerStore = await headers();
-  const host = headerStore.get("x-forwarded-host") ?? headerStore.get("host");
-  const proto = headerStore.get("x-forwarded-proto") ?? "http";
-  if (host) {
-    return `${proto}://${host}`;
-  }
-  return process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+function getSiteOrigin(): string {
+  return getPublicSiteUrl();
 }
 
 export async function signInAction(
@@ -100,7 +94,7 @@ export async function signUpAction(
     };
   }
 
-  const origin = await getSiteOrigin();
+  const origin = getSiteOrigin();
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({
     email,
@@ -166,7 +160,7 @@ export async function requestPasswordResetAction(
     };
   }
 
-  const origin = await getSiteOrigin();
+  const origin = getSiteOrigin();
   const supabase = await createClient();
   await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${origin}/auth/callback?next=/actualizar-contrasena`,
