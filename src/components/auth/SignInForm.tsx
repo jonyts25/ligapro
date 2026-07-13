@@ -7,6 +7,8 @@ import {
 } from "@/lib/auth/actions";
 import { initialAuthActionState } from "@/lib/auth/action-state";
 import { AuthCard } from "@/components/auth/AuthCard";
+import { AuthDivider } from "@/components/auth/AuthDivider";
+import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 import { TextField } from "@/components/auth/TextField";
 import { PasswordInput } from "@/components/auth/PasswordInput";
 import { SubmitButton } from "@/components/auth/SubmitButton";
@@ -61,6 +63,11 @@ export function SignInForm({ next, message }: SignInFormProps) {
         />
         <SubmitButton pending={pending}>Entrar</SubmitButton>
       </form>
+
+      <div className="mt-5 space-y-3">
+        <AuthDivider />
+        <GoogleSignInButton next={next} disabled={pending} />
+      </div>
 
       <div className="mt-5 space-y-2 text-sm text-text-secondary">
         <p>

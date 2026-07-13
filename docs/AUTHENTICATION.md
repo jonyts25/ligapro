@@ -2,9 +2,9 @@
 
 ## Resumen
 
-LigaPro usa **correo + contraseña** con Supabase Auth, sesión en cookies SSR (`@supabase/ssr`) y RLS como última barrera de autorización.
+LigaPro usa **correo + contraseña** y **Google OAuth** con Supabase Auth, sesión en cookies SSR (`@supabase/ssr`) y RLS como última barrera de autorización.
 
-No hay OAuth, Magic Link, MFA ni service worker en F1.
+No hay Magic Link, MFA ni service worker.
 
 ## Arquitectura SSR
 
@@ -61,6 +61,15 @@ No existe service role en el frontend. Ninguna clave sensible usa `NEXT_PUBLIC_`
 2. `signInWithPassword`.
 3. Error genérico (no revela existencia de cuenta).
 4. Destino vía membresías.
+
+### Google OAuth
+
+1. Botón en `/iniciar-sesion` y `/registro` → `signInWithOAuth({ provider: "google" })`.
+2. `redirectTo` = `{NEXT_PUBLIC_SITE_URL|/origen}/auth/callback` (con `next` seguro opcional).
+3. Callback existente intercambia `code` por sesión y resuelve destino por membresías.
+4. `handle_new_user` crea `profiles` (usa `full_name` / `display_name` de metadata Google).
+
+**Requisito hosted:** en Supabase Dashboard → Authentication → Providers → Google (habilitado con Client ID/Secret de Google Cloud) y Redirect URLs que incluyan el callback de LigaPro.
 
 ### Registro
 
@@ -134,9 +143,17 @@ enable_confirmations = false  # local default
 Debe configurarse manualmente en Dashboard → Authentication:
 
 ```text
-Site URL: http://localhost:3000   # o dominio real de deploy
-Redirect URL: http://localhost:3000/auth/callback
-(+ URL de producción cuando exista)
+Site URL: https://ligapro-dev.up.railway.app   # beta; localhost en desarrollo
+Redirect URLs:
+  http://localhost:3000/auth/callback
+  https://ligapro-dev.up.railway.app/auth/callback
+Providers → Google: enabled (Client ID + Secret de Google Cloud)
+```
+
+En Google Cloud Console, Authorized redirect URIs debe incluir:
+
+```text
+https://akgcamaegpboewsbbevl.supabase.co/auth/v1/callback
 ```
 
 **No se empujó** `supabase config push` en F1.
@@ -158,3 +175,4 @@ El correo por defecto de Supabase basta para desarrollo; producción necesitará
 - Sin reenvío de correo de confirmación.
 - Sin documentos legales reales (checkbox informativo).
 - Auth y branding requieren internet (PWA sin SW / sin cache privado).
+- Google OAuth depende de Provider Google habilitado en Supabase + redirect URLs correctas.
