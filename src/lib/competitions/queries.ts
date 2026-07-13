@@ -1,16 +1,27 @@
 import { createClient } from "@/lib/supabase/server";
 import { getOrganizationVenueStats } from "@/lib/venues/queries";
+import { getSeasonRosterStats } from "@/lib/teams/queries";
 import type {
   CompetitionDetail,
   CompetitionListItem,
   CompetitionRecord,
   SeasonDetail,
   SeasonListItem,
+  SeasonPreparationLabel,
   SeasonRecord,
   SeasonRulesRecord,
   SeasonFormatType,
   SeasonVisibility,
 } from "@/lib/competitions/types";
+
+function preparationLabel(
+  teamCount: number,
+  activePlayerCount: number
+): SeasonPreparationLabel {
+  if (teamCount === 0) return "Pendiente de equipos";
+  if (activePlayerCount === 0) return "Configurando planteles";
+  return "Lista para generar fixture";
+}
 
 function mapSeason(row: {
   id: string;
@@ -189,7 +200,10 @@ export async function getSeasonDetails(
     .eq("season_id", seasonId)
     .eq("organization_id", organizationId);
 
-  const venueStats = await getOrganizationVenueStats(organizationId);
+  const [venueStats, rosterStats] = await Promise.all([
+    getOrganizationVenueStats(organizationId),
+    getSeasonRosterStats(organizationId, seasonId),
+  ]);
 
   const competitionRelation = season.competitions as
     | { name: string }
@@ -199,17 +213,25 @@ export async function getSeasonDetails(
     ? competitionRelation[0]?.name
     : competitionRelation?.name;
 
+  const teams = teamCount ?? 0;
+
   return {
     ...mapSeason(season),
     competitionName: competitionName ?? "Torneo",
     rules: rules as SeasonRulesRecord,
-    teamCount: teamCount ?? 0,
+    teamCount: teams,
     readiness: {
       activeVenues: venueStats.activeVenues,
       effectiveActiveFields: venueStats.effectiveActiveFields,
-      teamCount: teamCount ?? 0,
+      teamCount: teams,
+      activePlayerCount: rosterStats.activePlayerCount,
+      teamsWithCaptain: rosterStats.teamsWithCaptain,
       fixtureGenerated: false,
       scheduledMatches: 0,
+      preparationLabel: preparationLabel(
+        teams,
+        rosterStats.activePlayerCount
+      ),
     },
   };
 }

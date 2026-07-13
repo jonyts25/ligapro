@@ -93,6 +93,8 @@ No puede quedar una season con reglas parciales o defaults accidentales.
 - Sin equipos / fixture / partidos / páginas públicas (F5+)
 - `visibility = public` no implica acceso anon
 
-## Siguiente paso (F5)
+## Siguiente paso (F5) — hecho en Frontend F5
 
-Inscripción de equipos a temporadas (`season_teams`), planteles y flujo “Registrar equipos”.
+Inscripción de equipos (`season_teams`), planteles y capitanía. Ver `docs/TEAMS_AND_ROSTERS.md`.
+
+Siguiente: fixture / partidos.

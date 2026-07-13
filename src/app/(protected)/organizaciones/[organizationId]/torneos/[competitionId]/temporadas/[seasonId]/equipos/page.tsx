@@ -3,16 +3,9 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth/require-user";
 import { requireOrganizationMembership } from "@/lib/auth/require-organization-membership";
 import { getSeasonDetails } from "@/lib/competitions/queries";
-import {
-  formatLabel,
-  visibilityBadgeVariant,
-  visibilityLabel,
-} from "@/lib/competitions/types";
+import { getSeasonTeams } from "@/lib/teams/queries";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { StatusBadge } from "@/components/ui/StatusBadge";
-import { Card } from "@/components/ui/Card";
-import { SeasonRulesSummary } from "@/components/competitions/SeasonRulesSummary";
-import { SeasonReadinessCard } from "@/components/competitions/SeasonReadinessCard";
+import { SeasonTeamList } from "@/components/teams/SeasonTeamList";
 
 type PageProps = {
   params: Promise<{
@@ -22,7 +15,7 @@ type PageProps = {
   }>;
 };
 
-export default async function SeasonDetailPage({ params }: PageProps) {
+export default async function SeasonTeamsPage({ params }: PageProps) {
   const { organizationId, competitionId, seasonId } = await params;
   const user = await requireUser();
   const membership = await requireOrganizationMembership(
@@ -40,55 +33,41 @@ export default async function SeasonDetailPage({ params }: PageProps) {
   );
   if (!season) notFound();
 
+  const seasonTeams = await getSeasonTeams(organizationId, seasonId);
+
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <PageHeader
-        title={season.name}
-        description={`Torneo: ${season.competitionName}`}
+        title="Equipos de la temporada"
+        description={`${season.competitionName} · ${season.name}`}
         actions={
           <div className="flex flex-wrap gap-2">
             <Link
-              href={`/organizaciones/${organizationId}/torneos/${competitionId}`}
+              href={`/organizaciones/${organizationId}/torneos/${competitionId}/temporadas/${seasonId}`}
               className="inline-flex min-h-11 items-center rounded-xl border border-border px-4 text-sm font-medium text-text-secondary"
             >
-              Volver al torneo
+              Volver a temporada
             </Link>
             {canManage && (
               <Link
-                href={`/organizaciones/${organizationId}/torneos/${competitionId}/temporadas/${seasonId}/editar`}
+                href={`/organizaciones/${organizationId}/torneos/${competitionId}/temporadas/${seasonId}/equipos/inscribir`}
                 className="inline-flex min-h-11 items-center rounded-xl bg-brand px-4 text-sm font-semibold text-brand-foreground"
               >
-                Editar temporada
+                Inscribir equipo
               </Link>
             )}
           </div>
         }
       />
-
-      <Card className="flex flex-wrap items-center gap-3">
-        <StatusBadge
-          label={visibilityLabel(season.visibility)}
-          variant={visibilityBadgeVariant(season.visibility)}
-        />
-        <span className="text-sm text-text-secondary">
-          {formatLabel(season.format_type)}
-        </span>
-        <span className="text-sm text-muted">
-          {season.starts_on || season.ends_on
-            ? `${season.starts_on ?? "—"} → ${season.ends_on ?? "—"}`
-            : "Sin fechas"}
-        </span>
-        {season.teamCount === 0 && (
-          <StatusBadge label="Pendiente de equipos" variant="warning" />
-        )}
-      </Card>
-
-      <SeasonRulesSummary rules={season.rules} />
-      <SeasonReadinessCard
+      <p className="text-sm text-text-secondary">
+        {seasonTeams.length} equipo{seasonTeams.length === 1 ? "" : "s"}{" "}
+        inscrito{seasonTeams.length === 1 ? "" : "s"}
+      </p>
+      <SeasonTeamList
         organizationId={organizationId}
         competitionId={competitionId}
         seasonId={seasonId}
-        season={season}
+        seasonTeams={seasonTeams}
         canManage={canManage}
       />
     </div>

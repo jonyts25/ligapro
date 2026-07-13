@@ -1380,9 +1380,27 @@ export type Database = {
       }
     }
     Functions: {
+      add_player_to_season_team: {
+        Args: {
+          p_jersey_number?: number | null
+          p_player_id: string
+          p_registration_status?: string
+          p_season_team_id: string
+        }
+        Returns: string
+      }
       can_capture_match: { Args: { p_match_id: string }; Returns: boolean }
       create_organization_with_owner: {
         Args: { p_brand_color?: string; p_name: string }
+        Returns: string
+      }
+      create_player_and_add_to_roster: {
+        Args: {
+          p_full_name: string
+          p_jersey_number?: number | null
+          p_registration_status?: string
+          p_season_team_id: string
+        }
         Returns: string
       }
       create_season_with_rules: {
@@ -1402,6 +1420,20 @@ export type Database = {
           p_suspension_matches: number
           p_visibility: string
           p_yellow_card_limit: number
+        }
+        Returns: string
+      }
+      deactivate_season_team_player: {
+        Args: { p_season_team_player_id: string }
+        Returns: undefined
+      }
+      enroll_team_in_season: {
+        Args: {
+          p_display_name?: string | null
+          p_group_name?: string | null
+          p_registration_status?: string
+          p_season_id: string
+          p_team_id: string
         }
         Returns: string
       }

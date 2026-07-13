@@ -1,13 +1,24 @@
+import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import type { SeasonDetail } from "@/lib/competitions/types";
 
 type SeasonReadinessCardProps = {
+  organizationId: string;
+  competitionId: string;
+  seasonId: string;
   season: SeasonDetail;
+  canManage?: boolean;
 };
 
-export function SeasonReadinessCard({ season }: SeasonReadinessCardProps) {
+export function SeasonReadinessCard({
+  organizationId,
+  competitionId,
+  seasonId,
+  season,
+  canManage = false,
+}: SeasonReadinessCardProps) {
   const { readiness } = season;
 
   const items = [
@@ -27,6 +38,16 @@ export function SeasonReadinessCard({ season }: SeasonReadinessCardProps) {
       ok: readiness.teamCount > 0,
     },
     {
+      label: "Jugadores en planteles",
+      value: String(readiness.activePlayerCount),
+      ok: readiness.activePlayerCount > 0,
+    },
+    {
+      label: "Equipos con capitán",
+      value: String(readiness.teamsWithCaptain),
+      ok: readiness.teamsWithCaptain > 0,
+    },
+    {
       label: "Fixture generado",
       value: "No",
       ok: false,
@@ -38,11 +59,21 @@ export function SeasonReadinessCard({ season }: SeasonReadinessCardProps) {
     },
   ];
 
+  const equiposHref = `/organizaciones/${organizationId}/torneos/${competitionId}/temporadas/${seasonId}/equipos`;
+
   return (
     <Card className="space-y-4">
       <SectionHeader
         title="Preparación de temporada"
-        description="Checklist antes de operar partidos. Los equipos llegan en el siguiente bloque."
+        description="Checklist con datos reales antes de generar fixture."
+      />
+      <StatusBadge
+        label={readiness.preparationLabel}
+        variant={
+          readiness.preparationLabel === "Lista para generar fixture"
+            ? "success"
+            : "warning"
+        }
       />
       <ul className="space-y-3">
         {items.map((item) => (
@@ -61,17 +92,12 @@ export function SeasonReadinessCard({ season }: SeasonReadinessCardProps) {
           </li>
         ))}
       </ul>
-      {readiness.teamCount === 0 && (
-        <StatusBadge label="Pendiente de equipos" variant="warning" />
-      )}
-      <button
-        type="button"
-        disabled
-        className="inline-flex min-h-11 w-full cursor-not-allowed items-center justify-center rounded-xl border border-border px-4 text-sm font-medium text-muted opacity-70"
-        title="Disponible en el siguiente bloque"
+      <Link
+        href={equiposHref}
+        className="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-brand px-4 text-sm font-semibold text-brand-foreground"
       >
-        Registrar equipos · Disponible en el siguiente bloque
-      </button>
+        {canManage ? "Registrar equipos" : "Ver equipos inscritos"}
+      </Link>
     </Card>
   );
 }

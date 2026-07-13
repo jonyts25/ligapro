@@ -2,9 +2,9 @@
 
 ## Estado
 
-**Diseño v0 congelado** + onboarding/branding (011) + sedes/canchas/disponibilidad (012 / Frontend F3) + torneos/temporadas/reglas (Frontend F4 sobre Migration 003).
+**Diseño v0 congelado** + onboarding/branding (011) + sedes (012 / F3) + torneos (F4 / 013) + equipos/planteles (Frontend F5 / Migration 014).
 
-Schema SQL: Migrations 001–012 (+ hardening) aplicadas en `ligapro-dev`. Pendiente: equipos en UI (F5), reservas, fixture, etc.
+Schema SQL: Migrations 001–014 aplicadas en `ligapro-dev`. Pendiente: fixture, partidos, etc.
 
 ## Entidades aprobadas (22)
 
@@ -183,6 +183,10 @@ Columnas tipadas (no JSON). Sin `season_rule_templates`.
 ## Bloque 004 — teams, players, season_teams, season_team_players
 
 El **capitán** vive únicamente en `season_team_players.is_captain` (máximo uno por `season_team` vía UNIQUE parcial). No existe `season_role` de captain. `profile_id` en `players` es opcional; no es requisito de BD para ser capitán. Permisos de capitán a nivel RLS / `season_roles` son un bloque futuro. Sin acceso anon/público todavía.
+
+**UI (Frontend F5):** módulo Equipos + inscripción/plantel por temporada. Ver `docs/TEAMS_AND_ROSTERS.md`.
+
+**RPCs (014 + 004):** `enroll_team_in_season`, `create_player_and_add_to_roster`, `add_player_to_season_team`, `deactivate_season_team_player`, `set_season_team_captain`. Retiro de plantel = `inactive` (no DELETE de `players`). Un player **puede** estar en dos equipos de la misma season (sin constraint global; decisión pendiente).
 
 ### `teams`
 

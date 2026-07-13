@@ -88,9 +88,9 @@ Convenciones:
 
 ## Navegación
 
-Áreas: Inicio, **Sedes**, **Torneos**, Equipos, Partidos, Calendario, Disciplina, Finanzas, Configuración.
+Áreas: Inicio, **Sedes**, **Torneos**, **Equipos**, Partidos, Calendario, Disciplina, Finanzas, Configuración.
 
-- Disponibles (F4): Inicio, Sedes, Torneos; Configuración solo owner/admin.
+- Disponibles (F5): Inicio, Sedes, Torneos, Equipos; Configuración solo owner/admin.
 - Resto marcado “Próximamente” sin navegación activa.
 - Desktop: sidebar completo (`lg+`).
 - Mobile: barra inferior con 5 ítems principales; resto en menú “Más”.

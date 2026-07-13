@@ -38,6 +38,8 @@ type OrganizationDashboardDemoProps = {
     totalVenues: number;
     competitions: number;
     seasons: number;
+    teams: number;
+    seasonEnrollments: number;
   };
   canManage?: boolean;
 };
@@ -66,14 +68,14 @@ export function OrganizationDashboardDemo({
         <div className="mb-3 flex flex-wrap items-center gap-2">
           <SectionHeader
             title="Datos reales"
-            description="Métricas de sedes, canchas, torneos y temporadas."
+            description="Sedes, torneos, temporadas y equipos."
           />
           <StatusBadge label="Datos reales" variant="success" />
         </div>
         <h2 id="real-stats-heading" className="sr-only">
           Datos reales
         </h2>
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <StatCard
             label="Torneos"
             value={String(stats.competitions)}
@@ -85,6 +87,12 @@ export function OrganizationDashboardDemo({
             value={String(stats.seasons)}
             hint="Ediciones registradas"
             icon={Trophy}
+          />
+          <StatCard
+            label="Equipos"
+            value={String(stats.teams)}
+            hint={`${stats.seasonEnrollments} inscripción${stats.seasonEnrollments === 1 ? "" : "es"} en temporadas`}
+            icon={Users}
           />
           <StatCard
             label="Sedes activas"
@@ -131,11 +139,19 @@ export function OrganizationDashboardDemo({
             />
           </div>
         )}
-        {stats.competitions === 0 && !canManage && (
+        {stats.teams === 0 && canManage && (
           <div className="mt-4">
             <EmptyState
-              title="Sin torneos todavía"
-              description="Cuando un administrador cree competencias, aparecerán aquí."
+              title="Registra tu primer equipo"
+              description="Crea equipos persistentes para inscribirlos en temporadas."
+              action={
+                <Link
+                  href={`/organizaciones/${organizationId}/equipos/nuevo`}
+                  className="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand px-4 text-sm font-semibold text-brand-foreground"
+                >
+                  Registrar primer equipo
+                </Link>
+              }
             />
           </div>
         )}
@@ -145,16 +161,16 @@ export function OrganizationDashboardDemo({
         <div className="mb-3 flex flex-wrap items-center gap-2">
           <SectionHeader
             title="Datos de demostración"
-            description="Equipos, partidos y adeudos aún no son datos reales."
+            description="Partidos y adeudos aún no son datos reales."
           />
           <StatusBadge label="Datos de demostración" variant="warning" />
         </div>
         <h2 id="stats-heading" className="sr-only">
           Datos de demostración
         </h2>
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2">
           {DEMO_STATS.map((stat, index) => {
-            const icons = [Users, CalendarDays, Wallet] as const;
+            const icons = [CalendarDays, Wallet] as const;
             return (
               <StatCard
                 key={stat.label}
