@@ -12,6 +12,10 @@ import {
   type SeasonTeamRegistrationStatus,
   type TeamsActionState,
 } from "@/lib/teams/types";
+import {
+  isSeasonRosterSeatConflict,
+  seasonRosterSeatConflictMessage,
+} from "@/lib/teams/roster-errors";
 
 function validateName(name: string, label: string): string | null {
   const trimmed = name.trim();
@@ -225,8 +229,8 @@ export async function enrollTeamAction(
     {
       p_season_id: seasonId,
       p_team_id: teamId,
-      p_display_name: displayName || null,
-      p_group_name: groupName || null,
+      p_display_name: displayName || undefined,
+      p_group_name: groupName || undefined,
       p_registration_status: registrationStatus,
     }
   );
@@ -294,15 +298,16 @@ export async function createPlayerAndAddAction(
   const { error } = await supabase.rpc("create_player_and_add_to_roster", {
     p_season_team_id: seasonTeamId,
     p_full_name: fullName.trim(),
-    p_jersey_number: jersey.value,
+    p_jersey_number: jersey.value ?? undefined,
     p_registration_status: "active",
   });
 
   if (error) {
     return {
       ok: false,
-      message:
-        "No pudimos agregar al jugador. Revisa el dorsal e inténtalo de nuevo.",
+      message: isSeasonRosterSeatConflict(error)
+        ? seasonRosterSeatConflictMessage()
+        : "No pudimos agregar al jugador. Revisa el dorsal e inténtalo de nuevo.",
       values,
     };
   }
@@ -357,18 +362,54 @@ export async function addExistingPlayerAction(
   const { error } = await supabase.rpc("add_player_to_season_team", {
     p_season_team_id: seasonTeamId,
     p_player_id: playerId,
-    p_jersey_number: jersey.value,
+    p_jersey_number: jersey.value ?? undefined,
     p_registration_status: "active",
   });
 
   if (error) {
     const already =
       error.message?.toLowerCase().includes("already on this roster") ?? false;
+
+    let occupiedName: string | null = null;
+    if (isSeasonRosterSeatConflict(error)) {
+      const { data: occupied } = await supabase
+        .from("season_team_players")
+        .select(
+          "season_team_id, season_teams(display_name, teams(name))"
+        )
+        .eq("organization_id", organizationId)
+        .eq("season_id", seasonId)
+        .eq("player_id", playerId)
+        .in("registration_status", ["active", "suspended"])
+        .neq("season_team_id", seasonTeamId)
+        .maybeSingle();
+
+      const stRel = occupied?.season_teams as
+        | {
+            display_name: string | null;
+            teams: { name: string } | { name: string }[] | null;
+          }
+        | {
+            display_name: string | null;
+            teams: { name: string } | { name: string }[] | null;
+          }[]
+        | null
+        | undefined;
+      const st = Array.isArray(stRel) ? stRel[0] : stRel;
+      const teamRel = st?.teams;
+      const teamName = Array.isArray(teamRel)
+        ? teamRel[0]?.name
+        : teamRel?.name;
+      occupiedName = st?.display_name?.trim() || teamName || null;
+    }
+
     return {
       ok: false,
-      message: already
-        ? "Ese jugador ya está activo en este plantel."
-        : "No pudimos agregar al jugador. Inténtalo nuevamente.",
+      message: isSeasonRosterSeatConflict(error)
+        ? seasonRosterSeatConflictMessage(occupiedName)
+        : already
+          ? "Ese jugador ya está activo en este plantel."
+          : "No pudimos agregar al jugador. Inténtalo nuevamente.",
       values,
     };
   }
@@ -418,7 +459,7 @@ export async function updateRosterEntryAction(
   const supabase = await createClient();
   const { data: entry } = await supabase
     .from("season_team_players")
-    .select("id, is_captain")
+    .select("id")
     .eq("id", rosterId)
     .eq("season_team_id", seasonTeamId)
     .eq("organization_id", organizationId)
@@ -428,27 +469,33 @@ export async function updateRosterEntryAction(
     return { ok: false, message: "No encontramos al jugador en el plantel." };
   }
 
-  if (entry.is_captain && registrationStatus !== "active") {
+  const { error: statusError } = await supabase.rpc(
+    "set_season_team_player_status",
+    {
+      p_season_team_player_id: rosterId,
+      p_registration_status: registrationStatus,
+    }
+  );
+
+  if (statusError) {
     return {
       ok: false,
-      message:
-        "Quita la capitanía o retira al jugador con la acción de plantel antes de cambiar su estado.",
+      message: isSeasonRosterSeatConflict(statusError)
+        ? seasonRosterSeatConflictMessage()
+        : "No pudimos actualizar el estado del plantel.",
     };
   }
 
-  const { error } = await supabase
+  const { error: jerseyError } = await supabase
     .from("season_team_players")
-    .update({
-      jersey_number: jersey.value,
-      registration_status: registrationStatus,
-    })
+    .update({ jersey_number: jersey.value })
     .eq("id", rosterId)
     .eq("organization_id", organizationId);
 
-  if (error) {
+  if (jerseyError) {
     return {
       ok: false,
-      message: "No pudimos actualizar el plantel. Revisa el dorsal.",
+      message: "El estado se actualizó, pero no pudimos guardar el dorsal.",
     };
   }
 
@@ -458,6 +505,60 @@ export async function updateRosterEntryAction(
     seasonTeamId,
   });
   return { ok: true, message: "Participación actualizada." };
+}
+
+export async function setRosterStatusAction(
+  _prev: TeamsActionState,
+  formData: FormData
+): Promise<TeamsActionState> {
+  const user = await requireUser();
+  const organizationId = String(formData.get("organizationId") ?? "");
+  const competitionId = String(formData.get("competitionId") ?? "");
+  const seasonId = String(formData.get("seasonId") ?? "");
+  const seasonTeamId = String(formData.get("seasonTeamId") ?? "");
+  const rosterId = String(formData.get("rosterId") ?? "");
+  await requireOrganizationAdmin(user.id, organizationId);
+
+  const registrationStatus = String(
+    formData.get("registrationStatus") ?? "active"
+  );
+
+  if (!isRosterStatus(registrationStatus)) {
+    return { ok: false, message: "Estado de plantel inválido." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("set_season_team_player_status", {
+    p_season_team_player_id: rosterId,
+    p_registration_status: registrationStatus,
+  });
+
+  if (error) {
+    return {
+      ok: false,
+      message: isSeasonRosterSeatConflict(error)
+        ? seasonRosterSeatConflictMessage()
+        : "No pudimos actualizar el estado del plantel.",
+    };
+  }
+
+  revalidateTeamPaths(organizationId, {
+    competitionId,
+    seasonId,
+    seasonTeamId,
+  });
+
+  const label =
+    ROSTER_STATUS_OPTIONS.find((o) => o.value === registrationStatus)?.label ??
+    registrationStatus;
+
+  return {
+    ok: true,
+    message:
+      registrationStatus === "inactive"
+        ? "Jugador marcado como inactivo. Ya puede inscribirse en otro equipo de esta temporada."
+        : `Estado actualizado: ${label}.`,
+  };
 }
 
 export async function deactivateRosterPlayerAction(

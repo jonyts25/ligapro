@@ -1,13 +1,13 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useMemo, useState } from "react";
 import {
   addExistingPlayerAction,
   createPlayerAndAddAction,
 } from "@/lib/teams/actions";
 import {
   initialTeamsActionState,
-  type PlayerRecord,
+  type AvailablePlayerOption,
 } from "@/lib/teams/types";
 import { SubmitButton } from "@/components/auth/SubmitButton";
 import { Card } from "@/components/ui/Card";
@@ -19,7 +19,7 @@ type AddRosterPlayerFormProps = {
   competitionId: string;
   seasonId: string;
   seasonTeamId: string;
-  availablePlayers: PlayerRecord[];
+  availablePlayers: AvailablePlayerOption[];
 };
 
 function FieldError({ message }: { message?: string }) {
@@ -68,9 +68,19 @@ export function AddRosterPlayerForm({
     addExistingPlayerAction,
     initialTeamsActionState
   );
+  const [selectedPlayerId, setSelectedPlayerId] = useState(
+    String(existingState.values?.playerId ?? "")
+  );
 
   const createValues = createState.values;
-  const existingValues = existingState.values;
+  const selectableCount = availablePlayers.filter((p) => p.selectable).length;
+  const selectedBlocked = useMemo(
+    () =>
+      availablePlayers.find(
+        (p) => p.id === selectedPlayerId && !p.selectable
+      ) ?? null,
+    [availablePlayers, selectedPlayerId]
+  );
 
   return (
     <div className="space-y-6">
@@ -138,7 +148,7 @@ export function AddRosterPlayerForm({
       <Card className="space-y-4">
         <SectionHeader
           title="Agregar jugador existente"
-          description="Selecciona un jugador ya registrado en la organización."
+          description="Un jugador activo o suspendido en otro equipo de esta temporada no puede agregarse aquí. Márcalo como inactivo allí primero."
         />
         <ActionMessage ok={existingState.ok} message={existingState.message} />
         <form action={existingAction} className="space-y-4">
@@ -156,7 +166,8 @@ export function AddRosterPlayerForm({
               name="playerId"
               required
               disabled={existingPending || availablePlayers.length === 0}
-              defaultValue={String(existingValues?.playerId ?? "")}
+              value={selectedPlayerId}
+              onChange={(e) => setSelectedPlayerId(e.target.value)}
               className={cn(
                 "min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm",
                 existingState.fieldErrors?.playerId && "border-danger"
@@ -164,15 +175,34 @@ export function AddRosterPlayerForm({
             >
               <option value="">Selecciona un jugador</option>
               {availablePlayers.map((player) => (
-                <option key={player.id} value={player.id}>
-                  {player.full_name}
+                <option
+                  key={player.id}
+                  value={player.id}
+                  disabled={!player.selectable}
+                >
+                  {player.selectable
+                    ? player.full_name
+                    : `${player.full_name} — en ${player.occupiedByTeamName ?? "otro equipo"}`}
                 </option>
               ))}
             </select>
             <FieldError message={existingState.fieldErrors?.playerId} />
+            {selectedBlocked && (
+              <p className="text-sm text-warning" role="status">
+                Este jugador ya está con {selectedBlocked.occupiedByTeamName} en
+                esta temporada. Márcalo como inactivo en ese plantel para
+                liberarlo.
+              </p>
+            )}
             {availablePlayers.length === 0 && (
               <p className="text-sm text-muted">
-                No hay jugadores disponibles fuera del plantel activo.
+                No hay jugadores fuera del plantel ocupado de este equipo.
+              </p>
+            )}
+            {availablePlayers.length > 0 && selectableCount === 0 && (
+              <p className="text-sm text-muted">
+                Todos los jugadores listados ya ocupan plaza en otro equipo de
+                esta temporada.
               </p>
             )}
           </div>
@@ -190,7 +220,7 @@ export function AddRosterPlayerForm({
               name="jerseyNumber"
               inputMode="numeric"
               disabled={existingPending}
-              defaultValue={String(existingValues?.jerseyNumber ?? "")}
+              defaultValue={String(existingState.values?.jerseyNumber ?? "")}
               placeholder="7"
               className={cn(
                 "min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none",
@@ -204,7 +234,11 @@ export function AddRosterPlayerForm({
           <SubmitButton
             pending={existingPending}
             className="w-auto"
-            disabled={availablePlayers.length === 0}
+            disabled={
+              selectableCount === 0 ||
+              !selectedPlayerId ||
+              Boolean(selectedBlocked)
+            }
           >
             Agregar al plantel
           </SubmitButton>

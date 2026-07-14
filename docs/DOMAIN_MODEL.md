@@ -186,7 +186,7 @@ El **capitán** vive únicamente en `season_team_players.is_captain` (máximo un
 
 **UI (Frontend F5):** módulo Equipos + inscripción/plantel por temporada. Ver `docs/TEAMS_AND_ROSTERS.md`.
 
-**RPCs (014 + 004):** `enroll_team_in_season`, `create_player_and_add_to_roster`, `add_player_to_season_team`, `deactivate_season_team_player`, `set_season_team_captain`. Retiro de plantel = `inactive` (no DELETE de `players`). Un player **puede** estar en dos equipos de la misma season (sin constraint global; decisión pendiente).
+**RPCs (014 + 015 + 004):** `enroll_team_in_season`, `create_player_and_add_to_roster`, `add_player_to_season_team`, `set_season_team_player_status`, `deactivate_season_team_player`, `set_season_team_captain`. Retiro de plantel = `inactive` (no DELETE de `players`). Un player **no** puede estar `active`/`suspended` en dos equipos de la misma season (índice único parcial sobre `season_id, player_id`; Migration 015). `inactive` libera la plaza. Distintas seasons/competitions permitidas. Sin transferencia automática.
 
 ### `teams`
 

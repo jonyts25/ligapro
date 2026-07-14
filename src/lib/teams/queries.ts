@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import type {
+  AvailablePlayerOption,
   PlayerRecord,
   RosterListItem,
   SeasonRosterStats,
@@ -292,7 +293,7 @@ export async function getSeasonTeamRoster(
   const { data: rosterRows } = await supabase
     .from("season_team_players")
     .select(
-      "id, season_team_id, player_id, organization_id, jersey_number, is_captain, registration_status, players(full_name)"
+      "id, season_team_id, player_id, organization_id, season_id, jersey_number, is_captain, registration_status, players(full_name)"
     )
     .eq("season_team_id", seasonTeamId)
     .eq("organization_id", organizationId)
@@ -311,6 +312,7 @@ export async function getSeasonTeamRoster(
       season_team_id: row.season_team_id,
       player_id: row.player_id,
       organization_id: row.organization_id,
+      season_id: row.season_id,
       jersey_number: row.jersey_number,
       is_captain: row.is_captain,
       registration_status: row.registration_status as RosterRegistrationStatus,
@@ -343,8 +345,17 @@ export async function getSeasonTeamRoster(
 export async function getAvailablePlayersForRoster(
   organizationId: string,
   seasonTeamId: string
-): Promise<PlayerRecord[]> {
+): Promise<AvailablePlayerOption[]> {
   const supabase = await createClient();
+
+  const { data: seasonTeam } = await supabase
+    .from("season_teams")
+    .select("id, season_id")
+    .eq("id", seasonTeamId)
+    .eq("organization_id", organizationId)
+    .maybeSingle();
+
+  if (!seasonTeam) return [];
 
   const { data: players } = await supabase
     .from("players")
@@ -352,21 +363,66 @@ export async function getAvailablePlayersForRoster(
     .eq("organization_id", organizationId)
     .order("full_name");
 
-  const { data: roster } = await supabase
+  const { data: thisRoster } = await supabase
     .from("season_team_players")
     .select("player_id, registration_status")
     .eq("season_team_id", seasonTeamId)
     .eq("organization_id", organizationId);
 
-  const activeIds = new Set(
-    (roster ?? [])
-      .filter((r) => r.registration_status === "active")
+  const occupyingHere = new Set(
+    (thisRoster ?? [])
+      .filter(
+        (r) =>
+          r.registration_status === "active" ||
+          r.registration_status === "suspended"
+      )
       .map((r) => r.player_id)
   );
 
+  const { data: seasonOccupied } = await supabase
+    .from("season_team_players")
+    .select(
+      "player_id, season_team_id, registration_status, season_teams(id, display_name, teams(name))"
+    )
+    .eq("organization_id", organizationId)
+    .eq("season_id", seasonTeam.season_id)
+    .in("registration_status", ["active", "suspended"]);
+
+  const blockedBy = new Map<string, string>();
+  for (const row of seasonOccupied ?? []) {
+    if (row.season_team_id === seasonTeamId) continue;
+    const stRel = row.season_teams as
+      | {
+          display_name: string | null;
+          teams: { name: string } | { name: string }[] | null;
+        }
+      | {
+          display_name: string | null;
+          teams: { name: string } | { name: string }[] | null;
+        }[]
+      | null;
+    const st = Array.isArray(stRel) ? stRel[0] : stRel;
+    const teamRel = st?.teams;
+    const teamName = Array.isArray(teamRel)
+      ? teamRel[0]?.name
+      : teamRel?.name;
+    const display = st?.display_name?.trim();
+    blockedBy.set(
+      row.player_id,
+      display || teamName || "otro equipo de la temporada"
+    );
+  }
+
   return (players ?? [])
-    .filter((p) => !activeIds.has(p.id))
-    .map((p) => p as PlayerRecord);
+    .filter((p) => !occupyingHere.has(p.id))
+    .map((p) => {
+      const occupiedByTeamName = blockedBy.get(p.id) ?? null;
+      return {
+        ...(p as PlayerRecord),
+        selectable: occupiedByTeamName == null,
+        occupiedByTeamName,
+      };
+    });
 }
 
 export async function getSeasonRosterStats(

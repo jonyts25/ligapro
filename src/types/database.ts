@@ -1,4 +1,4 @@
-export type Json =
+﻿export type Json =
   | string
   | number
   | boolean
@@ -967,6 +967,7 @@ export type Database = {
           organization_id: string
           player_id: string
           registration_status: string
+          season_id: string
           season_team_id: string
           updated_at: string
         }
@@ -978,6 +979,7 @@ export type Database = {
           organization_id: string
           player_id: string
           registration_status?: string
+          season_id: string
           season_team_id: string
           updated_at?: string
         }
@@ -989,6 +991,7 @@ export type Database = {
           organization_id?: string
           player_id?: string
           registration_status?: string
+          season_id?: string
           season_team_id?: string
           updated_at?: string
         }
@@ -1005,6 +1008,13 @@ export type Database = {
             columns: ["player_id"]
             isOneToOne: false
             referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "season_team_players_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
             referencedColumns: ["id"]
           },
           {
@@ -1382,7 +1392,7 @@ export type Database = {
     Functions: {
       add_player_to_season_team: {
         Args: {
-          p_jersey_number?: number | null
+          p_jersey_number?: number
           p_player_id: string
           p_registration_status?: string
           p_season_team_id: string
@@ -1397,7 +1407,7 @@ export type Database = {
       create_player_and_add_to_roster: {
         Args: {
           p_full_name: string
-          p_jersey_number?: number | null
+          p_jersey_number?: number
           p_registration_status?: string
           p_season_team_id: string
         }
@@ -1429,8 +1439,8 @@ export type Database = {
       }
       enroll_team_in_season: {
         Args: {
-          p_display_name?: string | null
-          p_group_name?: string | null
+          p_display_name?: string
+          p_group_name?: string
           p_registration_status?: string
           p_season_id: string
           p_team_id: string
@@ -1485,6 +1495,7 @@ export type Database = {
           organization_id: string
           player_id: string
           registration_status: string
+          season_id: string
           season_team_id: string
           updated_at: string
         }
@@ -1494,6 +1505,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      set_season_team_player_status: {
+        Args: { p_registration_status: string; p_season_team_player_id: string }
+        Returns: undefined
       }
       slugify_organization_name: { Args: { p_name: string }; Returns: string }
       update_match_result: {

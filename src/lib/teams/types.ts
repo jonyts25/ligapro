@@ -28,6 +28,13 @@ export type PlayerRecord = {
   profile_id: string | null;
 };
 
+/** Player option for roster add UI (season exclusivity). */
+export type AvailablePlayerOption = PlayerRecord & {
+  selectable: boolean;
+  /** Team display name occupying the season seat, if any (same org only). */
+  occupiedByTeamName: string | null;
+};
+
 export type SeasonTeamRecord = {
   id: string;
   season_id: string;
@@ -43,6 +50,7 @@ export type RosterEntryRecord = {
   season_team_id: string;
   player_id: string;
   organization_id: string;
+  season_id: string;
   jersey_number: number | null;
   is_captain: boolean;
   registration_status: RosterRegistrationStatus;

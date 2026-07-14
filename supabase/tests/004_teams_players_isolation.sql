@@ -39,6 +39,7 @@ DECLARE
   v_count int;
   v_captain_count int;
   v_captain_player uuid;
+  v_org_check uuid;
 BEGIN
   ALTER TABLE public.audit_log DISABLE TRIGGER audit_log_prevent_mutation;
   ALTER TABLE public.organization_members DISABLE TRIGGER USER;
@@ -295,24 +296,28 @@ BEGIN
     );
   END;
 
-  -- Test 5a: roster org must match season_team
+  -- Test 5a (updated for Migration 015): client-supplied wrong organization_id
+  -- is overwritten from season_team. Verify derived org, then remove the seed row
+  -- so later captain/inactive tests stay valid.
   BEGIN
     EXECUTE 'SET LOCAL ROLE authenticated';
     INSERT INTO public.season_team_players (
       season_team_id, player_id, organization_id
-    ) VALUES (season_team_a, player_a3, org_b);
-    GET DIAGNOSTICS v_count = ROW_COUNT;
+    ) VALUES (season_team_a, player_a3, org_b)
+    RETURNING organization_id INTO v_org_check;
+    DELETE FROM public.season_team_players
+    WHERE season_team_id = season_team_a AND player_id = player_a3;
     EXECUTE 'RESET ROLE';
     INSERT INTO public.__mig004_test_results VALUES (
-      '5a_roster_org_must_match_season_team',
-      false,
-      format('unexpected success inserted_rows=%s', v_count)
+      '5a_roster_org_derived_from_season_team',
+      v_org_check = org_a,
+      format('derived_org=%s expected=%s', v_org_check, org_a)
     );
   EXCEPTION WHEN OTHERS THEN
     EXECUTE 'RESET ROLE';
     INSERT INTO public.__mig004_test_results VALUES (
-      '5a_roster_org_must_match_season_team',
-      SQLERRM ILIKE '%must match season_teams.organization_id%',
+      '5a_roster_org_derived_from_season_team',
+      false,
       SQLERRM
     );
   END;

@@ -139,18 +139,11 @@ PWA: manifest OK; **no** se afirma offline.
 2. Auth Site URL / Redirect URLs hosted aún requieren configuración manual.
 3. Railway environment se llama `production` aunque el producto es beta.
 4. Advisor Supabase: tablas `__mig010_test_results` / `__mig011_test_results` sin RLS (legado de tests) — fuera de alcance de este deploy; remediar aparte.
-5. Un player puede pertenecer a dos equipos de la misma season (ver decisión pendiente).
+5. ~~Un player puede pertenecer a dos equipos de la misma season~~ → **cerrado en Migration 015** (`active`/`suspended` exclusivos por season; `inactive` libera).
 
-## 11. Decisión pendiente (antes de F6)
+## 11. Decisión player/múltiples equipos
 
-```text
-Actualmente un player puede pertenecer a dos equipos de la misma season.
-Antes de fixture, disciplina y estadísticas debe decidirse si LigaPro:
-A) lo permite;
-B) lo prohíbe mediante constraint/migración.
-```
-
-Esta regla **no** se cambió en este bloque.
+**Resuelta (B):** prohibido vía índice parcial / Migration 015. Ver `docs/reports/MIGRATION_015_REPORT.md`.
 
 ## 12. Mundial Compas
 
@@ -159,6 +152,6 @@ Confirmado intacto: trabajo exclusivo en `ligapro`; Railway service `ligapro` / 
 ## 13. Resultado
 
 - **Dominio beta:** https://ligapro-dev.up.railway.app  
-- **GitHub `main` y Railway** alineados en `b812530` (+ reporte posterior si se commitea).  
+- **GitHub `main` y Railway** alineados en el último deploy de auth/oauth.  
 - **F5 cerrado** para deploy beta.  
-- **No avanzar a F6 / fixture** hasta revisión y decisión player/multi-equipo.
+- **No avanzar a F6 / fixture** hasta revisión de Migration 015.

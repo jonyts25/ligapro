@@ -32,9 +32,9 @@
 `season_id`, `team_id`, `organization_id`, `display_name`, `group_name`, `registration_status` (`registered`\|`confirmed`\|`withdrawn`). UNIQUE `(season_id, team_id)`.
 
 ### `season_team_players`
-`season_team_id`, `player_id`, `organization_id`, `jersey_number`, `is_captain`, `registration_status` (`active`\|`inactive`\|`suspended`). UNIQUE plantel+player; un capitán; jersey único si no null; capitán debe ser active.
+`season_team_id`, `player_id`, `organization_id`, `season_id` (015), `jersey_number`, `is_captain`, `registration_status` (`active`\|`inactive`\|`suspended`). UNIQUE plantel+player; un capitán; jersey único si no null; capitán debe ser active.
 
-**Permite** un player en dos equipos de la misma season (sin UNIQUE season+player).
+**Migration 015:** un player **no** puede estar `active`/`suspended` en dos equipos de la misma season (índice parcial `(season_id, player_id)`). `inactive` libera.
 
 ---
 
@@ -158,10 +158,11 @@ Sin commit. Working tree con F5 + 014.
 
 ## 27. Riesgos / pendientes
 
-- Player en dos equipos de la misma season: **permitido por schema**; documentado como decisión pendiente.
+- **Resuelto (015):** exclusividad active/suspended por season.
 - Retiro = soft `inactive`, no DELETE de roster row ni de player.
 - Capitanía usa `p_player_id` (RPC 004), no `season_team_player_id`.
 - Sin logos / Auth / invitaciones.
+- Impacto futuro: disciplina y estadísticas deben respetar un plantel activo por season (sin doble conteo).
 
 ---
 
