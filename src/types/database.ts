@@ -618,9 +618,12 @@ export type Database = {
           home_score: number | null
           home_season_team_id: string
           id: string
+          leg_number: number | null
           organization_id: string
           round_label: string | null
+          round_number: number | null
           season_id: string
+          sequence_in_round: number | null
           status: string
           updated_at: string
         }
@@ -632,9 +635,12 @@ export type Database = {
           home_score?: number | null
           home_season_team_id: string
           id?: string
+          leg_number?: number | null
           organization_id: string
           round_label?: string | null
+          round_number?: number | null
           season_id: string
+          sequence_in_round?: number | null
           status?: string
           updated_at?: string
         }
@@ -646,9 +652,12 @@ export type Database = {
           home_score?: number | null
           home_season_team_id?: string
           id?: string
+          leg_number?: number | null
           organization_id?: string
           round_label?: string | null
+          round_number?: number | null
           season_id?: string
+          sequence_in_round?: number | null
           status?: string
           updated_at?: string
         }
@@ -1413,11 +1422,37 @@ export type Database = {
         }
         Returns: string
       }
+      create_season_round_robin_fixture: {
+        Args: { p_matches: Json; p_mode: string; p_season_id: string }
+        Returns: {
+          away_score: number | null
+          away_season_team_id: string
+          created_at: string
+          field_reservation_id: string | null
+          home_score: number | null
+          home_season_team_id: string
+          id: string
+          leg_number: number | null
+          organization_id: string
+          round_label: string | null
+          round_number: number | null
+          season_id: string
+          sequence_in_round: number | null
+          status: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "matches"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       create_season_with_rules: {
         Args: {
           p_allow_draws: boolean
           p_competition_id: string
-          p_ends_on: string | null
+          p_ends_on?: string | null
           p_format_type: string
           p_match_duration_minutes: number
           p_minimum_rest_minutes: number
@@ -1426,7 +1461,7 @@ export type Database = {
           p_points_loss: number
           p_points_win: number
           p_slug: string
-          p_starts_on: string | null
+          p_starts_on?: string | null
           p_suspension_matches: number
           p_visibility: string
           p_yellow_card_limit: number
@@ -1481,6 +1516,10 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      schedule_match: {
+        Args: { p_field_id: string; p_match_id: string; p_starts_at: string }
+        Returns: undefined
+      }
       set_organization_logo: {
         Args: { p_logo_path: string; p_organization_id: string }
         Returns: undefined
@@ -1511,6 +1550,7 @@ export type Database = {
         Returns: undefined
       }
       slugify_organization_name: { Args: { p_name: string }; Returns: string }
+      unschedule_match: { Args: { p_match_id: string }; Returns: undefined }
       update_match_result: {
         Args: {
           p_away_score: number
@@ -1526,9 +1566,12 @@ export type Database = {
           home_score: number | null
           home_season_team_id: string
           id: string
+          leg_number: number | null
           organization_id: string
           round_label: string | null
+          round_number: number | null
           season_id: string
+          sequence_in_round: number | null
           status: string
           updated_at: string
         }
@@ -1550,7 +1593,7 @@ export type Database = {
       update_season_with_rules: {
         Args: {
           p_allow_draws: boolean
-          p_ends_on: string | null
+          p_ends_on?: string | null
           p_format_type: string
           p_match_duration_minutes: number
           p_minimum_rest_minutes: number
@@ -1559,7 +1602,7 @@ export type Database = {
           p_points_loss: number
           p_points_win: number
           p_season_id: string
-          p_starts_on: string | null
+          p_starts_on?: string | null
           p_suspension_matches: number
           p_visibility: string
           p_yellow_card_limit: number

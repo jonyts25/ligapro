@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getOrganizationVenueStats } from "@/lib/venues/queries";
 import { getSeasonRosterStats } from "@/lib/teams/queries";
+import { getSeasonFixtureStats } from "@/lib/fixtures/queries";
 import type {
   CompetitionDetail,
   CompetitionListItem,
@@ -14,13 +15,20 @@ import type {
   SeasonVisibility,
 } from "@/lib/competitions/types";
 
-function preparationLabel(
-  teamCount: number,
-  activePlayerCount: number
-): SeasonPreparationLabel {
-  if (teamCount === 0) return "Pendiente de equipos";
-  if (activePlayerCount === 0) return "Configurando planteles";
-  return "Lista para generar fixture";
+function preparationLabel(input: {
+  teamCount: number;
+  activePlayerCount: number;
+  fixtureGenerated: boolean;
+  totalMatches: number;
+  scheduledMatches: number;
+}): SeasonPreparationLabel {
+  if (input.teamCount === 0) return "Pendiente de equipos";
+  if (input.activePlayerCount === 0) return "Configurando planteles";
+  if (!input.fixtureGenerated) return "Lista para generar fixture";
+  if (input.scheduledMatches < input.totalMatches) {
+    return "Programando partidos";
+  }
+  return "Calendario listo";
 }
 
 function mapSeason(row: {
@@ -200,9 +208,10 @@ export async function getSeasonDetails(
     .eq("season_id", seasonId)
     .eq("organization_id", organizationId);
 
-  const [venueStats, rosterStats] = await Promise.all([
+  const [venueStats, rosterStats, fixtureStats] = await Promise.all([
     getOrganizationVenueStats(organizationId),
     getSeasonRosterStats(organizationId, seasonId),
+    getSeasonFixtureStats(organizationId, seasonId),
   ]);
 
   const competitionRelation = season.competitions as
@@ -226,12 +235,17 @@ export async function getSeasonDetails(
       teamCount: teams,
       activePlayerCount: rosterStats.activePlayerCount,
       teamsWithCaptain: rosterStats.teamsWithCaptain,
-      fixtureGenerated: false,
-      scheduledMatches: 0,
-      preparationLabel: preparationLabel(
-        teams,
-        rosterStats.activePlayerCount
-      ),
+      fixtureGenerated: fixtureStats.fixtureGenerated,
+      totalMatches: fixtureStats.totalMatches,
+      scheduledMatches: fixtureStats.scheduledMatches,
+      pendingMatches: fixtureStats.pendingMatches,
+      preparationLabel: preparationLabel({
+        teamCount: teams,
+        activePlayerCount: rosterStats.activePlayerCount,
+        fixtureGenerated: fixtureStats.fixtureGenerated,
+        totalMatches: fixtureStats.totalMatches,
+        scheduledMatches: fixtureStats.scheduledMatches,
+      }),
     },
   };
 }

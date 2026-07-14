@@ -2,9 +2,9 @@
 
 ## Estado
 
-**Diseño v0 congelado** + onboarding/branding (011) + sedes (012 / F3) + torneos (F4 / 013) + equipos/planteles (Frontend F5 / Migration 014).
+**Diseño v0 congelado** + onboarding/branding (011) + sedes (012 / F3) + torneos (F4 / 013) + equipos/planteles (Frontend F5 / Migration 014–015) + fixture/programación (Frontend F6 / Migration 016).
 
-Schema SQL: Migrations 001–014 aplicadas en `ligapro-dev`. Pendiente: fixture, partidos, etc.
+Schema SQL: Migrations 001–016 aplicadas en `ligapro-dev`. Pendiente: captura de resultados (UI).
 
 ## Entidades aprobadas (22)
 
@@ -280,7 +280,12 @@ Captura de resultado por oficiales / `match_events` **no** está en este bloque 
 | `status` | text NOT NULL | default `scheduled`; CHECK scheduled/in_progress/finished/cancelled/walkover |
 | `home_score` / `away_score` | integer nullable | ≥ 0; ambos NULL o ambos NOT NULL |
 | `round_label` | text nullable | ej. "Jornada 3", "Semifinal" |
+| `round_number` | integer nullable | Migration 016; jornada > 0 |
+| `leg_number` | integer nullable | Migration 016; 1 \| 2 |
+| `sequence_in_round` | integer nullable | Migration 016; orden en jornada |
 | `created_at` / `updated_at` | timestamptz | |
+
+RPCs F6 (016): `create_season_round_robin_fixture`, `schedule_match`, `unschedule_match`. Ver `docs/FIXTURE_AND_SCHEDULING.md`.
 
 ### `match_officials`
 

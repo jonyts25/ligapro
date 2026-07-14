@@ -153,3 +153,7 @@ Service worker: no implementado en F0. Recomendación F1+: `@serwist/next` o SW 
 **Similitudes conceptuales:** tema oscuro, tarjetas, badges, stats, nav persistente móvil.
 
 **Evitado:** quinielas, Pitoniso, FIFA, emoji nav, estética apuestas, importación de código.
+
+## F6 — Fixture y calendario
+
+Componentes en `src/components/fixtures/` reutilizan `Card`, `PageHeader`, `StatusBadge`, `SectionHeader`, `EmptyState` y patrones de formularios F4/F5. Badges de programación: Pendiente / Programado. Sin calendario drag-and-drop ni UI kit externo.

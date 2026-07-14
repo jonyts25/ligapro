@@ -15,6 +15,8 @@ import { StatusBadge } from "@/components/ui/StatusBadge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ResponsiveTableContainer } from "@/components/ui/ResponsiveTableContainer";
 import type { OrganizationBranding } from "@/types/branding";
+import type { OrganizationMatchStats } from "@/lib/fixtures/types";
+import { formatMatchDateTime } from "@/lib/fixtures/format";
 import {
   DEMO_RECENT_ACTIVITY,
   DEMO_STATS,
@@ -41,6 +43,7 @@ type OrganizationDashboardDemoProps = {
     teams: number;
     seasonEnrollments: number;
   };
+  matchStats?: OrganizationMatchStats;
   canManage?: boolean;
 };
 
@@ -48,8 +51,11 @@ export function OrganizationDashboardDemo({
   branding,
   organizationId,
   stats,
+  matchStats,
   canManage = false,
 }: OrganizationDashboardDemoProps) {
+  const hasRealMatches = (matchStats?.totalMatches ?? 0) > 0;
+
   return (
     <>
       <PageHeader
@@ -68,7 +74,7 @@ export function OrganizationDashboardDemo({
         <div className="mb-3 flex flex-wrap items-center gap-2">
           <SectionHeader
             title="Datos reales"
-            description="Sedes, torneos, temporadas y equipos."
+            description="Sedes, torneos, temporadas, equipos y partidos."
           />
           <StatusBadge label="Datos reales" variant="success" />
         </div>
@@ -105,6 +111,12 @@ export function OrganizationDashboardDemo({
             value={String(stats.effectiveActiveFields)}
             hint="Activas y en sede activa"
             icon={MapPin}
+          />
+          <StatCard
+            label="Partidos"
+            value={String(matchStats?.totalMatches ?? 0)}
+            hint={`${matchStats?.scheduledMatches ?? 0} programados`}
+            icon={CalendarDays}
           />
         </div>
         {stats.totalVenues === 0 && (
@@ -157,74 +169,134 @@ export function OrganizationDashboardDemo({
         )}
       </section>
 
-      <section aria-labelledby="stats-heading" className="mb-8">
-        <div className="mb-3 flex flex-wrap items-center gap-2">
-          <SectionHeader
-            title="Datos de demostración"
-            description="Partidos y adeudos aún no son datos reales."
-          />
-          <StatusBadge label="Datos de demostración" variant="warning" />
-        </div>
-        <h2 id="stats-heading" className="sr-only">
-          Datos de demostración
-        </h2>
-        <div className="grid gap-4 sm:grid-cols-2">
-          {DEMO_STATS.map((stat, index) => {
-            const icons = [CalendarDays, Wallet] as const;
-            return (
-              <StatCard
-                key={stat.label}
-                label={stat.label}
-                value={stat.value}
-                hint={stat.hint}
-                icon={icons[index]}
-              />
-            );
-          })}
-        </div>
-      </section>
-
       <section aria-labelledby="matches-heading" className="mb-8">
         <div className="mb-3 flex flex-wrap items-center gap-2">
           <SectionHeader
             title="Próximos partidos"
-            description="Partidos ficticios para validar tablas y badges."
+            description={
+              hasRealMatches
+                ? "Partidos programados con fecha futura."
+                : "Partidos ficticios para validar tablas y badges."
+            }
           />
-          <StatusBadge label="Datos de demostración" variant="warning" />
+          <StatusBadge
+            label={hasRealMatches ? "Datos reales" : "Datos de demostración"}
+            variant={hasRealMatches ? "success" : "warning"}
+          />
         </div>
         <h2 id="matches-heading" className="sr-only">
           Próximos partidos
         </h2>
-        <ResponsiveTableContainer>
-          <table className="w-full min-w-[36rem] text-left text-sm">
-            <thead className="bg-surface-elevated text-xs uppercase tracking-wide text-muted">
-              <tr>
-                <th className="px-3 py-2 font-medium">Partido</th>
-                <th className="px-3 py-2 font-medium">Horario</th>
-                <th className="px-3 py-2 font-medium">Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              {DEMO_UPCOMING_MATCHES.map((match) => (
-                <tr key={match.id} className="border-t border-border">
-                  <td className="px-3 py-3 text-text-primary">
-                    {match.homeTeam} vs {match.awayTeam}
-                  </td>
-                  <td className="px-3 py-3 text-text-secondary">
-                    {match.date} · {match.time}
-                  </td>
-                  <td className="px-3 py-3">
-                    <StatusBadge
-                      label={match.statusLabel}
-                      variant={matchStatusVariant(match.status)}
-                    />
-                  </td>
+        {hasRealMatches ? (
+          matchStats && matchStats.upcoming.length > 0 ? (
+            <ResponsiveTableContainer>
+              <table className="w-full min-w-[36rem] text-left text-sm">
+                <thead className="bg-surface-elevated text-xs uppercase tracking-wide text-muted">
+                  <tr>
+                    <th className="px-3 py-2 font-medium">Partido</th>
+                    <th className="px-3 py-2 font-medium">Horario</th>
+                    <th className="px-3 py-2 font-medium">Lugar</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {matchStats.upcoming.map((match) => (
+                    <tr key={match.id} className="border-t border-border">
+                      <td className="px-3 py-3 text-text-primary">
+                        <Link
+                          href={`/organizaciones/${organizationId}/torneos/${match.competitionId}/temporadas/${match.seasonId}/partidos/${match.id}`}
+                          className="underline-offset-2 hover:underline"
+                        >
+                          {match.homeName} vs {match.awayName}
+                        </Link>
+                      </td>
+                      <td className="px-3 py-3 text-text-secondary">
+                        {formatMatchDateTime(match.startsAt)}
+                      </td>
+                      <td className="px-3 py-3 text-text-secondary">
+                        {[match.venueName, match.fieldName]
+                          .filter(Boolean)
+                          .join(" · ") || "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </ResponsiveTableContainer>
+          ) : (
+            <EmptyState
+              title="Sin próximos partidos programados"
+              description="Hay fixture, pero aún no hay partidos con fecha futura."
+              action={
+                <Link
+                  href={`/organizaciones/${organizationId}/calendario`}
+                  className="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand px-4 text-sm font-semibold text-brand-foreground"
+                >
+                  Ir al calendario
+                </Link>
+              }
+            />
+          )
+        ) : (
+          <ResponsiveTableContainer>
+            <table className="w-full min-w-[36rem] text-left text-sm">
+              <thead className="bg-surface-elevated text-xs uppercase tracking-wide text-muted">
+                <tr>
+                  <th className="px-3 py-2 font-medium">Partido</th>
+                  <th className="px-3 py-2 font-medium">Horario</th>
+                  <th className="px-3 py-2 font-medium">Estado</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </ResponsiveTableContainer>
+              </thead>
+              <tbody>
+                {DEMO_UPCOMING_MATCHES.map((match) => (
+                  <tr key={match.id} className="border-t border-border">
+                    <td className="px-3 py-3 text-text-primary">
+                      {match.homeTeam} vs {match.awayTeam}
+                    </td>
+                    <td className="px-3 py-3 text-text-secondary">
+                      {match.date} · {match.time}
+                    </td>
+                    <td className="px-3 py-3">
+                      <StatusBadge
+                        label={match.statusLabel}
+                        variant={matchStatusVariant(match.status)}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </ResponsiveTableContainer>
+        )}
       </section>
+
+      {!hasRealMatches && (
+        <section aria-labelledby="stats-heading" className="mb-8">
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <SectionHeader
+              title="Datos de demostración"
+              description="Adeudos aún no son datos reales."
+            />
+            <StatusBadge label="Datos de demostración" variant="warning" />
+          </div>
+          <h2 id="stats-heading" className="sr-only">
+            Datos de demostración
+          </h2>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {DEMO_STATS.map((stat, index) => {
+              const icons = [CalendarDays, Wallet] as const;
+              return (
+                <StatCard
+                  key={stat.label}
+                  label={stat.label}
+                  value={stat.value}
+                  hint={stat.hint}
+                  icon={icons[index]}
+                />
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       <section aria-labelledby="activity-heading">
         <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -245,7 +317,9 @@ export function OrganizationDashboardDemo({
                   <p className="text-sm font-medium text-text-primary">
                     {item.title}
                   </p>
-                  <p className="mt-1 text-xs text-text-secondary">{item.detail}</p>
+                  <p className="mt-1 text-xs text-text-secondary">
+                    {item.detail}
+                  </p>
                 </div>
                 <p className="shrink-0 text-xs text-muted">{item.time}</p>
               </Card>

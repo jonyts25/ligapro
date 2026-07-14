@@ -12,6 +12,16 @@ type SeasonReadinessCardProps = {
   canManage?: boolean;
 };
 
+function badgeVariant(
+  label: SeasonDetail["readiness"]["preparationLabel"]
+): "success" | "warning" | "info" {
+  if (label === "Lista para generar fixture" || label === "Calendario listo") {
+    return "success";
+  }
+  if (label === "Programando partidos") return "info";
+  return "warning";
+}
+
 export function SeasonReadinessCard({
   organizationId,
   competitionId,
@@ -20,6 +30,7 @@ export function SeasonReadinessCard({
   canManage = false,
 }: SeasonReadinessCardProps) {
   const { readiness } = season;
+  const base = `/organizaciones/${organizationId}/torneos/${competitionId}/temporadas/${seasonId}`;
 
   const items = [
     {
@@ -49,31 +60,35 @@ export function SeasonReadinessCard({
     },
     {
       label: "Fixture generado",
-      value: "No",
-      ok: false,
+      value: readiness.fixtureGenerated
+        ? `Sí (${readiness.totalMatches})`
+        : "No",
+      ok: readiness.fixtureGenerated,
     },
     {
       label: "Partidos programados",
-      value: "0",
-      ok: false,
+      value: `${readiness.scheduledMatches}/${readiness.totalMatches || 0}`,
+      ok:
+        readiness.fixtureGenerated &&
+        readiness.pendingMatches === 0 &&
+        readiness.totalMatches > 0,
+    },
+    {
+      label: "Partidos pendientes",
+      value: String(readiness.pendingMatches),
+      ok: readiness.fixtureGenerated && readiness.pendingMatches === 0,
     },
   ];
-
-  const equiposHref = `/organizaciones/${organizationId}/torneos/${competitionId}/temporadas/${seasonId}/equipos`;
 
   return (
     <Card className="space-y-4">
       <SectionHeader
         title="Preparación de temporada"
-        description="Checklist con datos reales antes de generar fixture."
+        description="Checklist con datos reales del fixture y planteles."
       />
       <StatusBadge
         label={readiness.preparationLabel}
-        variant={
-          readiness.preparationLabel === "Lista para generar fixture"
-            ? "success"
-            : "warning"
-        }
+        variant={badgeVariant(readiness.preparationLabel)}
       />
       <ul className="space-y-3">
         {items.map((item) => (
@@ -92,12 +107,32 @@ export function SeasonReadinessCard({
           </li>
         ))}
       </ul>
-      <Link
-        href={equiposHref}
-        className="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-brand px-4 text-sm font-semibold text-brand-foreground"
-      >
-        {canManage ? "Registrar equipos" : "Ver equipos inscritos"}
-      </Link>
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <Link
+          href={`${base}/equipos`}
+          className="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl border border-border px-4 text-sm font-medium"
+        >
+          {canManage ? "Registrar equipos" : "Ver equipos"}
+        </Link>
+        {canManage &&
+          !readiness.fixtureGenerated &&
+          readiness.teamCount >= 2 && (
+            <Link
+              href={`${base}/fixture/generar`}
+              className="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl bg-brand px-4 text-sm font-semibold text-brand-foreground"
+            >
+              Generar fixture
+            </Link>
+          )}
+        {readiness.fixtureGenerated && (
+          <Link
+            href={`${base}/calendario`}
+            className="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl bg-brand px-4 text-sm font-semibold text-brand-foreground"
+          >
+            Ver calendario
+          </Link>
+        )}
+      </div>
     </Card>
   );
 }

@@ -27,6 +27,8 @@ Un field no debe considerarse disponible para reservas/partidos si:
 
 En F3 aún no existen reservas ni partidos; la regla queda documentada para F4+.
 
+**F6:** `schedule_match` exige `field.is_active` y `venue.is_active`. Canchas inactivas no aceptan nuevas programaciones; reservas históricas se conservan. Sin reglas de `field_availability_rules` para el día = no se programa (no se asume 24/7). Ver `docs/FIXTURE_AND_SCHEDULING.md`.
+
 ## Disponibilidad habitual
 
 Tabla: `field_availability_rules`.

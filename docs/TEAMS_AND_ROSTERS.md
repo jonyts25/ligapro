@@ -89,4 +89,6 @@ owner/admin: mutan. member: lee. tournament_admin: sin privilegio estructural. C
 
 ## Limitaciones / siguiente paso
 
-Sin logos, fixture, partidos, finanzas, invitaciones Auth. Siguiente: fixture (F6+).
+Equipos elegibles para fixture F6: `registered` | `confirmed` (no `withdrawn`). Ver `docs/FIXTURE_AND_SCHEDULING.md`.
+
+Siguiente: captura de resultados.

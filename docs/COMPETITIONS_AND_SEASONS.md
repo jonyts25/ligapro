@@ -90,11 +90,10 @@ No puede quedar una season con reglas parciales o defaults accidentales.
 
 - Sin DELETE físico en UI
 - Competition solo edita `name`
-- Sin equipos / fixture / partidos / páginas públicas (F5+)
 - `visibility = public` no implica acceso anon
 
-## Siguiente paso (F5) — hecho en Frontend F5
+## Fixture (F6)
 
-Inscripción de equipos (`season_teams`), planteles y capitanía. Ver `docs/TEAMS_AND_ROSTERS.md`.
+Para `format_type` round-robin / round-robin_double: generador en `.../fixture/generar`, calendario por jornadas, programación atómica. Ver `docs/FIXTURE_AND_SCHEDULING.md`.
 
-Siguiente: fixture / partidos.
+Otros formatos: generador automático no disponible (sin bracket inventado).

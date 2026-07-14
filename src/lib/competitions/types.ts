@@ -62,7 +62,9 @@ export type CompetitionListItem = CompetitionRecord & {
 export type SeasonPreparationLabel =
   | "Pendiente de equipos"
   | "Configurando planteles"
-  | "Lista para generar fixture";
+  | "Lista para generar fixture"
+  | "Programando partidos"
+  | "Calendario listo";
 
 export type SeasonDetail = SeasonRecord & {
   competitionName: string;
@@ -74,8 +76,10 @@ export type SeasonDetail = SeasonRecord & {
     teamCount: number;
     activePlayerCount: number;
     teamsWithCaptain: number;
-    fixtureGenerated: false;
-    scheduledMatches: 0;
+    fixtureGenerated: boolean;
+    totalMatches: number;
+    scheduledMatches: number;
+    pendingMatches: number;
     preparationLabel: SeasonPreparationLabel;
   };
 };
