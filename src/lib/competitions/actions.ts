@@ -48,7 +48,7 @@ function isVisibility(value: string): value is SeasonVisibility {
   return SEASON_VISIBILITY_OPTIONS.some((o) => o.value === value);
 }
 
-function revalidateCompetitionPaths(
+async function revalidateCompetitionPaths(
   organizationId: string,
   competitionId?: string,
   seasonId?: string
@@ -62,12 +62,29 @@ function revalidateCompetitionPaths(
     );
   }
   if (competitionId && seasonId) {
-    revalidatePath(
-      `/organizaciones/${organizationId}/torneos/${competitionId}/temporadas/${seasonId}`
-    );
-    revalidatePath(
-      `/organizaciones/${organizationId}/torneos/${competitionId}/temporadas/${seasonId}/editar`
-    );
+    const base = `/organizaciones/${organizationId}/torneos/${competitionId}/temporadas/${seasonId}`;
+    revalidatePath(base);
+    revalidatePath(`${base}/editar`);
+    revalidatePath(`${base}/calendario`);
+    revalidatePath(`${base}/posiciones`);
+    revalidatePath(`${base}/goleadores`);
+    revalidatePath(`${base}/disciplina`);
+
+    const supabase = await createClient();
+    const { data: season } = await supabase
+      .from("seasons")
+      .select("slug")
+      .eq("id", seasonId)
+      .eq("organization_id", organizationId)
+      .maybeSingle();
+    if (season?.slug) {
+      const publicBase = `/publico/${organizationId}/${season.slug}`;
+      revalidatePath(publicBase);
+      revalidatePath(`${publicBase}/calendario`);
+      revalidatePath(`${publicBase}/posiciones`);
+      revalidatePath(`${publicBase}/goleadores`);
+      revalidatePath(`${publicBase}/disciplina`);
+    }
   }
 }
 
@@ -108,7 +125,7 @@ export async function createCompetitionAction(
     };
   }
 
-  revalidateCompetitionPaths(organizationId, data.id);
+  await revalidateCompetitionPaths(organizationId, data.id);
   redirect(`/organizaciones/${organizationId}/torneos/${data.id}`);
 }
 
@@ -158,7 +175,7 @@ export async function updateCompetitionAction(
     };
   }
 
-  revalidateCompetitionPaths(organizationId, competitionId);
+  await revalidateCompetitionPaths(organizationId, competitionId);
   return {
     ok: true,
     message: "Torneo actualizado correctamente.",
@@ -324,7 +341,7 @@ export async function createSeasonAction(
     };
   }
 
-  revalidateCompetitionPaths(organizationId, competitionId, seasonId);
+  await revalidateCompetitionPaths(organizationId, competitionId, seasonId);
   redirect(
     `/organizaciones/${organizationId}/torneos/${competitionId}/temporadas/${seasonId}`
   );
@@ -388,7 +405,7 @@ export async function updateSeasonAction(
     };
   }
 
-  revalidateCompetitionPaths(organizationId, competitionId, seasonId);
+  await revalidateCompetitionPaths(organizationId, competitionId, seasonId);
   return {
     ok: true,
     message: "Temporada y reglas actualizadas.",

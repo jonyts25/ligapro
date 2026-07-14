@@ -18,7 +18,7 @@ import {
   type SeasonRoleValue,
 } from "@/lib/matches/types";
 
-function revalidateMatchPaths(
+async function revalidateMatchPaths(
   organizationId: string,
   competitionId: string,
   seasonId: string,
@@ -27,6 +27,9 @@ function revalidateMatchPaths(
   const base = `/organizaciones/${organizationId}/torneos/${competitionId}/temporadas/${seasonId}`;
   revalidatePath(base);
   revalidatePath(`${base}/calendario`);
+  revalidatePath(`${base}/posiciones`);
+  revalidatePath(`${base}/goleadores`);
+  revalidatePath(`${base}/disciplina`);
   revalidatePath(`${base}/oficiales`);
   revalidatePath(`/organizaciones/${organizationId}/inicio`);
   revalidatePath(`/organizaciones/${organizationId}/partidos`);
@@ -34,6 +37,22 @@ function revalidateMatchPaths(
     revalidatePath(`${base}/partidos/${matchId}`);
     revalidatePath(`${base}/partidos/${matchId}/captura`);
     revalidatePath(`${base}/partidos/${matchId}/programar`);
+  }
+
+  const supabase = await createClient();
+  const { data: season } = await supabase
+    .from("seasons")
+    .select("slug")
+    .eq("id", seasonId)
+    .eq("organization_id", organizationId)
+    .maybeSingle();
+  if (season?.slug) {
+    const publicBase = `/publico/${organizationId}/${season.slug}`;
+    revalidatePath(publicBase);
+    revalidatePath(`${publicBase}/calendario`);
+    revalidatePath(`${publicBase}/posiciones`);
+    revalidatePath(`${publicBase}/goleadores`);
+    revalidatePath(`${publicBase}/disciplina`);
   }
 }
 
@@ -96,7 +115,7 @@ export async function assignSeasonRoleAction(
     return { ok: false, message: humanError(error.message) };
   }
 
-  revalidateMatchPaths(organizationId, competitionId, seasonId);
+  await revalidateMatchPaths(organizationId, competitionId, seasonId);
   return { ok: true, message: "Rol de temporada asignado." };
 }
 
@@ -124,7 +143,7 @@ export async function removeSeasonRoleAction(
     return { ok: false, message: humanError(error.message) };
   }
 
-  revalidateMatchPaths(organizationId, competitionId, seasonId);
+  await revalidateMatchPaths(organizationId, competitionId, seasonId);
   return { ok: true, message: "Rol retirado." };
 }
 
@@ -204,7 +223,7 @@ export async function assignMatchOfficialAction(
     return { ok: false, message: humanError(error.message) };
   }
 
-  revalidateMatchPaths(organizationId, competitionId, seasonId, matchId);
+  await revalidateMatchPaths(organizationId, competitionId, seasonId, matchId);
   return { ok: true, message: "Oficial asignado." };
 }
 
@@ -233,7 +252,7 @@ export async function confirmMatchOfficialAction(
     return { ok: false, message: humanError(error.message) };
   }
 
-  revalidateMatchPaths(organizationId, competitionId, seasonId, matchId);
+  await revalidateMatchPaths(organizationId, competitionId, seasonId, matchId);
   return { ok: true, message: "Asignación confirmada." };
 }
 
@@ -279,7 +298,7 @@ export async function removeMatchOfficialAction(
     return { ok: false, message: humanError(error.message) };
   }
 
-  revalidateMatchPaths(organizationId, competitionId, seasonId, matchId);
+  await revalidateMatchPaths(organizationId, competitionId, seasonId, matchId);
   return { ok: true, message: "Oficial retirado." };
 }
 
@@ -368,7 +387,7 @@ export async function updateMatchResultAction(
     return { ok: false, message: humanError(error.message) };
   }
 
-  revalidateMatchPaths(organizationId, competitionId, seasonId, matchId);
+  await revalidateMatchPaths(organizationId, competitionId, seasonId, matchId);
   return { ok: true, message: "Marcador y estado actualizados." };
 }
 
@@ -447,6 +466,6 @@ export async function recordMatchEventAction(
     return { ok: false, message: humanError(error.message) };
   }
 
-  revalidateMatchPaths(organizationId, competitionId, seasonId, matchId);
+  await revalidateMatchPaths(organizationId, competitionId, seasonId, matchId);
   return { ok: true, message: "Evento registrado." };
 }

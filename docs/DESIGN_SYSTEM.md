@@ -161,3 +161,7 @@ Componentes en `src/components/fixtures/` reutilizan `Card`, `PageHeader`, `Stat
 ## F7 — Captura
 
 Componentes en `src/components/matches/`: captura mobile-first, timeline, disciplina solo lectura. Sin edición/borrado de eventos en UI.
+
+## F8 — Standings y público
+
+Componentes en `src/components/standings/` y `src/components/public-season/`. Tablas con scroll horizontal contenido; branding org vía `--organization-accent`; página pública sin controles admin.

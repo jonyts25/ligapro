@@ -66,4 +66,4 @@ Sin máquina formal en DB. UI limita: `scheduled` → `in_progress`/`finished`/`
 
 ## Siguiente paso
 
-Reconciliación disciplinaria / anulación segura de eventos (F8+); read models (standings, goleo). **No avanzar a F8 en este cierre.**
+Reconciliación disciplinaria / anulación segura de eventos (F9+). Standings y páginas públicas: ver `docs/STANDINGS_AND_PUBLIC_PAGES.md`.

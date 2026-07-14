@@ -1,19 +1,29 @@
 # Railway Beta Deploy Report — LigaPro
 
-**Fecha:** 2026-07-13  
-**Alcance:** Cierre Frontend F5 + despliegue beta pública en Railway  
+**Fecha:** 2026-07-13 (actualizado 2026-07-14 cierre F8)
+**Alcance original:** Cierre Frontend F5 + despliegue beta pública en Railway
+
 **Supabase:** `ligapro-dev` (`akgcamaegpboewsbbevl`) — **beta/staging**, no producción definitiva  
-**F6:** no iniciado
+
+## Estado F8 vs Railway
+
+- **F6 y F7** ya están cerrados en `main` (fixture, match operation/capture).
+- **F8** (standings, stats, `/publico/...`) está listo para commit / push.
+- **Railway todavía no contiene F8:** el servicio desplegado sigue el `origin/main` previo al push F8.
+- Tras el push F8 se requiere **rebuild/deploy** de Railway. **No se hizo deploy en este paso.**
+- Pendientes: configuración manual de Supabase Auth (Site URL / Redirect URLs); smoke browser visual completo 375px / hydration (no automatizado).
 
 ---
 
-## 1. Commits
+## 1. Commits (histórico F5 / deploy beta)
 
 | Commit | Mensaje |
 |--------|---------|
 | `9b7d5df` | `feat: frontend F5 teams enrollments and rosters` |
 | `9b982b9` | `chore: prepare LigaPro beta deployment` |
 | `b812530` | `chore: configure Railway beta healthcheck` |
+
+Nota: F6/F7 ya están en `origin/main` (`7e3ac39`, `bcd072d`). F8 queda listo para commit en este paso.
 
 ## 2. Repositorio / branch
 
@@ -138,7 +148,7 @@ PWA: manifest OK; **no** se afirma offline.
 1. Beta sobre `ligapro-dev`: datos de prueba / smoke; no tratar como prod final.
 2. Auth Site URL / Redirect URLs hosted aún requieren configuración manual.
 3. Railway environment se llama `production` aunque el producto es beta.
-4. Advisor Supabase: tablas `__mig010_test_results` / `__mig011_test_results` sin RLS (legado de tests) — fuera de alcance de este deploy; remediar aparte.
+4. Smoke browser visual completo (375px / hydration / consola) no automatizado en el cierre F8 — no afirmado como PASS.
 5. ~~Un player puede pertenecer a dos equipos de la misma season~~ → **cerrado en Migration 015** (`active`/`suspended` exclusivos por season; `inactive` libera).
 
 ## 11. Decisión player/múltiples equipos
@@ -151,7 +161,9 @@ Confirmado intacto: trabajo exclusivo en `ligapro`; Railway service `ligapro` / 
 
 ## 13. Resultado
 
-- **Dominio beta:** https://ligapro-dev.up.railway.app  
-- **GitHub `main` y Railway** alineados en el último deploy de auth/oauth.  
-- **F5 cerrado** para deploy beta.  
-- **No avanzar a F6 / fixture** hasta revisión de Migration 015.
+- **Dominio beta:** https://ligapro-dev.up.railway.app
+- **F5** cerrado para deploy beta.
+- **F6 y F7** ya cerrados en `main`.
+- **F8** listo para commit; **Railway todavía no contiene F8** — se requiere rebuild/deploy después del push.
+- Pendiente: configuración manual Supabase Auth Site URL / Redirect URLs (si aún no se realizó).
+- Pendiente: smoke browser visual completo 375px / hydration (no automatizado).

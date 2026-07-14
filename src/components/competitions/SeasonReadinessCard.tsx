@@ -132,6 +132,14 @@ export function SeasonReadinessCard({
             Ver calendario
           </Link>
         )}
+        {readiness.fixtureGenerated && (
+          <Link
+            href={`${base}/posiciones`}
+            className="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl border border-border px-4 text-sm font-medium"
+          >
+            Ver posiciones
+          </Link>
+        )}
       </div>
     </Card>
   );

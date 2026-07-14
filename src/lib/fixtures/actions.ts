@@ -18,7 +18,7 @@ import { getSeasonFixtureContext } from "@/lib/fixtures/queries";
 import type { Json } from "@/types/database";
 import { localMexicoCityToTimestamptz } from "@/lib/fixtures/timezone";
 
-function revalidateFixturePaths(
+async function revalidateFixturePaths(
   organizationId: string,
   competitionId: string,
   seasonId: string,
@@ -27,6 +27,9 @@ function revalidateFixturePaths(
   const base = `/organizaciones/${organizationId}/torneos/${competitionId}/temporadas/${seasonId}`;
   revalidatePath(base);
   revalidatePath(`${base}/calendario`);
+  revalidatePath(`${base}/posiciones`);
+  revalidatePath(`${base}/goleadores`);
+  revalidatePath(`${base}/disciplina`);
   revalidatePath(`${base}/fixture/generar`);
   revalidatePath(`/organizaciones/${organizationId}/inicio`);
   revalidatePath(`/organizaciones/${organizationId}/calendario`);
@@ -34,6 +37,22 @@ function revalidateFixturePaths(
   if (matchId) {
     revalidatePath(`${base}/partidos/${matchId}`);
     revalidatePath(`${base}/partidos/${matchId}/programar`);
+  }
+
+  const supabase = await createClient();
+  const { data: season } = await supabase
+    .from("seasons")
+    .select("slug")
+    .eq("id", seasonId)
+    .eq("organization_id", organizationId)
+    .maybeSingle();
+  if (season?.slug) {
+    const publicBase = `/publico/${organizationId}/${season.slug}`;
+    revalidatePath(publicBase);
+    revalidatePath(`${publicBase}/calendario`);
+    revalidatePath(`${publicBase}/posiciones`);
+    revalidatePath(`${publicBase}/goleadores`);
+    revalidatePath(`${publicBase}/disciplina`);
   }
 }
 
@@ -136,7 +155,7 @@ export async function createSeasonFixtureAction(
     return { ok: false, message: humanizeScheduleError(error.message) };
   }
 
-  revalidateFixturePaths(organizationId, competitionId, seasonId);
+  await revalidateFixturePaths(organizationId, competitionId, seasonId);
   redirect(
     `/organizaciones/${organizationId}/torneos/${competitionId}/temporadas/${seasonId}/calendario`
   );
@@ -200,7 +219,7 @@ export async function scheduleMatchAction(
     };
   }
 
-  revalidateFixturePaths(organizationId, competitionId, seasonId, matchId);
+  await revalidateFixturePaths(organizationId, competitionId, seasonId, matchId);
   redirect(
     `/organizaciones/${organizationId}/torneos/${competitionId}/temporadas/${seasonId}/partidos/${matchId}`
   );
@@ -227,7 +246,7 @@ export async function unscheduleMatchAction(
     return { ok: false, message: humanizeScheduleError(error.message) };
   }
 
-  revalidateFixturePaths(organizationId, competitionId, seasonId, matchId);
+  await revalidateFixturePaths(organizationId, competitionId, seasonId, matchId);
   return {
     ok: true,
     message: "El partido quedó pendiente de programación.",

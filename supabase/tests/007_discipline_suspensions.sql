@@ -625,3 +625,5 @@ $$;
 SELECT test_name, passed, details
 FROM public.__mig007_test_results
 ORDER BY test_name;
+
+DROP TABLE IF EXISTS public.__mig007_test_results;

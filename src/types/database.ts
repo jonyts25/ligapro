@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -184,6 +184,24 @@ export type Database = {
         Relationships: []
       }
       __mig017_test_results: {
+        Row: {
+          details: string | null
+          passed: boolean
+          test_name: string
+        }
+        Insert: {
+          details?: string | null
+          passed: boolean
+          test_name: string
+        }
+        Update: {
+          details?: string | null
+          passed?: boolean
+          test_name?: string
+        }
+        Relationships: []
+      }
+      __mig018_test_results: {
         Row: {
           details: string | null
           passed: boolean
@@ -1417,6 +1435,33 @@ export type Database = {
       }
     }
     Functions: {
+      __assert_season_readable: {
+        Args: { p_season_id: string }
+        Returns: string
+      }
+      __resolve_public_season: {
+        Args: { p_organization_id: string; p_season_slug: string }
+        Returns: string
+      }
+      __season_standings_core: {
+        Args: { p_season_id: string }
+        Returns: {
+          drawn: number
+          goal_difference: number
+          goals_against: number
+          goals_for: number
+          lost: number
+          played: number
+          points: number
+          position: number
+          recent_form: string
+          registration_status: string
+          season_team_id: string
+          team_id: string
+          team_name: string
+          won: number
+        }[]
+      }
       add_player_to_season_team: {
         Args: {
           p_jersey_number?: number
@@ -1499,6 +1544,116 @@ export type Database = {
           p_team_id: string
         }
         Returns: string
+      }
+      get_public_season_discipline: {
+        Args: { p_organization_id: string; p_season_slug: string }
+        Returns: {
+          is_suspended: boolean
+          matches_remaining: number
+          player_name: string
+          team_name: string
+        }[]
+      }
+      get_public_season_matches: {
+        Args: { p_organization_id: string; p_season_slug: string }
+        Returns: {
+          away_score: number
+          away_team_name: string
+          field_name: string
+          home_score: number
+          home_team_name: string
+          round_label: string
+          round_number: number
+          sequence_in_round: number
+          starts_at: string
+          status: string
+          venue_name: string
+        }[]
+      }
+      get_public_season_overview: {
+        Args: { p_organization_id: string; p_season_slug: string }
+        Returns: {
+          competition_name: string
+          ends_on: string
+          format_type: string
+          organization_brand_color: string
+          organization_logo_path: string
+          organization_name: string
+          season_name: string
+          season_slug: string
+          starts_on: string
+          visibility: string
+        }[]
+      }
+      get_public_season_scorers: {
+        Args: { p_organization_id: string; p_season_slug: string }
+        Returns: {
+          goals: number
+          player_name: string
+          position: number
+          team_name: string
+        }[]
+      }
+      get_public_season_standings: {
+        Args: { p_organization_id: string; p_season_slug: string }
+        Returns: {
+          drawn: number
+          goal_difference: number
+          goals_against: number
+          goals_for: number
+          lost: number
+          played: number
+          points: number
+          position: number
+          recent_form: string
+          registration_status: string
+          team_name: string
+          won: number
+        }[]
+      }
+      get_season_discipline_summary: {
+        Args: { p_season_id: string }
+        Returns: {
+          active_suspensions: number
+          matches_remaining: number
+          player_id: string
+          player_name: string
+          red_cards: number
+          season_team_id: string
+          suspension_status: string
+          team_name: string
+          yellow_cards: number
+        }[]
+      }
+      get_season_standings: {
+        Args: { p_season_id: string }
+        Returns: {
+          drawn: number
+          goal_difference: number
+          goals_against: number
+          goals_for: number
+          lost: number
+          played: number
+          points: number
+          position: number
+          recent_form: string
+          registration_status: string
+          season_team_id: string
+          team_id: string
+          team_name: string
+          won: number
+        }[]
+      }
+      get_season_top_scorers: {
+        Args: { p_season_id: string }
+        Returns: {
+          goals: number
+          player_id: string
+          player_name: string
+          position: number
+          season_team_id: string
+          team_name: string
+        }[]
       }
       has_role_in_org: {
         Args: { p_org_id: string; p_roles: string[] }

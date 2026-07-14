@@ -509,3 +509,5 @@ SELECT COUNT(*) FILTER (WHERE passed) AS passed,
        COUNT(*) FILTER (WHERE NOT passed) AS failed,
        COUNT(*) AS total
 FROM public.__mig017_test_results;
+
+DROP TABLE IF EXISTS public.__mig017_test_results;

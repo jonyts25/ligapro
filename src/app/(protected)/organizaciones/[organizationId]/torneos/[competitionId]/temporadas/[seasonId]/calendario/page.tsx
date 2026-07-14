@@ -7,6 +7,7 @@ import { getSeasonMatchesGroupedByRound } from "@/lib/fixtures/queries";
 import { FixtureRoundCard } from "@/components/fixtures/FixtureRoundCard";
 import { MatchdayTabs } from "@/components/fixtures/MatchdayTabs";
 import { SeasonFixtureSummary } from "@/components/fixtures/SeasonFixtureSummary";
+import { SeasonStandingsNav } from "@/components/standings/SeasonStandingsNav";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { cn } from "@/lib/utils/cn";
 
@@ -72,23 +73,22 @@ export default async function SeasonCalendarPage({
         title="Calendario"
         description={`${data.seasonName} · ${data.competitionName}`}
         actions={
-          <div className="flex flex-wrap gap-2">
+          canManage && !data.stats.fixtureGenerated ? (
             <Link
-              href={base}
-              className="inline-flex min-h-11 items-center rounded-xl border border-border px-4 text-sm font-medium"
+              href={`${base}/fixture/generar`}
+              className="inline-flex min-h-11 items-center rounded-xl bg-brand px-4 text-sm font-semibold text-brand-foreground"
             >
-              Temporada
+              Generar fixture
             </Link>
-            {canManage && !data.stats.fixtureGenerated && (
-              <Link
-                href={`${base}/fixture/generar`}
-                className="inline-flex min-h-11 items-center rounded-xl bg-brand px-4 text-sm font-semibold text-brand-foreground"
-              >
-                Generar fixture
-              </Link>
-            )}
-          </div>
+          ) : undefined
         }
+      />
+
+      <SeasonStandingsNav
+        organizationId={organizationId}
+        competitionId={competitionId}
+        seasonId={seasonId}
+        active="calendario"
       />
 
       <SeasonFixtureSummary stats={data.stats} />

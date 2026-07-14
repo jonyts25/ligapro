@@ -16,6 +16,24 @@ function validateOrganizationName(name: string): string | null {
   return null;
 }
 
+async function revalidatePublicSeasonsForOrganization(organizationId: string) {
+  const supabase = await createClient();
+  const { data: seasons } = await supabase
+    .from("seasons")
+    .select("slug")
+    .eq("organization_id", organizationId)
+    .eq("visibility", "public");
+  for (const season of seasons ?? []) {
+    if (!season.slug) continue;
+    const publicBase = `/publico/${organizationId}/${season.slug}`;
+    revalidatePath(publicBase);
+    revalidatePath(`${publicBase}/calendario`);
+    revalidatePath(`${publicBase}/posiciones`);
+    revalidatePath(`${publicBase}/goleadores`);
+    revalidatePath(`${publicBase}/disciplina`);
+  }
+}
+
 export async function createOrganizationAction(
   _prev: OrganizationActionState,
   formData: FormData
@@ -120,6 +138,7 @@ export async function updateOrganizationBrandingAction(
   revalidatePath(`/organizaciones/${organizationId}`, "layout");
   revalidatePath(`/organizaciones/${organizationId}/configuracion`);
   revalidatePath(`/organizaciones/${organizationId}/inicio`);
+  await revalidatePublicSeasonsForOrganization(organizationId);
 
   return {
     ok: true,
@@ -161,6 +180,7 @@ export async function setOrganizationLogoAction(input: {
   revalidatePath(`/organizaciones/${input.organizationId}`, "layout");
   revalidatePath(`/organizaciones/${input.organizationId}/configuracion`);
   revalidatePath(`/organizaciones/${input.organizationId}/inicio`);
+  await revalidatePublicSeasonsForOrganization(input.organizationId);
 
   return { ok: true, message: null, previousPath };
 }

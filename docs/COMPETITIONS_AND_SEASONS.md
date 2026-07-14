@@ -31,7 +31,9 @@ Sin descripción, sin `is_active`, sin tipo/formato a nivel competence.
 `competition_id`, `organization_id`, `name`, `slug` (único por org), `format_type`, `visibility`, `starts_on`, `ends_on`
 
 - `format_type`: `round_robin` | `round_robin_double` | `groups_knockout` | `knockout`
-- `visibility`: `draft` | `private` | `unlisted` | `public` | `archived` (etiqueta de estado; **no** abre acceso público todavía)
+- `visibility`: `draft` | `private` | `unlisted` | `public` | `archived`
+- Acceso anon solo vía RPCs públicas F8 cuando `visibility = public` (ver `docs/STANDINGS_AND_PUBLIC_PAGES.md`)
+- Members leen seasons de su org sin filtrar por visibility
 - CHECK: `ends_on >= starts_on` cuando ambas fechas existen
 
 ### `season_rules` (1:1)
@@ -90,7 +92,7 @@ No puede quedar una season con reglas parciales o defaults accidentales.
 
 - Sin DELETE físico en UI
 - Competition solo edita `name`
-- `visibility = public` no implica acceso anon
+- `visibility = public` habilita RPCs públicas F8 (`get_public_season_*`); no otorga SELECT anon a tablas base
 
 ## Fixture (F6) y captura (F7)
 

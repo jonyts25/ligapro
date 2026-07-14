@@ -50,7 +50,7 @@ function parseOptionalJersey(
   return { value };
 }
 
-function revalidateTeamPaths(
+async function revalidateTeamPaths(
   organizationId: string,
   opts?: {
     teamId?: string;
@@ -72,8 +72,61 @@ function revalidateTeamPaths(
     revalidatePath(base);
     revalidatePath(`${base}/equipos`);
     revalidatePath(`${base}/equipos/inscribir`);
+    revalidatePath(`${base}/calendario`);
+    revalidatePath(`${base}/posiciones`);
+    revalidatePath(`${base}/goleadores`);
+    revalidatePath(`${base}/disciplina`);
     if (opts.seasonTeamId) {
       revalidatePath(`${base}/equipos/${opts.seasonTeamId}`);
+    }
+
+    const supabase = await createClient();
+    const { data: season } = await supabase
+      .from("seasons")
+      .select("slug")
+      .eq("id", opts.seasonId)
+      .eq("organization_id", organizationId)
+      .maybeSingle();
+    if (season?.slug) {
+      const publicBase = `/publico/${organizationId}/${season.slug}`;
+      revalidatePath(publicBase);
+      revalidatePath(`${publicBase}/calendario`);
+      revalidatePath(`${publicBase}/posiciones`);
+      revalidatePath(`${publicBase}/goleadores`);
+      revalidatePath(`${publicBase}/disciplina`);
+    }
+  }
+}
+
+async function revalidateStandingsSurfacesForTeam(
+  organizationId: string,
+  teamId: string
+) {
+  const supabase = await createClient();
+  const { data: rows } = await supabase
+    .from("season_teams")
+    .select("season_id, seasons!inner(id, slug, competition_id, organization_id)")
+    .eq("team_id", teamId)
+    .eq("organization_id", organizationId);
+
+  for (const row of rows ?? []) {
+    const season = row.seasons as unknown as {
+      id: string;
+      slug: string;
+      competition_id: string;
+      organization_id: string;
+    } | null;
+    if (!season?.competition_id || !season?.id) continue;
+    const base = `/organizaciones/${organizationId}/torneos/${season.competition_id}/temporadas/${season.id}`;
+    revalidatePath(`${base}/posiciones`);
+    revalidatePath(`${base}/calendario`);
+    revalidatePath(`${base}/goleadores`);
+    if (season.slug) {
+      const publicBase = `/publico/${organizationId}/${season.slug}`;
+      revalidatePath(publicBase);
+      revalidatePath(`${publicBase}/posiciones`);
+      revalidatePath(`${publicBase}/calendario`);
+      revalidatePath(`${publicBase}/goleadores`);
     }
   }
 }
@@ -112,7 +165,7 @@ export async function createTeamAction(
     };
   }
 
-  revalidateTeamPaths(organizationId, { teamId: data.id });
+  await revalidateTeamPaths(organizationId, { teamId: data.id });
   redirect(`/organizaciones/${organizationId}/equipos/${data.id}`);
 }
 
@@ -162,7 +215,8 @@ export async function updateTeamAction(
     };
   }
 
-  revalidateTeamPaths(organizationId, { teamId });
+  await revalidateTeamPaths(organizationId, { teamId });
+  await revalidateStandingsSurfacesForTeam(organizationId, teamId);
   return {
     ok: true,
     message: "Equipo actualizado correctamente.",
@@ -248,7 +302,7 @@ export async function enrollTeamAction(
     };
   }
 
-  revalidateTeamPaths(organizationId, {
+  await revalidateTeamPaths(organizationId, {
     teamId,
     competitionId,
     seasonId,
@@ -312,7 +366,7 @@ export async function createPlayerAndAddAction(
     };
   }
 
-  revalidateTeamPaths(organizationId, {
+  await revalidateTeamPaths(organizationId, {
     competitionId,
     seasonId,
     seasonTeamId,
@@ -414,7 +468,7 @@ export async function addExistingPlayerAction(
     };
   }
 
-  revalidateTeamPaths(organizationId, {
+  await revalidateTeamPaths(organizationId, {
     competitionId,
     seasonId,
     seasonTeamId,
@@ -499,7 +553,7 @@ export async function updateRosterEntryAction(
     };
   }
 
-  revalidateTeamPaths(organizationId, {
+  await revalidateTeamPaths(organizationId, {
     competitionId,
     seasonId,
     seasonTeamId,
@@ -542,7 +596,7 @@ export async function setRosterStatusAction(
     };
   }
 
-  revalidateTeamPaths(organizationId, {
+  await revalidateTeamPaths(organizationId, {
     competitionId,
     seasonId,
     seasonTeamId,
@@ -585,7 +639,7 @@ export async function deactivateRosterPlayerAction(
     };
   }
 
-  revalidateTeamPaths(organizationId, {
+  await revalidateTeamPaths(organizationId, {
     competitionId,
     seasonId,
     seasonTeamId,
@@ -627,7 +681,7 @@ export async function setCaptainAction(
     };
   }
 
-  revalidateTeamPaths(organizationId, {
+  await revalidateTeamPaths(organizationId, {
     competitionId,
     seasonId,
     seasonTeamId,

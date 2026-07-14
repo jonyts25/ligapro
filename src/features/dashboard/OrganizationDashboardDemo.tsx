@@ -55,6 +55,23 @@ type OrganizationDashboardDemoProps = {
     status: string;
     updatedAt: string;
   }>;
+  standingsLeader?: {
+    seasonId: string;
+    competitionId: string;
+    seasonName: string;
+    competitionName: string;
+    teamName: string;
+    points: number;
+    played: number;
+  } | null;
+  publicSeasonsCount?: number;
+  publicSeasons?: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    competitionId: string;
+    competitionName: string;
+  }>;
   canManage?: boolean;
 };
 
@@ -64,6 +81,9 @@ export function OrganizationDashboardDemo({
   stats,
   matchStats,
   recentResults = [],
+  standingsLeader = null,
+  publicSeasonsCount = 0,
+  publicSeasons = [],
   canManage = false,
 }: OrganizationDashboardDemoProps) {
   const hasRealMatches = (matchStats?.totalMatches ?? 0) > 0;
@@ -326,6 +346,94 @@ export function OrganizationDashboardDemo({
               </tbody>
             </table>
           </ResponsiveTableContainer>
+        </section>
+      )}
+
+      {(standingsLeader || publicSeasonsCount > 0 || canManage) && (
+        <section aria-labelledby="standings-public-heading" className="mb-8">
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <SectionHeader
+              title="Tabla y página pública"
+              description="Líder de la temporada reciente y temporadas visibles al público."
+            />
+            <StatusBadge label="Datos reales" variant="success" />
+          </div>
+          <h2 id="standings-public-heading" className="sr-only">
+            Tabla y página pública
+          </h2>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {standingsLeader ? (
+              <Card className="space-y-2">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted">
+                  Líder · {standingsLeader.seasonName}
+                </p>
+                <p className="text-lg font-semibold text-text-primary">
+                  {standingsLeader.teamName}
+                </p>
+                <p className="text-sm text-text-secondary">
+                  {standingsLeader.points} pts · {standingsLeader.played} PJ ·{" "}
+                  {standingsLeader.competitionName}
+                </p>
+                <Link
+                  href={`/organizaciones/${organizationId}/torneos/${standingsLeader.competitionId}/temporadas/${standingsLeader.seasonId}/posiciones`}
+                  className="inline-flex min-h-11 items-center text-sm font-medium text-organization-accent underline-offset-2 hover:underline"
+                >
+                  Ver posiciones
+                </Link>
+              </Card>
+            ) : (
+              <Card className="space-y-2">
+                <p className="text-sm font-medium text-text-primary">
+                  Sin líder aún
+                </p>
+                <p className="text-sm text-text-secondary">
+                  La tabla aparece cuando hay partidos finalizados con marcador.
+                </p>
+              </Card>
+            )}
+
+            <Card className="space-y-3">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted">
+                Temporadas públicas
+              </p>
+              <p className="text-2xl font-semibold text-text-primary">
+                {publicSeasonsCount}
+              </p>
+              {publicSeasons.length > 0 ? (
+                <ul className="space-y-2">
+                  {publicSeasons.map((season) => (
+                    <li key={season.id}>
+                      <Link
+                        href={`/publico/${organizationId}/${season.slug}`}
+                        className="text-sm font-medium text-organization-accent underline-offset-2 hover:underline"
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {season.name}
+                      </Link>
+                      <span className="ml-2 text-xs text-muted">
+                        {season.competitionName}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-text-secondary">
+                  {canManage
+                    ? "Marca una temporada como pública para compartir el enlace."
+                    : "Aún no hay temporadas públicas."}
+                </p>
+              )}
+              {canManage && publicSeasonsCount === 0 && (
+                <Link
+                  href={`/organizaciones/${organizationId}/torneos`}
+                  className="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand px-4 text-sm font-semibold text-brand-foreground"
+                >
+                  Ir a torneos
+                </Link>
+              )}
+            </Card>
+          </div>
         </section>
       )}
 

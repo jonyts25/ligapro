@@ -7,6 +7,11 @@ import { getOrganizationCompetitionStats } from "@/lib/competitions/queries";
 import { getOrganizationTeamStats } from "@/lib/teams/queries";
 import { getOrganizationMatchStats } from "@/lib/fixtures/queries";
 import { getRecentMatchResults } from "@/lib/matches/queries";
+import {
+  getDashboardStandingsLeader,
+  getPublicSeasonsCount,
+  getRecentPublicSeasons,
+} from "@/lib/standings/queries";
 import { OrganizationDashboardDemo } from "@/features/dashboard/OrganizationDashboardDemo";
 import { notFound } from "next/navigation";
 
@@ -26,14 +31,25 @@ export default async function OrganizationHomePage({ params }: PageProps) {
   if (!organization) notFound();
 
   const branding = mapOrganizationBranding(organization);
-  const [venueStats, competitionStats, teamStats, matchStats, recentResults] =
-    await Promise.all([
-      getOrganizationVenueStats(organizationId),
-      getOrganizationCompetitionStats(organizationId),
-      getOrganizationTeamStats(organizationId),
-      getOrganizationMatchStats(organizationId),
-      getRecentMatchResults(organizationId, 5),
-    ]);
+  const [
+    venueStats,
+    competitionStats,
+    teamStats,
+    matchStats,
+    recentResults,
+    standingsLeader,
+    publicSeasonsCount,
+    publicSeasons,
+  ] = await Promise.all([
+    getOrganizationVenueStats(organizationId),
+    getOrganizationCompetitionStats(organizationId),
+    getOrganizationTeamStats(organizationId),
+    getOrganizationMatchStats(organizationId),
+    getRecentMatchResults(organizationId, 5),
+    getDashboardStandingsLeader(organizationId),
+    getPublicSeasonsCount(organizationId),
+    getRecentPublicSeasons(organizationId, 3),
+  ]);
 
   const canManage =
     membership.role === "organization_owner" ||
@@ -46,6 +62,9 @@ export default async function OrganizationHomePage({ params }: PageProps) {
       canManage={canManage}
       matchStats={matchStats}
       recentResults={recentResults}
+      standingsLeader={standingsLeader}
+      publicSeasonsCount={publicSeasonsCount}
+      publicSeasons={publicSeasons}
       stats={{
         ...venueStats,
         competitions: competitionStats.competitions,

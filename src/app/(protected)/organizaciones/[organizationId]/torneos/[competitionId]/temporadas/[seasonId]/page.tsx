@@ -13,6 +13,7 @@ import { StatusBadge } from "@/components/ui/StatusBadge";
 import { Card } from "@/components/ui/Card";
 import { SeasonRulesSummary } from "@/components/competitions/SeasonRulesSummary";
 import { SeasonReadinessCard } from "@/components/competitions/SeasonReadinessCard";
+import { SeasonStandingsNav } from "@/components/standings/SeasonStandingsNav";
 
 type PageProps = {
   params: Promise<{
@@ -39,6 +40,9 @@ export default async function SeasonDetailPage({ params }: PageProps) {
     seasonId
   );
   if (!season) notFound();
+
+  const publicHref = `/publico/${organizationId}/${season.slug}`;
+  const isPublic = season.visibility === "public";
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -73,6 +77,13 @@ export default async function SeasonDetailPage({ params }: PageProps) {
         }
       />
 
+      <SeasonStandingsNav
+        organizationId={organizationId}
+        competitionId={competitionId}
+        seasonId={seasonId}
+        active="temporada"
+      />
+
       <Card className="flex flex-wrap items-center gap-3">
         <StatusBadge
           label={visibilityLabel(season.visibility)}
@@ -90,6 +101,44 @@ export default async function SeasonDetailPage({ params }: PageProps) {
           <StatusBadge label="Pendiente de equipos" variant="warning" />
         )}
       </Card>
+
+      {canManage && (
+        <Card className="space-y-3">
+          <h2 className="text-sm font-semibold text-text-primary">
+            Página pública
+          </h2>
+          {isPublic ? (
+            <>
+              <p className="text-sm text-text-secondary">
+                Esta temporada es pública. Cualquiera con el enlace puede
+                consultar calendario, posiciones, goleadores y disciplina.
+              </p>
+              <Link
+                href={publicHref}
+                className="inline-flex min-h-11 items-center rounded-xl border border-border px-4 text-sm font-medium text-organization-accent"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Abrir página pública
+              </Link>
+            </>
+          ) : (
+            <>
+              <p className="text-sm text-text-secondary">
+                La página pública solo está disponible cuando la visibilidad es
+                «Pública». Cambia la visibilidad en Editar temporada; no se
+                modifica sola.
+              </p>
+              <Link
+                href={`/organizaciones/${organizationId}/torneos/${competitionId}/temporadas/${seasonId}/editar`}
+                className="inline-flex min-h-11 items-center rounded-xl border border-border px-4 text-sm font-medium"
+              >
+                Cambiar visibilidad
+              </Link>
+            </>
+          )}
+        </Card>
+      )}
 
       <SeasonRulesSummary rules={season.rules} />
       <SeasonReadinessCard
