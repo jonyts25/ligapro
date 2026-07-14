@@ -10,19 +10,39 @@ type MatchCardProps = {
   match: MatchListItem;
   href: string;
   scheduleHref?: string;
+  captureHref?: string;
   canManage?: boolean;
+  canCapture?: boolean;
 };
 
 export function MatchCard({
   match,
   href,
   scheduleHref,
+  captureHref,
   canManage = false,
+  canCapture = false,
 }: MatchCardProps) {
   const inactiveInfra =
     match.isProgrammed &&
     (match.schedule.fieldIsActive === false ||
       match.schedule.venueIsActive === false);
+
+  const scoreText =
+    match.homeScore != null && match.awayScore != null
+      ? `${match.homeScore}–${match.awayScore}`
+      : null;
+
+  const winnerHint =
+    match.status === "finished" || match.status === "walkover"
+      ? scoreText
+        ? match.homeScore! > match.awayScore!
+          ? `Gana ${match.homeName}`
+          : match.awayScore! > match.homeScore!
+            ? `Gana ${match.awayName}`
+            : "Empate"
+        : null
+      : null;
 
   return (
     <Card className="space-y-3">
@@ -30,7 +50,10 @@ export function MatchCard({
         <div>
           <p className="text-sm font-semibold text-text-primary">
             {match.homeName}{" "}
-            <span className="font-normal text-muted">vs</span> {match.awayName}
+            <span className="font-normal text-muted">
+              {scoreText ?? "vs"}
+            </span>{" "}
+            {match.awayName}
           </p>
           <p className="mt-1 text-xs text-text-secondary">
             {match.roundLabel ??
@@ -39,6 +62,9 @@ export function MatchCard({
                 : "Sin jornada")}
             {match.legNumber ? ` · Vuelta ${match.legNumber}` : ""}
           </p>
+          {winnerHint && (
+            <p className="mt-1 text-xs font-medium text-success">{winnerHint}</p>
+          )}
         </div>
         <MatchStatusBadge match={match} />
       </div>
@@ -54,8 +80,7 @@ export function MatchCard({
         )}
         {inactiveInfra && (
           <p className="text-warning">
-            Advertencia: la sede o cancha ya no está activa. La programación
-            histórica se conserva.
+            Advertencia: la sede o cancha ya no está activa.
           </p>
         )}
       </div>
@@ -65,12 +90,20 @@ export function MatchCard({
           href={href}
           className="inline-flex min-h-11 items-center rounded-xl border border-border px-4 text-sm font-medium"
         >
-          Ver detalle
+          Ver partido
         </Link>
+        {canCapture && captureHref && (
+          <Link
+            href={captureHref}
+            className="inline-flex min-h-11 items-center rounded-xl bg-brand px-4 text-sm font-semibold text-brand-foreground"
+          >
+            Capturar
+          </Link>
+        )}
         {canManage && scheduleHref && match.status === "scheduled" && (
           <Link
             href={scheduleHref}
-            className="inline-flex min-h-11 items-center rounded-xl bg-brand px-4 text-sm font-semibold text-brand-foreground"
+            className="inline-flex min-h-11 items-center rounded-xl border border-border px-4 text-sm font-medium"
           >
             {match.isProgrammed ? "Reprogramar" : "Programar"}
           </Link>

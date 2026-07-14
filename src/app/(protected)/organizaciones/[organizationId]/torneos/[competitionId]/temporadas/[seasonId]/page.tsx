@@ -55,6 +55,14 @@ export default async function SeasonDetailPage({ params }: PageProps) {
             </Link>
             {canManage && (
               <Link
+                href={`/organizaciones/${organizationId}/torneos/${competitionId}/temporadas/${seasonId}/oficiales`}
+                className="inline-flex min-h-11 items-center rounded-xl border border-border px-4 text-sm font-medium text-text-secondary"
+              >
+                Oficiales
+              </Link>
+            )}
+            {canManage && (
+              <Link
                 href={`/organizaciones/${organizationId}/torneos/${competitionId}/temporadas/${seasonId}/editar`}
                 className="inline-flex min-h-11 items-center rounded-xl bg-brand px-4 text-sm font-semibold text-brand-foreground"
               >

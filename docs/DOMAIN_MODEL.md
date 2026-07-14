@@ -4,7 +4,7 @@
 
 **Diseño v0 congelado** + onboarding/branding (011) + sedes (012 / F3) + torneos (F4 / 013) + equipos/planteles (Frontend F5 / Migration 014–015) + fixture/programación (Frontend F6 / Migration 016).
 
-Schema SQL: Migrations 001–016 aplicadas en `ligapro-dev`. Pendiente: captura de resultados (UI).
+Schema SQL: Migrations 001–016 aplicadas en `ligapro-dev`. Captura F7 reutiliza 006–008 (sin Migration 017). Pendiente: corrección segura de eventos / standings UI.
 
 ## Entidades aprobadas (22)
 

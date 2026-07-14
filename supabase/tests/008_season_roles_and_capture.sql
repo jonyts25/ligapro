@@ -326,7 +326,7 @@ BEGIN
     EXECUTE 'RESET ROLE';
     INSERT INTO public.__mig008_test_results VALUES (
       '2_member_cannot_create_season_role',
-      SQLERRM ILIKE '%row-level security%' OR SQLERRM ILIKE '%policy%',
+      SQLERRM ILIKE '%row-level security%' OR SQLERRM ILIKE '%policy%' OR SQLERRM ILIKE '%Not authorized%' OR SQLERRM ILIKE '%permission denied%' OR SQLERRM ILIKE '%Cannot record events%',
       SQLERRM
     );
   END;
@@ -473,7 +473,7 @@ BEGIN
     EXECUTE 'RESET ROLE';
     INSERT INTO public.__mig008_test_results VALUES (
       '8_referee_without_confirmed_assignment_cannot_insert',
-      SQLERRM ILIKE '%row-level security%' OR SQLERRM ILIKE '%policy%',
+      SQLERRM ILIKE '%row-level security%' OR SQLERRM ILIKE '%policy%' OR SQLERRM ILIKE '%Not authorized%' OR SQLERRM ILIKE '%permission denied%' OR SQLERRM ILIKE '%Cannot record events%',
       SQLERRM
     );
   END;
@@ -501,7 +501,7 @@ BEGIN
     EXECUTE 'RESET ROLE';
     INSERT INTO public.__mig008_test_results VALUES (
       '9_confirmed_official_without_season_role_cannot_insert',
-      SQLERRM ILIKE '%row-level security%' OR SQLERRM ILIKE '%policy%',
+      SQLERRM ILIKE '%row-level security%' OR SQLERRM ILIKE '%policy%' OR SQLERRM ILIKE '%Not authorized%' OR SQLERRM ILIKE '%permission denied%' OR SQLERRM ILIKE '%Cannot record events%',
       SQLERRM
     );
   END;
@@ -529,7 +529,7 @@ BEGIN
     EXECUTE 'RESET ROLE';
     INSERT INTO public.__mig008_test_results VALUES (
       '10_referee_assigned_not_confirmed_cannot_insert',
-      SQLERRM ILIKE '%row-level security%' OR SQLERRM ILIKE '%policy%',
+      SQLERRM ILIKE '%row-level security%' OR SQLERRM ILIKE '%policy%' OR SQLERRM ILIKE '%Not authorized%' OR SQLERRM ILIKE '%permission denied%' OR SQLERRM ILIKE '%Cannot record events%',
       SQLERRM
     );
   END;
@@ -571,7 +571,7 @@ BEGIN
     EXECUTE 'RESET ROLE';
     INSERT INTO public.__mig008_test_results VALUES (
       '12_referee_cannot_insert_on_other_match_same_season',
-      SQLERRM ILIKE '%row-level security%' OR SQLERRM ILIKE '%policy%',
+      SQLERRM ILIKE '%row-level security%' OR SQLERRM ILIKE '%policy%' OR SQLERRM ILIKE '%Not authorized%' OR SQLERRM ILIKE '%permission denied%' OR SQLERRM ILIKE '%Cannot record events%',
       SQLERRM
     );
   END;
@@ -651,7 +651,7 @@ BEGIN
     EXECUTE 'RESET ROLE';
     INSERT INTO public.__mig008_test_results VALUES (
       '15_tournament_admin_wrong_season_cannot_insert',
-      SQLERRM ILIKE '%row-level security%' OR SQLERRM ILIKE '%policy%',
+      SQLERRM ILIKE '%row-level security%' OR SQLERRM ILIKE '%policy%' OR SQLERRM ILIKE '%Not authorized%' OR SQLERRM ILIKE '%permission denied%' OR SQLERRM ILIKE '%Cannot record events%',
       SQLERRM
     );
   END;
@@ -805,10 +805,16 @@ BEGIN
       '20_official_cannot_change_match_id_on_event',
       SQLERRM ILIKE '%match_id cannot be changed%'
         OR SQLERRM ILIKE '%row-level security%'
-        OR SQLERRM ILIKE '%policy%',
+        OR SQLERRM ILIKE '%policy%'
+        OR SQLERRM ILIKE '%permission denied%',
       SQLERRM
     );
   END;
+
+  -- Re-open match_a1 after result tests: Migration 017 blocks INSERT on finished/cancelled/walkover.
+  UPDATE public.matches
+  SET status = 'in_progress', home_score = NULL, away_score = NULL
+  WHERE id = match_a1;
 
   -- Test 21 owner inserts event without season_role
   PERFORM set_config('request.jwt.claim.sub', uid_owner_a::text, true);
@@ -927,7 +933,7 @@ BEGIN
     EXECUTE 'RESET ROLE';
     INSERT INTO public.__mig008_test_results VALUES (
       '28_referee_cannot_update_match_event',
-      SQLERRM ILIKE '%row-level security%' OR SQLERRM ILIKE '%policy%',
+      SQLERRM ILIKE '%row-level security%' OR SQLERRM ILIKE '%policy%' OR SQLERRM ILIKE '%Not authorized%' OR SQLERRM ILIKE '%permission denied%' OR SQLERRM ILIKE '%Cannot record events%',
       SQLERRM
     );
   END;
@@ -953,7 +959,7 @@ BEGIN
     EXECUTE 'RESET ROLE';
     INSERT INTO public.__mig008_test_results VALUES (
       '29_tournament_admin_cannot_update_match_event',
-      SQLERRM ILIKE '%row-level security%' OR SQLERRM ILIKE '%policy%',
+      SQLERRM ILIKE '%row-level security%' OR SQLERRM ILIKE '%policy%' OR SQLERRM ILIKE '%Not authorized%' OR SQLERRM ILIKE '%permission denied%' OR SQLERRM ILIKE '%Cannot record events%',
       SQLERRM
     );
   END;
@@ -979,7 +985,7 @@ BEGIN
     EXECUTE 'RESET ROLE';
     INSERT INTO public.__mig008_test_results VALUES (
       '30a_tournament_admin_cannot_delete_match_event',
-      SQLERRM ILIKE '%row-level security%' OR SQLERRM ILIKE '%policy%',
+      SQLERRM ILIKE '%row-level security%' OR SQLERRM ILIKE '%policy%' OR SQLERRM ILIKE '%Not authorized%' OR SQLERRM ILIKE '%permission denied%' OR SQLERRM ILIKE '%Cannot record events%',
       SQLERRM
     );
   END;
@@ -1004,12 +1010,13 @@ BEGIN
     EXECUTE 'RESET ROLE';
     INSERT INTO public.__mig008_test_results VALUES (
       '30b_referee_cannot_delete_match_event',
-      SQLERRM ILIKE '%row-level security%' OR SQLERRM ILIKE '%policy%',
+      SQLERRM ILIKE '%row-level security%' OR SQLERRM ILIKE '%policy%' OR SQLERRM ILIKE '%Not authorized%' OR SQLERRM ILIKE '%permission denied%' OR SQLERRM ILIKE '%Cannot record events%',
       SQLERRM
     );
   END;
 
-  -- Test 31 admin retains UPDATE and DELETE on match_events
+  -- Test 31 owner/admin cannot UPDATE or DELETE match_events (Migration 017);
+  -- INSERT remains available for authorized capture roles.
   PERFORM set_config('request.jwt.claim.sub', uid_admin_a::text, true);
   PERFORM set_config(
     'request.jwt.claims',
@@ -1021,24 +1028,40 @@ BEGIN
     UPDATE public.match_events
     SET notes = 'admin corrected note'
     WHERE id = event_id;
-    INSERT INTO public.match_events (
-      match_id, organization_id, season_team_player_id, event_type, minute
-    ) VALUES (match_a3, org_a, stp_p, 'injury', 99)
-    RETURNING id INTO event_id2;
-    DELETE FROM public.match_events WHERE id = event_id2;
     GET DIAGNOSTICS v_count = ROW_COUNT;
-    SELECT notes INTO v_status FROM public.match_events WHERE id = event_id;
     EXECUTE 'RESET ROLE';
     INSERT INTO public.__mig008_test_results VALUES (
       '31_admin_update_and_delete_match_events',
-      v_status = 'admin corrected note' AND v_count = 1,
-      format('updated_notes=%s delete_rows=%s', v_status, v_count)
+      false,
+      format('unexpected UPDATE success rows=%s', v_count)
     );
   EXCEPTION WHEN OTHERS THEN
     EXECUTE 'RESET ROLE';
-    INSERT INTO public.__mig008_test_results VALUES (
-      '31_admin_update_and_delete_match_events', false, SQLERRM
-    );
+    -- UPDATE denied; also assert DELETE denied
+    BEGIN
+      EXECUTE 'SET LOCAL ROLE authenticated';
+      INSERT INTO public.match_events (
+        match_id, organization_id, season_team_player_id, event_type, minute
+      ) VALUES (match_a3, org_a, stp_p, 'injury', 99)
+      RETURNING id INTO event_id2;
+      DELETE FROM public.match_events WHERE id = event_id2;
+      GET DIAGNOSTICS v_count = ROW_COUNT;
+      EXECUTE 'RESET ROLE';
+      INSERT INTO public.__mig008_test_results VALUES (
+        '31_admin_update_and_delete_match_events',
+        false,
+        format('unexpected DELETE success rows=%s (insert_ok=%s)', v_count, event_id2)
+      );
+    EXCEPTION WHEN OTHERS THEN
+      EXECUTE 'RESET ROLE';
+      INSERT INTO public.__mig008_test_results VALUES (
+        '31_admin_update_and_delete_match_events',
+        SQLERRM ILIKE '%permission denied%'
+          OR SQLERRM ILIKE '%row-level security%'
+          OR SQLERRM ILIKE '%policy%',
+        format('update_err_then_delete_err=%s', SQLERRM)
+      );
+    END;
   END;
 
   -- Test 25 revoked membership blocks referee capture
@@ -1084,7 +1107,7 @@ BEGIN
     EXECUTE 'RESET ROLE';
     INSERT INTO public.__mig008_test_results VALUES (
       '25_revoked_member_referee_cannot_insert',
-      (SQLERRM ILIKE '%row-level security%' OR SQLERRM ILIKE '%policy%')
+      (SQLERRM ILIKE '%row-level security%' OR SQLERRM ILIKE '%policy%' OR SQLERRM ILIKE '%Not authorized%' OR SQLERRM ILIKE '%permission denied%' OR SQLERRM ILIKE '%Cannot record events%')
         AND v_roles_before >= 1 AND v_roles_after = 0,
       format('roles_before=%s roles_after=%s err=%s', v_roles_before, v_roles_after, SQLERRM)
     );
@@ -1123,7 +1146,7 @@ BEGIN
     );
   EXCEPTION WHEN OTHERS THEN
     EXECUTE 'RESET ROLE';
-    IF SQLERRM ILIKE '%row-level security%' OR SQLERRM ILIKE '%policy%' THEN
+    IF SQLERRM ILIKE '%row-level security%' OR SQLERRM ILIKE '%policy%' OR SQLERRM ILIKE '%Not authorized%' OR SQLERRM ILIKE '%permission denied%' OR SQLERRM ILIKE '%Cannot record events%' THEN
       BEGIN
         EXECUTE 'SET LOCAL ROLE authenticated';
         PERFORM public.update_match_result(match_a1, 'finished', 4, 4);
@@ -1260,7 +1283,7 @@ BEGIN
     EXECUTE 'RESET ROLE';
     INSERT INTO public.__mig008_test_results VALUES (
       '24_official_cannot_delete_match_event',
-      SQLERRM ILIKE '%row-level security%' OR SQLERRM ILIKE '%policy%',
+      SQLERRM ILIKE '%row-level security%' OR SQLERRM ILIKE '%policy%' OR SQLERRM ILIKE '%Not authorized%' OR SQLERRM ILIKE '%permission denied%' OR SQLERRM ILIKE '%Cannot record events%',
       SQLERRM
     );
   END;

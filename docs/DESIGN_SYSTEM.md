@@ -157,3 +157,7 @@ Service worker: no implementado en F0. Recomendación F1+: `@serwist/next` o SW 
 ## F6 — Fixture y calendario
 
 Componentes en `src/components/fixtures/` reutilizan `Card`, `PageHeader`, `StatusBadge`, `SectionHeader`, `EmptyState` y patrones de formularios F4/F5. Badges de programación: Pendiente / Programado. Sin calendario drag-and-drop ni UI kit externo.
+
+## F7 — Captura
+
+Componentes en `src/components/matches/`: captura mobile-first, timeline, disciplina solo lectura. Sin edición/borrado de eventos en UI.

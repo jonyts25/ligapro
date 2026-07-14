@@ -44,6 +44,17 @@ type OrganizationDashboardDemoProps = {
     seasonEnrollments: number;
   };
   matchStats?: OrganizationMatchStats;
+  recentResults?: Array<{
+    id: string;
+    seasonId: string;
+    competitionId: string;
+    homeName: string;
+    awayName: string;
+    homeScore: number | null;
+    awayScore: number | null;
+    status: string;
+    updatedAt: string;
+  }>;
   canManage?: boolean;
 };
 
@@ -52,6 +63,7 @@ export function OrganizationDashboardDemo({
   organizationId,
   stats,
   matchStats,
+  recentResults = [],
   canManage = false,
 }: OrganizationDashboardDemoProps) {
   const hasRealMatches = (matchStats?.totalMatches ?? 0) > 0;
@@ -115,7 +127,7 @@ export function OrganizationDashboardDemo({
           <StatCard
             label="Partidos"
             value={String(matchStats?.totalMatches ?? 0)}
-            hint={`${matchStats?.scheduledMatches ?? 0} programados`}
+            hint={`${matchStats?.scheduledMatches ?? 0} programados · ${Math.max(0, (matchStats?.totalMatches ?? 0) - (matchStats?.scheduledMatches ?? 0))} pendientes de horario`}
             icon={CalendarDays}
           />
         </div>
@@ -268,6 +280,54 @@ export function OrganizationDashboardDemo({
           </ResponsiveTableContainer>
         )}
       </section>
+
+      {hasRealMatches && recentResults.length > 0 && (
+        <section aria-labelledby="results-heading" className="mb-8">
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <SectionHeader
+              title="Resultados recientes"
+              description="Partidos finalizados con marcador oficial."
+            />
+            <StatusBadge label="Datos reales" variant="success" />
+          </div>
+          <h2 id="results-heading" className="sr-only">
+            Resultados recientes
+          </h2>
+          <ResponsiveTableContainer>
+            <table className="w-full min-w-[36rem] text-left text-sm">
+              <thead className="bg-surface-elevated text-xs uppercase tracking-wide text-muted">
+                <tr>
+                  <th className="px-3 py-2 font-medium">Partido</th>
+                  <th className="px-3 py-2 font-medium">Marcador</th>
+                  <th className="px-3 py-2 font-medium">Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentResults.map((match) => (
+                  <tr key={match.id} className="border-t border-border">
+                    <td className="px-3 py-3 text-text-primary">
+                      <Link
+                        href={`/organizaciones/${organizationId}/torneos/${match.competitionId}/temporadas/${match.seasonId}/partidos/${match.id}`}
+                        className="underline-offset-2 hover:underline"
+                      >
+                        {match.homeName} vs {match.awayName}
+                      </Link>
+                    </td>
+                    <td className="px-3 py-3 text-text-secondary">
+                      {match.homeScore != null && match.awayScore != null
+                        ? `${match.homeScore}–${match.awayScore}`
+                        : "—"}
+                    </td>
+                    <td className="px-3 py-3">
+                      <StatusBadge label="Finalizado" variant="finished" />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </ResponsiveTableContainer>
+        </section>
+      )}
 
       {!hasRealMatches && (
         <section aria-labelledby="stats-heading" className="mb-8">

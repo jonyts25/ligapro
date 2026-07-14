@@ -6,6 +6,7 @@ import { getOrganizationVenueStats } from "@/lib/venues/queries";
 import { getOrganizationCompetitionStats } from "@/lib/competitions/queries";
 import { getOrganizationTeamStats } from "@/lib/teams/queries";
 import { getOrganizationMatchStats } from "@/lib/fixtures/queries";
+import { getRecentMatchResults } from "@/lib/matches/queries";
 import { OrganizationDashboardDemo } from "@/features/dashboard/OrganizationDashboardDemo";
 import { notFound } from "next/navigation";
 
@@ -25,12 +26,13 @@ export default async function OrganizationHomePage({ params }: PageProps) {
   if (!organization) notFound();
 
   const branding = mapOrganizationBranding(organization);
-  const [venueStats, competitionStats, teamStats, matchStats] =
+  const [venueStats, competitionStats, teamStats, matchStats, recentResults] =
     await Promise.all([
       getOrganizationVenueStats(organizationId),
       getOrganizationCompetitionStats(organizationId),
       getOrganizationTeamStats(organizationId),
       getOrganizationMatchStats(organizationId),
+      getRecentMatchResults(organizationId, 5),
     ]);
 
   const canManage =
@@ -43,6 +45,7 @@ export default async function OrganizationHomePage({ params }: PageProps) {
       organizationId={organizationId}
       canManage={canManage}
       matchStats={matchStats}
+      recentResults={recentResults}
       stats={{
         ...venueStats,
         competitions: competitionStats.competitions,

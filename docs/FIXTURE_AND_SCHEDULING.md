@@ -81,4 +81,4 @@ RPC `unschedule_match(p_match_id)`:
 
 ## Siguiente paso
 
-Captura de resultados y eventos (F7+).
+Captura de resultados y eventos (F7): ver `docs/MATCH_OPERATION_AND_CAPTURE.md`.

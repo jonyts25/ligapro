@@ -9,6 +9,7 @@ type FixtureRoundCardProps = {
   competitionId: string;
   seasonId: string;
   canManage?: boolean;
+  canCapture?: boolean;
 };
 
 export function FixtureRoundCard({
@@ -17,6 +18,7 @@ export function FixtureRoundCard({
   competitionId,
   seasonId,
   canManage = false,
+  canCapture = false,
 }: FixtureRoundCardProps) {
   return (
     <Card className="space-y-4">
@@ -39,6 +41,7 @@ export function FixtureRoundCard({
         competitionId={competitionId}
         seasonId={seasonId}
         canManage={canManage}
+        canCapture={canCapture}
       />
     </Card>
   );

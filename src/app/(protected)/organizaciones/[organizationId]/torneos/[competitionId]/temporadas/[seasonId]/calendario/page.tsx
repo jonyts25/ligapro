@@ -34,6 +34,10 @@ export default async function SeasonCalendarPage({
     membership.role === "organization_owner" ||
     membership.role === "organization_admin";
 
+  // Capturar en calendario: owner/admin. Otros actores autorizados lo ven en el detalle
+  // (can_capture_match se calcula por partido allí).
+  const canCapture = canManage;
+
   const data = await getSeasonMatchesGroupedByRound(
     organizationId,
     competitionId,
@@ -142,6 +146,7 @@ export default async function SeasonCalendarPage({
                 competitionId={competitionId}
                 seasonId={seasonId}
                 canManage={canManage}
+                canCapture={canCapture}
               />
             ))}
           </div>

@@ -92,8 +92,8 @@ No puede quedar una season con reglas parciales o defaults accidentales.
 - Competition solo edita `name`
 - `visibility = public` no implica acceso anon
 
-## Fixture (F6)
+## Fixture (F6) y captura (F7)
 
-Para `format_type` round-robin / round-robin_double: generador en `.../fixture/generar`, calendario por jornadas, programación atómica. Ver `docs/FIXTURE_AND_SCHEDULING.md`.
+Para `format_type` round-robin / round-robin_double: generador, calendario, programación. Ver `docs/FIXTURE_AND_SCHEDULING.md`.
 
-Otros formatos: generador automático no disponible (sin bracket inventado).
+Operación de partido y captura de eventos/marcador: `docs/MATCH_OPERATION_AND_CAPTURE.md`. Roles en `.../oficiales`.

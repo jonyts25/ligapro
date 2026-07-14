@@ -183,6 +183,24 @@ export type Database = {
         }
         Relationships: []
       }
+      __mig017_test_results: {
+        Row: {
+          details: string | null
+          passed: boolean
+          test_name: string
+        }
+        Insert: {
+          details?: string | null
+          passed: boolean
+          test_name: string
+        }
+        Update: {
+          details?: string | null
+          passed?: boolean
+          test_name?: string
+        }
+        Relationships: []
+      }
       audit_log: {
         Row: {
           action: string
@@ -1497,6 +1515,16 @@ export type Database = {
       }
       is_valid_uuid_text: { Args: { p_value: string }; Returns: boolean }
       normalize_brand_color: { Args: { p_color: string }; Returns: string }
+      record_match_event: {
+        Args: {
+          p_event_type: string
+          p_match_id: string
+          p_minute: number
+          p_notes?: string | null
+          p_season_team_player_id: string
+        }
+        Returns: string
+      }
       replace_field_availability: {
         Args: { p_field_id: string; p_intervals: Json }
         Returns: {
