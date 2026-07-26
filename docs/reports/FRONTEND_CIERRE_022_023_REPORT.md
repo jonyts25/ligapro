@@ -50,4 +50,5 @@ Capitán/member: no ven el panel (gate en page, sin botones).
 
 ## Commit
 
-_Pendiente al cierre._
+`d2f6f22` — `feat(frontend): close migration 022/023 UI gaps`  
+Push: `origin/main` OK
