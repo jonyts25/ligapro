@@ -2,11 +2,11 @@
 
 ## Estado
 
-**Diseño v0 congelado** + onboarding/branding (011) + sedes (012 / F3) + torneos (F4 / 013) + equipos/planteles (Frontend F5 / Migration 014–015) + fixture/programación (Frontend F6 / Migration 016) + captura (F7 / Migration 017) + standings/páginas públicas (F8 / Migration 018) + reagendado/capitán/calendario dual (Migration 019).
+**Diseño v0 congelado** + onboarding/branding (011) + sedes (012 / F3) + torneos (F4 / 013) + equipos/planteles (Frontend F5 / Migration 014–015) + fixture/programación (Frontend F6 / Migration 016) + captura (F7 / Migration 017) + standings/páginas públicas (F8 / Migration 018) + reagendado/capitán/calendario dual (Migration 019) + disciplina/vicecapitán/marcas de pago internas (Migration 020).
 
-Schema SQL: Migrations 001–019 aplicadas en `ligapro-dev`. Pendiente: corrección segura de eventos / desempates avanzados / F9.
+Schema SQL: Migrations 001–020 aplicadas en `ligapro-dev`. Pendiente: corrección segura de eventos / desempates avanzados / F9.
 
-## Entidades aprobadas (24)
+## Entidades aprobadas (25)
 
 1. `profiles` — **implementada (001)**
 2. `organizations` — **implementada (001)**
@@ -32,6 +32,7 @@ Schema SQL: Migrations 001–019 aplicadas en `ligapro-dev`. Pendiente: correcci
 22. `audit_log` — **implementada (010)**
 23. `captain_invitations` — **implementada (019)**
 24. `match_reschedule_requests` — **implementada (019)**
+25. `season_team_player_payment_marks` — **implementada (020)**
 
 ## Bloque 001 — identidad y multi-tenancy
 
@@ -188,11 +189,11 @@ Columnas tipadas (no JSON). Sin `season_rule_templates`.
 
 ## Bloque 004 — teams, players, season_teams, season_team_players
 
-El **capitán** vive únicamente en `season_team_players.is_captain` (máximo uno por `season_team` vía UNIQUE parcial). `profile_id` en `players` es opcional; Migration 019 permite vincularlo al capitán vía invitación (`captain_invitations` + `accept_captain_invitation`). Capitán con perfil vinculado: RLS limitada (leer partidos propios, proponer/responder reagendados). Sin permisos de roster, cargos ni resultados.
+El **capitán** vive en `season_team_players.is_captain` (máximo uno por `season_team` vía UNIQUE parcial). El **vicecapitán** en `is_vice_captain` (máximo uno por plantel; CHECK excluye capitán y vice simultáneos). `profile_id` en `players` es opcional; Migration 019 permite vincularlo al capitán o vicecapitán vía invitación (`captain_invitations` + `accept_captain_invitation`; tabla sin renombrar). Capitán/vicecapitán con perfil vinculado: RLS limitada (leer partidos propios, proponer/responder reagendados; marcas informales de pago interno vía RPC 020). Sin permisos de roster, cargos oficiales ni resultados.
 
 **UI (Frontend F5):** módulo Equipos + inscripción/plantel por temporada. Ver `docs/TEAMS_AND_ROSTERS.md`.
 
-**RPCs (014 + 015 + 004 + 019):** `enroll_team_in_season`, `create_player_and_add_to_roster`, `add_player_to_season_team`, `set_season_team_player_status`, `deactivate_season_team_player`, `set_season_team_captain`, `invite_captain_to_roster`, `create_captain_player_with_invitation`, `accept_captain_invitation`. Retiro de plantel = `inactive` (no DELETE de `players`). Un player **no** puede estar `active`/`suspended` en dos equipos de la misma season (índice único parcial sobre `season_id, player_id`; Migration 015). `inactive` libera la plaza. Distintas seasons/competitions permitidas. Sin transferencia automática.
+**RPCs (014 + 015 + 004 + 019 + 020):** `enroll_team_in_season`, `create_player_and_add_to_roster`, `add_player_to_season_team`, `set_season_team_player_status`, `deactivate_season_team_player`, `set_season_team_captain`, `set_season_team_vice_captain`, `invite_captain_to_roster`, `create_captain_player_with_invitation`, `accept_captain_invitation`, `set_player_payment_mark`. Retiro de plantel = `inactive` (no DELETE de `players`). Un player **no** puede estar `active`/`suspended` en dos equipos de la misma season (índice único parcial sobre `season_id, player_id`; Migration 015). `inactive` libera la plaza. Distintas seasons/competitions permitidas. Sin transferencia automática.
 
 ### `teams`
 
@@ -241,11 +242,16 @@ UNIQUE `(season_id, team_id)`.
 | `organization_id` | uuid NOT NULL | denormalizado; trigger exige igualdad con season_team Y player |
 | `jersey_number` | integer nullable | CHECK > 0; UNIQUE parcial por `season_team_id` |
 | `is_captain` | boolean NOT NULL | default false; UNIQUE parcial un capitán por team; CHECK debe ser `active` |
+| `is_vice_captain` | boolean NOT NULL | default false; UNIQUE parcial un vice por team; CHECK debe ser `active`; excluye `is_captain` |
 | `registration_status` | text NOT NULL | default `active`; CHECK `active` \| `inactive` \| `suspended` |
 | `created_at` | timestamptz | |
 | `updated_at` | timestamptz | trigger `set_updated_at` |
 
-UNIQUE `(season_team_id, player_id)`. Cambio de capitán: RPC `set_season_team_captain` (atómico).
+UNIQUE `(season_team_id, player_id)`. Cambio de capitán/vice: RPCs `set_season_team_captain` / `set_season_team_vice_captain` (atómicos; se excluyen mutuamente).
+
+### `season_team_player_payment_marks` (020)
+
+Marcas informales de pago por jugador del roster (`marked_paid`, `notes`). Una fila por `season_team_player_id` (UPSERT vía RPC). **No** ligada a `team_charges`/`team_payments` ni a reportes financieros del admin. Capitán/vicecapitán vinculado escribe vía `set_player_payment_mark`; owner/admin solo lectura.
 
 ## Bloque 005 — field_reservations
 
@@ -348,9 +354,9 @@ Suspensiones por tarjeta roja directa, acumulación de amarillas, o administrati
 | `id` | uuid PK | |
 | `organization_id` | uuid NOT NULL | trigger vs season_team_player padre |
 | `season_team_player_id` | uuid NOT NULL | FK → `season_team_players` |
-| `source_match_event_id` | uuid nullable | FK → `match_events`; obligatorio salvo `administrative`; mismo jugador |
-| `suspension_type` | text NOT NULL | CHECK direct_red/accumulation/administrative |
-| `matches_remaining` | integer NOT NULL | ≥ 0; ajuste manual por admin |
+| `source_match_event_id` | uuid nullable | FK → `match_events`; obligatorio salvo `administrative`/`expulsion`; mismo jugador |
+| `suspension_type` | text NOT NULL | CHECK direct_red/accumulation/administrative/expulsion |
+| `matches_remaining` | integer NOT NULL | ≥ 0; ajuste vía RPC owner/admin (020) |
 | `matches_served` | integer NOT NULL | default 0; ≥ 0 |
 | `status` | text NOT NULL | default `active`; CHECK active/served/waived |
 | `notes` | text nullable | |
@@ -369,7 +375,7 @@ Suspensiones por tarjeta roja directa, acumulación de amarillas, o administrati
 | referee / delegate | **INSERT** en su match si season_role + confirmed; sin UPDATE/DELETE directo | **no** (RPC rechaza) | sin cambios |
 | assistant / scorekeeper | sin permisos nuevos | sin permisos nuevos | sin cambios |
 
-`discipline_suspensions`: sin cambios; trigger SECURITY DEFINER de 007 sigue generando suspensiones aunque el evento lo inserte un capturador autorizado.
+`discipline_suspensions`: generación automática sin cambios (007). Ajustes posteriores (020): owner/admin vía RPC con motivo obligatorio — `waive_discipline_suspension`, `adjust_discipline_suspension_length`, `create_administrative_suspension` (`administrative` \| `expulsion` sin evento origen). Sin UPDATE/DELETE directo para `authenticated`.
 
 ### `season_roles`
 
@@ -492,6 +498,7 @@ matches 1──* match_events
 season_team_players 1──* match_events
 organizations 1──* match_events (denormalizado)
 season_team_players 1──* discipline_suspensions
+season_team_players 0..1──* season_team_player_payment_marks (020; informal)
 match_events 0..1──* discipline_suspensions (source)
 organizations 1──* discipline_suspensions (denormalizado)
 seasons 1──* season_roles

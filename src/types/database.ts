@@ -1028,11 +1028,67 @@ export type Database = {
           },
         ]
       }
+      season_team_player_payment_marks: {
+        Row: {
+          created_at: string
+          id: string
+          marked_by_profile_id: string
+          marked_paid: boolean
+          notes: string | null
+          organization_id: string
+          season_team_player_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          marked_by_profile_id: string
+          marked_paid?: boolean
+          notes?: string | null
+          organization_id: string
+          season_team_player_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          marked_by_profile_id?: string
+          marked_paid?: boolean
+          notes?: string | null
+          organization_id?: string
+          season_team_player_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "season_team_player_payment_marks_marked_by_profile_id_fkey"
+            columns: ["marked_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "season_team_player_payment_marks_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "season_team_player_payment_marks_season_team_player_id_fkey"
+            columns: ["season_team_player_id"]
+            isOneToOne: true
+            referencedRelation: "season_team_players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       season_team_players: {
         Row: {
           created_at: string
           id: string
           is_captain: boolean
+          is_vice_captain: boolean
           jersey_number: number | null
           organization_id: string
           player_id: string
@@ -1045,6 +1101,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_captain?: boolean
+          is_vice_captain?: boolean
           jersey_number?: number | null
           organization_id: string
           player_id: string
@@ -1057,6 +1114,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_captain?: boolean
+          is_vice_captain?: boolean
           jersey_number?: number | null
           organization_id?: string
           player_id?: string
@@ -1523,6 +1581,14 @@ export type Database = {
         }
         Returns: string
       }
+      adjust_discipline_suspension_length: {
+        Args: {
+          p_matches_remaining: number
+          p_reason: string
+          p_suspension_id: string
+        }
+        Returns: undefined
+      }
       apply_recurring_slot_to_season: {
         Args: {
           p_day_of_week: number
@@ -1535,6 +1601,15 @@ export type Database = {
       confirm_match_calendar: {
         Args: { p_match_id: string }
         Returns: undefined
+      }
+      create_administrative_suspension: {
+        Args: {
+          p_matches_remaining: number
+          p_reason: string
+          p_season_team_player_id: string
+          p_suspension_type: string
+        }
+        Returns: string
       }
       create_captain_player_with_invitation: {
         Args: {
@@ -1751,7 +1826,15 @@ export type Database = {
         Args: { p_profile_id?: string; p_season_team_id: string }
         Returns: boolean
       }
+      is_active_captain_or_vice_of_season_team: {
+        Args: { p_profile_id?: string; p_season_team_id: string }
+        Returns: boolean
+      }
       is_member_of: { Args: { p_org_id: string }; Returns: boolean }
+      is_team_leader_for_roster_player: {
+        Args: { p_profile_id?: string; p_season_team_player_id: string }
+        Returns: boolean
+      }
       is_valid_organization_logo_path: {
         Args: { p_logo_path: string; p_organization_id: string }
         Returns: boolean
@@ -1811,12 +1894,21 @@ export type Database = {
         Args: { p_logo_path: string; p_organization_id: string }
         Returns: undefined
       }
+      set_player_payment_mark: {
+        Args: {
+          p_marked_paid: boolean
+          p_notes?: string
+          p_season_team_player_id: string
+        }
+        Returns: string
+      }
       set_season_team_captain: {
         Args: { p_player_id: string; p_season_team_id: string }
         Returns: {
           created_at: string
           id: string
           is_captain: boolean
+          is_vice_captain: boolean
           jersey_number: number | null
           organization_id: string
           player_id: string
@@ -1835,6 +1927,28 @@ export type Database = {
       set_season_team_player_status: {
         Args: { p_registration_status: string; p_season_team_player_id: string }
         Returns: undefined
+      }
+      set_season_team_vice_captain: {
+        Args: { p_player_id: string; p_season_team_id: string }
+        Returns: {
+          created_at: string
+          id: string
+          is_captain: boolean
+          is_vice_captain: boolean
+          jersey_number: number | null
+          organization_id: string
+          player_id: string
+          registration_status: string
+          season_id: string
+          season_team_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "season_team_players"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       slugify_organization_name: { Args: { p_name: string }; Returns: string }
       unschedule_match: { Args: { p_match_id: string }; Returns: undefined }
@@ -1947,6 +2061,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      waive_discipline_suspension: {
+        Args: { p_reason: string; p_suspension_id: string }
+        Returns: undefined
       }
     }
     Enums: {

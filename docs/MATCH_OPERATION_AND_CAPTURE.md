@@ -8,7 +8,34 @@
 - Sin stoppage minute, sin autor en evento, sin team_id directo (vía `season_team_player`)
 - `update_match_result(p_match_id, p_status, p_home_score, p_away_score)` — owner/admin/`tournament_admin`
 - `can_capture_match(p_match_id)` — owner/admin OR tournament_admin OR referee/delegate con asignación **confirmada**
-- Disciplina automática: trigger `match_events_generate_discipline_suspensions` (007)
+- Disciplina automática: trigger `match_events_generate_discipline_suspensions` (007) — **sin cambios en 020**
+
+## Migration 020 — ajuste de sanciones (admin)
+
+Archivo: `supabase/migrations/20260715000000_discipline_vice_captain_payment_marks.sql`
+
+Alineado con el patrón de Migration 017 (`match_events`): correcciones vía RPC, no UPDATE/DELETE directo.
+
+### Policies finales `discipline_suspensions`
+
+- **SELECT:** sin cambios (miembros / owner/admin según policies existentes)
+- **INSERT:** trigger automático (007) + RPC `create_administrative_suspension` para `administrative` \| `expulsion` sin evento origen
+- **UPDATE:** denegado — policy DROP + `REVOKE UPDATE` de `authenticated`
+- **DELETE:** denegado — policy DROP + `REVOKE DELETE` de `authenticated`
+
+Tipo `expulsion` explícito en CHECK (no valores arbitrarios tipo 999 partidos).
+
+### RPCs de ajuste (owner/admin; `p_reason` obligatorio)
+
+| RPC | Efecto |
+| --- | --- |
+| `waive_discipline_suspension(p_suspension_id, p_reason)` | `status = 'waived'`; conserva fila |
+| `adjust_discipline_suspension_length(p_suspension_id, p_matches_remaining, p_reason)` | Sobrescribe `matches_remaining` |
+| `create_administrative_suspension(p_season_team_player_id, p_suspension_type, p_matches_remaining, p_reason)` | Alta manual; `suspension_type` ∈ `administrative` \| `expulsion`; `source_match_event_id` NULL |
+
+Motivo persistido en `notes`. Cambios auditados por trigger genérico de Migration 010 (`audit_discipline_suspensions`).
+
+El trigger `match_events_generate_discipline_suspensions` **no** se modificó.
 
 ## Migration 017 — hardening
 
