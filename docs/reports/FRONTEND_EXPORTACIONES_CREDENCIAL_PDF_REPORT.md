@@ -77,5 +77,5 @@ Componentes: `SeasonExportButtons`, `RosterExportButtons`, `CredentialPdfDownloa
 
 ## 7. Commit
 
-`COMMIT_HASH_PLACEHOLDER` — `feat(frontend): add CSV/PDF exports and printable credential`  
+`0e6d82a` — `feat(frontend): add CSV/PDF exports and printable credential`  
 Push: `origin/main`
