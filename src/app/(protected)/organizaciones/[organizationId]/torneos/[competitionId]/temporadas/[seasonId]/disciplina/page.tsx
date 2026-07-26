@@ -16,6 +16,7 @@ import { DisciplineAdminPanel } from "@/components/discipline/DisciplineAdminPan
 import { VerificationReviewPanel } from "@/components/verification/VerificationReviewPanel";
 import { isOrganizationAdminRole } from "@/lib/auth/is-organization-admin";
 import { getPendingVerificationPlayers } from "@/lib/verification/queries";
+import { SeasonExportButtons } from "@/components/export/ExportButtons";
 
 type PageProps = {
   params: Promise<{
@@ -87,6 +88,13 @@ export default async function SeasonDisciplinePage({ params }: PageProps) {
           rosterPlayers={rosterPlayers}
         />
       )}
+
+      <SeasonExportButtons
+        organizationId={organizationId}
+        competitionId={competitionId}
+        seasonId={seasonId}
+        exportKind="discipline"
+      />
 
       <DisciplineTable
         rows={rows.map((row) => ({

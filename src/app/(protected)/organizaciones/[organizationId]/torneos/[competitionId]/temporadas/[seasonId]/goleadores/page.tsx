@@ -9,6 +9,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { TopScorersTable } from "@/components/standings/TopScorersTable";
 import { SeasonStandingsNav } from "@/components/standings/SeasonStandingsNav";
 import { DataCompletenessWarning } from "@/components/standings/DataCompletenessWarning";
+import { SeasonExportButtons } from "@/components/export/ExportButtons";
 
 type PageProps = {
   params: Promise<{
@@ -55,6 +56,13 @@ export default async function SeasonTopScorersPage({ params }: PageProps) {
       <DataCompletenessWarning
         title="Depende de la captura de eventos"
         description="Solo cuentan los eventos de tipo gol. Los autogoles no suman al goleo. Si el marcador oficial no coincide con los eventos, revisa la captura del partido."
+      />
+
+      <SeasonExportButtons
+        organizationId={organizationId}
+        competitionId={competitionId}
+        seasonId={seasonId}
+        exportKind="scorers"
       />
 
       <TopScorersTable

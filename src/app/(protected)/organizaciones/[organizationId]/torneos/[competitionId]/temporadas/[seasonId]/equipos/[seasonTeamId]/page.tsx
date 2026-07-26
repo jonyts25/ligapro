@@ -18,6 +18,7 @@ import { SeasonRosterSummary } from "@/components/teams/SeasonRosterSummary";
 import { RosterList } from "@/components/teams/RosterList";
 import { AddRosterPlayerForm } from "@/components/teams/AddRosterPlayerForm";
 import { CreateCaptainPlayerForm } from "@/components/teams/CreateCaptainPlayerForm";
+import { RosterExportButtons } from "@/components/export/ExportButtons";
 
 type PageProps = {
   params: Promise<{
@@ -83,6 +84,13 @@ export default async function SeasonTeamRosterPage({ params }: PageProps) {
       </Card>
 
       <SeasonRosterSummary seasonTeam={detail} />
+
+      <RosterExportButtons
+        organizationId={organizationId}
+        competitionId={competitionId}
+        seasonId={seasonId}
+        seasonTeamId={seasonTeamId}
+      />
 
       <RosterList
         organizationId={organizationId}

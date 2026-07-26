@@ -13,6 +13,7 @@ import { StandingsTable } from "@/components/standings/StandingsTable";
 import { SeasonStandingsNav } from "@/components/standings/SeasonStandingsNav";
 import { ScoreEventsMismatchAlert } from "@/components/standings/ScoreEventsMismatchAlert";
 import { DataCompletenessWarning } from "@/components/standings/DataCompletenessWarning";
+import { SeasonExportButtons } from "@/components/export/ExportButtons";
 
 type PageProps = {
   params: Promise<{
@@ -78,6 +79,13 @@ export default async function SeasonStandingsPage({ params }: PageProps) {
           description="La clasificación se actualiza cuando hay partidos finalizados o walkover con ambos marcadores oficiales."
         />
       )}
+
+      <SeasonExportButtons
+        organizationId={organizationId}
+        competitionId={competitionId}
+        seasonId={seasonId}
+        exportKind="standings"
+      />
 
       <StandingsTable
         rows={standings.map((row) => ({

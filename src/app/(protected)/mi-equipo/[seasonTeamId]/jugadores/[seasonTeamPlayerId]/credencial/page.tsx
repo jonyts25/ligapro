@@ -38,6 +38,11 @@ export default async function CaptainPlayerCredentialPage({ params }: PageProps)
       <PlayerCredentialCard
         credential={credential}
         revalidatePaths={revalidatePaths}
+        pdfDownload={{
+          mode: "captain",
+          seasonTeamId,
+          seasonTeamPlayerId,
+        }}
       />
     </div>
   );

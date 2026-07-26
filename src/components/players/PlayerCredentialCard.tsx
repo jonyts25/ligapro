@@ -1,17 +1,23 @@
 import { PlayerAvatar } from "@/components/players/PlayerAvatar";
 import { PlayerVerificationBadge } from "@/components/players/PlayerVerificationBadge";
 import { PlayerPhotoUploader } from "@/components/players/PlayerPhotoUploader";
+import {
+  CredentialPdfDownload,
+  type CredentialPdfDownloadProps,
+} from "@/components/export/CredentialPdfDownload";
 import { Card } from "@/components/ui/Card";
 import type { PlayerCredentialData } from "@/lib/players/types";
 
 type PlayerCredentialCardProps = {
   credential: PlayerCredentialData;
   revalidatePaths?: string[];
+  pdfDownload?: CredentialPdfDownloadProps;
 };
 
 export function PlayerCredentialCard({
   credential,
   revalidatePaths = [],
+  pdfDownload,
 }: PlayerCredentialCardProps) {
   return (
     <Card className="mx-auto max-w-sm space-y-5 text-center">
@@ -35,8 +41,10 @@ export function PlayerCredentialCard({
           </div>
         </div>
       </div>
+      {pdfDownload && <CredentialPdfDownload {...pdfDownload} />}
       <p className="text-xs text-muted">
-        Credencial virtual de solo lectura. No incluye impresión ni exportación.
+        Credencial virtual de solo lectura. El PDF se genera al descargar y no se
+        almacena en el servidor.
       </p>
       {credential.canUploadPhoto && (
         <div className="border-t border-border pt-4 text-left">

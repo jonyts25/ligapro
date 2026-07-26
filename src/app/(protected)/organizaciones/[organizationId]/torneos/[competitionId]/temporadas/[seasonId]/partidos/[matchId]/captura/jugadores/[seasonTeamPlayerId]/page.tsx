@@ -45,7 +45,17 @@ export default async function MatchPlayerCredentialPage({ params }: PageProps) {
       >
         Volver a captura
       </Link>
-      <PlayerCredentialCard credential={credential} />
+      <PlayerCredentialCard
+        credential={credential}
+        pdfDownload={{
+          mode: "capture",
+          organizationId,
+          competitionId,
+          seasonId,
+          matchId,
+          seasonTeamPlayerId,
+        }}
+      />
     </div>
   );
 }

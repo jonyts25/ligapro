@@ -7,13 +7,16 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --import tsx --test src/lib/fixtures/**/*.test.ts src/lib/auth/**/*.test.ts src/lib/captain/**/*.test.ts src/lib/matches/**/*.test.ts"
+    "test": "node --import tsx --test src/lib/fixtures/**/*.test.ts src/lib/auth/**/*.test.ts src/lib/captain/**/*.test.ts src/lib/matches/**/*.test.ts src/lib/export/**/*.test.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.110.2",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8",
     "lucide-react": "^1.24.0",
     "next": "16.2.10",
+    "pdf-lib": "^1.17.1",
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },

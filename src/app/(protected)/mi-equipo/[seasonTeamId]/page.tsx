@@ -7,6 +7,7 @@ import {
 } from "@/lib/captain/queries";
 import { CaptainUpcomingMatches } from "@/components/captain/CaptainUpcomingMatches";
 import { CaptainRosterPanel } from "@/components/captain/CaptainRosterPanel";
+import { RosterExportButtons } from "@/components/export/ExportButtons";
 
 type PageProps = {
   params: Promise<{ seasonTeamId: string }>;
@@ -27,6 +28,12 @@ export default async function CaptainTeamPage({ params }: PageProps) {
   return (
     <div className="space-y-6">
       <CaptainUpcomingMatches seasonTeamId={seasonTeamId} matches={matches} />
+      <RosterExportButtons
+        organizationId={team.organizationId}
+        competitionId={team.competitionId}
+        seasonId={team.seasonId}
+        seasonTeamId={seasonTeamId}
+      />
       <CaptainRosterPanel
         seasonTeamId={seasonTeamId}
         roster={rosterData.roster}
