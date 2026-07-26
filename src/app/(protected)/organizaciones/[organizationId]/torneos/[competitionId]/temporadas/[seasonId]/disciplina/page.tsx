@@ -13,6 +13,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { DisciplineTable } from "@/components/standings/DisciplineTable";
 import { SeasonStandingsNav } from "@/components/standings/SeasonStandingsNav";
 import { DisciplineAdminPanel } from "@/components/discipline/DisciplineAdminPanel";
+import { isOrganizationAdminRole } from "@/lib/auth/is-organization-admin";
 
 type PageProps = {
   params: Promise<{
@@ -29,9 +30,7 @@ export default async function SeasonDisciplinePage({ params }: PageProps) {
     user.id,
     organizationId
   );
-  const canManage =
-    membership.role === "organization_owner" ||
-    membership.role === "organization_admin";
+  const canManage = isOrganizationAdminRole(membership.role);
 
   const season = await getSeasonDetails(
     organizationId,

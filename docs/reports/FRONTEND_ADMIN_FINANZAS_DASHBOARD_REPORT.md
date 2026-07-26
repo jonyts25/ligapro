@@ -48,11 +48,34 @@
 
 `SeasonStandingsNav` ampliado: **Dashboard** (todos), **Finanzas** (solo `canManage`).
 
+## Seguridad UI — confirmación explícita (2026-07-26)
+
+Los paneles admin **no se renderizan** para `organization_member` ni para capitán/vicecapitán. Las server actions siguen con `requireOrganizationAdmin` como segunda línea.
+
+| Superficie | Gate de página / render | Member | Capitán/vice* | Owner/admin |
+| --- | --- | --- | --- | --- |
+| `/finanzas` | `requireOrganizationAdmin` → 404 | 404 | 404 | ✓ panel completo |
+| Link Finanzas en nav | `SeasonStandingsNav` solo si `canManage` | oculto | N/A† | visible |
+| `DisciplineAdminPanel` | `{canManage && <...>}` en disciplina | oculto | N/A† | visible |
+| `MatchRescheduleAdminPanel` | `{canManage && <...>}` en partido | oculto | N/A† | visible |
+| Link Programar/Reprogramar | `{canManage && ...}` en partido | oculto | N/A† | visible |
+| `MatchOfficialsManager` forms | prop `canManage={false}` | solo lectura | N/A† | gestión |
+
+\* **Capitán/vice hoy:** no son `organization_members`; el layout `(protected)/organizaciones/[organizationId]` exige membresía → **404 antes de cualquier página**, incluido `.../partidos/[matchId]`. El portal del capitán (siguiente prompt) debe reutilizar `isOrganizationAdminRole` / no montar estos paneles.
+
+† Sin acceso al shell de org en el frontend actual.
+
+**Ruta compartida `.../partidos/[matchId]`:** el panel de reagendado y el link de programación están detrás de `canManage = isOrganizationAdminRole(membership.role)`. Un member ve timeline/disciplina del partido; no ve formularios admin. La query `getMatchRescheduleRequest` solo corre si `canManage`.
+
+**Tests automatizados:** `src/lib/auth/admin-ui-access.test.ts` — matriz de visibilidad para member vs admin vs sin membresía (proxy capitán). Ejecutar con `npm test`.
+
+**Prueba manual pendiente (cuando exista portal capitán):** iniciar sesión como capitán vinculado, abrir detalle de partido propio, confirmar ausencia de textos «Calendario y reagendado», «Confirmar reagendado», «Confirmar calendario», formularios de finanzas/disciplina admin.
+
 ## Verificación
 
 - `npm run lint` ✓
 - `npm run build` ✓
-- `npm test` ✓ (16/16)
+- `npm test` ✓ (fixtures + admin-ui-access)
 
 ## Fuera de alcance (confirmado)
 

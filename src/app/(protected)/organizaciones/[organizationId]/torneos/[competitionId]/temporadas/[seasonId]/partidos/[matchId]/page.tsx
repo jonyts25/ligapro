@@ -17,6 +17,7 @@ import { CapturePermissionBadge } from "@/components/matches/CapturePermissionBa
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { matchStatusLabel } from "@/lib/matches/types";
+import { isOrganizationAdminRole } from "@/lib/auth/is-organization-admin";
 
 type PageProps = {
   params: Promise<{
@@ -34,9 +35,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
     user.id,
     organizationId
   );
-  const canManage =
-    membership.role === "organization_owner" ||
-    membership.role === "organization_admin";
+  const canManage = isOrganizationAdminRole(membership.role);
 
   const ctx = await getMatchCaptureContext(
     organizationId,
