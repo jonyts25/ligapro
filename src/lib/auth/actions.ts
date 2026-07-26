@@ -6,6 +6,7 @@ import { resolveAuthDestination } from "@/lib/auth/resolve-auth-destination";
 import type { AuthActionState } from "@/lib/auth/types";
 import {
   AUTH_CALLBACK_ALLOWED_NEXT,
+  AUTH_CALLBACK_ALLOWED_PREFIXES,
   getSafeInternalPath,
   isValidEmail,
   normalizeEmail,
@@ -48,7 +49,8 @@ export async function signInAction(
 
   const safeNext = getSafeInternalPath(
     nextCandidate,
-    AUTH_CALLBACK_ALLOWED_NEXT
+    AUTH_CALLBACK_ALLOWED_NEXT,
+    AUTH_CALLBACK_ALLOWED_PREFIXES
   );
   if (safeNext && safeNext !== "/") {
     redirect(safeNext);
@@ -67,6 +69,7 @@ export async function signUpAction(
   const password = String(formData.get("password") ?? "");
   const confirmPassword = String(formData.get("confirmPassword") ?? "");
   const accepted = formData.get("acceptTerms") === "on";
+  const nextCandidate = String(formData.get("next") ?? "");
 
   const fieldErrors: Record<string, string> = {};
 
@@ -95,6 +98,12 @@ export async function signUpAction(
   }
 
   const origin = getSiteOrigin();
+  const safeNext = getSafeInternalPath(
+    nextCandidate,
+    AUTH_CALLBACK_ALLOWED_NEXT,
+    AUTH_CALLBACK_ALLOWED_PREFIXES
+  );
+  const emailRedirectNext = safeNext && safeNext !== "/" ? safeNext : "/onboarding";
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({
     email,
@@ -104,7 +113,7 @@ export async function signUpAction(
         display_name: displayName,
         full_name: displayName,
       },
-      emailRedirectTo: `${origin}/auth/callback?next=/onboarding`,
+      emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(emailRedirectNext)}`,
     },
   });
 
@@ -129,6 +138,10 @@ export async function signUpAction(
       message:
         "No pudimos completar el registro. Inténtalo nuevamente más tarde.",
     };
+  }
+
+  if (safeNext && safeNext !== "/") {
+    redirect(safeNext);
   }
 
   const destination = await resolveAuthDestination(data.user.id);

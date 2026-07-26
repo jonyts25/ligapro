@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { resolveAuthDestination } from "@/lib/auth/resolve-auth-destination";
 import {
   AUTH_CALLBACK_ALLOWED_NEXT,
+  AUTH_CALLBACK_ALLOWED_PREFIXES,
   getSafeInternalPath,
 } from "@/lib/auth/validation";
 import { getRequestPublicOrigin } from "@/lib/site-url";
@@ -12,7 +13,11 @@ export async function GET(request: Request) {
   const origin = getRequestPublicOrigin(request);
   const code = searchParams.get("code");
   const nextParam = searchParams.get("next");
-  const safeNext = getSafeInternalPath(nextParam, AUTH_CALLBACK_ALLOWED_NEXT);
+  const safeNext = getSafeInternalPath(
+    nextParam,
+    AUTH_CALLBACK_ALLOWED_NEXT,
+    AUTH_CALLBACK_ALLOWED_PREFIXES
+  );
 
   if (!code) {
     return NextResponse.redirect(

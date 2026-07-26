@@ -45,11 +45,15 @@ No existe service role en el frontend. Ninguna clave sensible usa `NEXT_PUBLIC_`
 - `/recuperar-contrasena`
 - `/actualizar-contrasena` (requiere sesión de recuperación)
 - `/auth/callback`
+- `/invitacion/[token]` — aceptación de invitación capitán/vice (login/registro + RPC)
 
 ### Privadas
 
-- `/onboarding` — solo con **0** membresías; con 1+ redirige fuera
+- `/onboarding` — solo con **0** membresías **y** 0 vínculos activos de capitán/vice; con 1+ membresía o capitán redirige fuera
 - `/seleccionar-organizacion`
+- `/mi-equipo` — portal capitán/vice (fuera del namespace de organización)
+- `/mi-equipo/[seasonTeamId]` — calendario y plantel de un equipo
+- `/mi-equipo/[seasonTeamId]/partidos/[matchId]` — detalle y reagendado
 - `/organizaciones/[organizationId]/inicio`
 - `/organizaciones/[organizationId]/configuracion` — solo owner/admin (`notFound()` para member/externo)
 
@@ -94,10 +98,18 @@ No existe service role en el frontend. Ninguna clave sensible usa `NEXT_PUBLIC_`
 ## Multi-organización
 
 ```text
-0 membresías → /onboarding
-1 membresía  → /organizaciones/{id}/inicio
-2+           → /seleccionar-organizacion
+0 membresías + 0 capitanías activas → /onboarding
+0 membresías + 1 capitanía activa    → /mi-equipo/{seasonTeamId}
+0 membresías + 2+ capitanías         → /mi-equipo (selector)
+1 membresía                          → /organizaciones/{id}/inicio
+2+                                   → /seleccionar-organizacion
 ```
+
+**Capitán/vicecapitán sin membresía:** no es `organization_member`; el portal vive en `/mi-equipo`, no en `/organizaciones/...`.
+
+**Usuario con membresía y capitanía** (p. ej. admin de una liga y capitán en otra): **prioridad a membresías de organización** en el destino post-login. Acceso secundario al portal del capitán desde `/seleccionar-organizacion` (enlace «Ir al portal del capitán») o navegando directamente a `/mi-equipo`.
+
+Vínculo activo de capitán/vice: fila en `season_team_players` con `players.profile_id = auth.uid()`, `(is_captain OR is_vice_captain)`, `registration_status = 'active'`.
 
 No se guarda organización activa global. No se elige silenciosamente la primera.
 

@@ -13,7 +13,11 @@ import { TextField } from "@/components/auth/TextField";
 import { PasswordInput } from "@/components/auth/PasswordInput";
 import { SubmitButton } from "@/components/auth/SubmitButton";
 
-export function SignUpForm() {
+type SignUpFormProps = {
+  next?: string;
+};
+
+export function SignUpForm({ next }: SignUpFormProps) {
   const [state, formAction, pending] = useActionState(
     signUpAction,
     initialAuthActionState
@@ -34,6 +38,7 @@ export function SignUpForm() {
       )}
 
       <form action={formAction} className="space-y-4">
+        {next ? <input type="hidden" name="next" value={next} /> : null}
         <TextField
           id="displayName"
           name="displayName"
@@ -100,7 +105,7 @@ export function SignUpForm() {
 
       <div className="mt-5 space-y-3">
         <AuthDivider />
-        <GoogleSignInButton next="/onboarding" disabled={pending} />
+        <GoogleSignInButton next={next ?? "/onboarding"} disabled={pending} />
       </div>
 
       <p className="mt-5 text-sm text-text-secondary">

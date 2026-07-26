@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth/require-user";
 import { getUserMemberships } from "@/lib/auth/get-user-memberships";
+import { getCaptainTeams } from "@/lib/auth/get-captain-teams";
 import { roleLabel } from "@/lib/auth/validation";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
@@ -11,8 +12,16 @@ import { SignOutButton } from "@/components/layout/SignOutButton";
 export default async function SelectOrganizationPage() {
   const user = await requireUser();
   const memberships = await getUserMemberships(user.id);
+  const captainTeams = await getCaptainTeams(user.id);
 
   if (memberships.length === 0) {
+    if (captainTeams.length > 0) {
+      redirect(
+        captainTeams.length === 1
+          ? `/mi-equipo/${captainTeams[0].seasonTeamId}`
+          : "/mi-equipo"
+      );
+    }
     redirect("/onboarding");
   }
 
@@ -30,6 +39,15 @@ export default async function SelectOrganizationPage() {
           title="Seleccionar organización"
           description={`Hola ${user.displayName ?? user.email}. Elige la organización con la que quieres trabajar.`}
         />
+        {captainTeams.length > 0 && (
+          <p className="mb-4 text-sm text-text-secondary">
+            También capitaneas {captainTeams.length} equipo
+            {captainTeams.length > 1 ? "s" : ""}.{" "}
+            <Link href="/mi-equipo" className="font-medium text-brand hover:underline">
+              Ir al portal del capitán
+            </Link>
+          </p>
+        )}
         <ul className="grid gap-4 sm:grid-cols-2">
           {memberships.map((membership) => (
             <li key={membership.organizationId}>

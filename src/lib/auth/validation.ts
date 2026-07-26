@@ -12,15 +12,19 @@ export function isValidEmail(email: string): boolean {
 
 export function getSafeInternalPath(
   candidate: string | null | undefined,
-  allowed: readonly string[]
+  allowed: readonly string[],
+  allowedPrefixes: readonly string[] = AUTH_CALLBACK_ALLOWED_PREFIXES
 ): string | null {
   if (!candidate) return null;
   if (!candidate.startsWith("/")) return null;
   if (candidate.startsWith("//")) return null;
   if (candidate.includes("://")) return null;
   if (candidate.toLowerCase().startsWith("javascript:")) return null;
-  if (!allowed.includes(candidate)) return null;
-  return candidate;
+  if (allowed.includes(candidate)) return candidate;
+  if (allowedPrefixes.some((prefix) => candidate.startsWith(prefix))) {
+    return candidate;
+  }
+  return null;
 }
 
 export const AUTH_CALLBACK_ALLOWED_NEXT = [
@@ -28,6 +32,12 @@ export const AUTH_CALLBACK_ALLOWED_NEXT = [
   "/onboarding",
   "/actualizar-contrasena",
   "/seleccionar-organizacion",
+  "/mi-equipo",
+] as const;
+
+export const AUTH_CALLBACK_ALLOWED_PREFIXES = [
+  "/invitacion/",
+  "/mi-equipo/",
 ] as const;
 
 export function roleLabel(role: string): string {

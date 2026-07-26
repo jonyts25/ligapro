@@ -14,6 +14,7 @@ const PRIVATE_PREFIXES = [
   "/seleccionar-organizacion",
   "/organizaciones",
   "/actualizar-contrasena",
+  "/mi-equipo",
 ];
 
 function isPrivatePath(pathname: string): boolean {

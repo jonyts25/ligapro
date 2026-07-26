@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth/require-user";
 import { getUserMemberships } from "@/lib/auth/get-user-memberships";
+import { getCaptainTeams } from "@/lib/auth/get-captain-teams";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SignOutButton } from "@/components/layout/SignOutButton";
 import { OnboardingForm } from "@/components/organizations/OnboardingForm";
@@ -15,6 +16,15 @@ export default async function OnboardingPage() {
 
   if (memberships.length > 1) {
     redirect("/seleccionar-organizacion");
+  }
+
+  const captainTeams = await getCaptainTeams(user.id);
+  if (captainTeams.length > 0) {
+    redirect(
+      captainTeams.length === 1
+        ? `/mi-equipo/${captainTeams[0].seasonTeamId}`
+        : "/mi-equipo"
+    );
   }
 
   return (
