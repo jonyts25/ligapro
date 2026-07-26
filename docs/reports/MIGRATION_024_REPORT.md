@@ -89,4 +89,5 @@ Usuarios con `season_roles` en `referee`/`delegate`/`scorekeeper` **no** heredan
 
 ## Commit
 
-_Pendiente de commit al cierre._
+`0f72c4c` — `feat(db): migration 024 — optional player photos and virtual credential`  
+Push: `origin/main` OK
