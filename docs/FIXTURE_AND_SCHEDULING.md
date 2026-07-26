@@ -123,7 +123,8 @@ WhatsApp: solo deep-links `wa.me` del lado cliente (sin API en 019).
 | owner/admin | sí | resolver | sí |
 | organization_member | no | no | sí |
 | capitán (profile vinculado) | no | proponer/responder propios partidos | partidos de su equipo |
-| tournament_admin | no (estructura) | no | sí (como miembro si aplica) |
+| tournament_admin | no (estructura) | no | sí (como miembro si aplica); captura con bypass de ventana |
+| scorekeeper (confirmado) | no | no | captura en partido asignado (dentro de ventana) |
 | externos/anon | no | no | no (vistas públicas vía RPC F8) |
 
 ## Rutas

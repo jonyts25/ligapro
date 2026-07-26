@@ -2,9 +2,9 @@
 
 ## Estado
 
-**Diseño v0 congelado** + onboarding/branding (011) + sedes (012 / F3) + torneos (F4 / 013) + equipos/planteles (Frontend F5 / Migration 014–015) + fixture/programación (Frontend F6 / Migration 016) + captura (F7 / Migration 017) + standings/páginas públicas (F8 / Migration 018) + reagendado/capitán/calendario dual (Migration 019) + disciplina/vicecapitán/marcas de pago internas (Migration 020).
+**Diseño v0 congelado** + onboarding/branding (011) + sedes (012 / F3) + torneos (F4 / 013) + equipos/planteles (Frontend F5 / Migration 014–015) + fixture/programación (Frontend F6 / Migration 016) + captura (F7 / Migration 017) + standings/páginas públicas (F8 / Migration 018) + reagendado/capitán/calendario dual (Migration 019) + disciplina/vicecapitán/marcas de pago internas (Migration 020) + bloqueos/cuota/roster/candado (021) + cédula arbitral ventana/anulación (022).
 
-Schema SQL: Migrations 001–020 aplicadas en `ligapro-dev`. Pendiente: corrección segura de eventos / desempates avanzados / F9.
+Schema SQL: Migrations 001–022 aplicadas en `ligapro-dev`. Pendiente: desempates avanzados / F9 frontend captura.
 
 ## Entidades aprobadas (25)
 
@@ -356,6 +356,9 @@ FK a `season_team_players` (no a `players`) para anclar el evento al roster temp
 | `event_type` | text NOT NULL | CHECK goal/own_goal/yellow_card/red_card/substitution_in/substitution_out/injury |
 | `minute` | integer NOT NULL | CHECK 0–130 |
 | `notes` | text nullable | texto libre |
+| `voided_at` | timestamptz nullable | Migration 022; anulación vía RPC |
+| `voided_by_profile_id` | uuid nullable | FK → `profiles` |
+| `void_reason` | text nullable | motivo obligatorio al anular |
 | `created_at` / `updated_at` | timestamptz | |
 
 ## Bloque 007 — discipline_suspensions
@@ -391,10 +394,10 @@ Suspensiones por tarjeta roja directa, acumulación de amarillas, o administrati
 
 | Rol | match_events | matches (marcador/status) | match_officials |
 |-----|--------------|---------------------------|-----------------|
-| organization_owner / organization_admin | CRUD completo (policies 006b) | UPDATE completo (006a) | CRUD (006a) |
-| tournament_admin | **INSERT** en cualquier match de su season; sin UPDATE/DELETE directo | `update_match_result()` RPC únicamente | sin cambios |
-| referee / delegate | **INSERT** en su match si season_role + confirmed; sin UPDATE/DELETE directo | **no** (RPC rechaza) | sin cambios |
-| assistant / scorekeeper | sin permisos nuevos | sin permisos nuevos | sin cambios |
+| organization_owner / organization_admin | captura + void RPC (022); sin UPDATE de contenido | UPDATE + bypass ventana | CRUD (006a) |
+| tournament_admin | **INSERT** en cualquier match de su season; bypass ventana | `update_match_result()` RPC | sin cambios |
+| referee / delegate / scorekeeper | **INSERT** en su match si season_role + confirmed; ventana obligatoria | **no** | sin cambios |
+| assistant | sin permisos nuevos | sin permisos nuevos | sin cambios |
 
 `discipline_suspensions`: generación automática sin cambios (007). Ajustes posteriores (020): owner/admin vía RPC con motivo obligatorio — `waive_discipline_suspension`, `adjust_discipline_suspension_length`, `create_administrative_suspension` (`administrative` \| `expulsion` sin evento origen). Sin UPDATE/DELETE directo para `authenticated`.
 
@@ -406,14 +409,14 @@ Suspensiones por tarjeta roja directa, acumulación de amarillas, o administrati
 | `organization_id` | uuid NOT NULL | trigger vs season padre |
 | `season_id` | uuid NOT NULL | FK → `seasons` |
 | `profile_id` | uuid NOT NULL | FK → `profiles`; debe existir en `organization_members` |
-| `role` | text NOT NULL | CHECK tournament_admin / referee / delegate |
+| `role` | text NOT NULL | CHECK tournament_admin / referee / delegate / scorekeeper |
 | `created_at` / `updated_at` | timestamptz | |
 
 FK compuesta → `organization_members(organization_id, profile_id)` ON DELETE CASCADE. `has_season_role` exige membresía vigente (JOIN a `organization_members`).
 
-Helpers: `has_season_role`, `can_capture_match`, RPC `update_match_result`.
+Helpers: `has_season_role`, `can_capture_match`, `__match_capture_window_open`, RPCs `update_match_result`, `void_match_event`.
 
-**Pendiente:** RPC segura para corregir/anular eventos con reconciliación de `discipline_suspensions` (007 solo genera en INSERT).
+Anulación (022): `void_match_event` owner/admin; no UPDATE de contenido; no reversión automática de disciplina.
 
 ## Bloque 009 — finanzas básicas por equipo/temporada
 

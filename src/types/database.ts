@@ -452,6 +452,9 @@ export type Database = {
           organization_id: string
           season_team_player_id: string
           updated_at: string
+          void_reason: string | null
+          voided_at: string | null
+          voided_by_profile_id: string | null
         }
         Insert: {
           created_at?: string
@@ -463,6 +466,9 @@ export type Database = {
           organization_id: string
           season_team_player_id: string
           updated_at?: string
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by_profile_id?: string | null
         }
         Update: {
           created_at?: string
@@ -474,6 +480,9 @@ export type Database = {
           organization_id?: string
           season_team_player_id?: string
           updated_at?: string
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by_profile_id?: string | null
         }
         Relationships: [
           {
@@ -495,6 +504,13 @@ export type Database = {
             columns: ["season_team_player_id"]
             isOneToOne: false
             referencedRelation: "season_team_players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_events_voided_by_profile_id_fkey"
+            columns: ["voided_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1605,6 +1621,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      __assert_match_capture_window: {
+        Args: { p_match_id: string }
+        Returns: undefined
+      }
       __assert_season_platform_billing_active: {
         Args: { p_season_id: string }
         Returns: undefined
@@ -1616,6 +1636,14 @@ export type Database = {
       __captain_season_team_for_match: {
         Args: { p_match_id: string; p_profile_id: string }
         Returns: string
+      }
+      __match_capture_window_bypass: {
+        Args: { p_match_id: string }
+        Returns: boolean
+      }
+      __match_capture_window_open: {
+        Args: { p_match_id: string }
+        Returns: boolean
       }
       __mig019_fixture_4: {
         Args: { p_st1: string; p_st2: string; p_st3: string; p_st4: string }
@@ -2125,6 +2153,29 @@ export type Database = {
           p_yellow_card_limit: number
         }
         Returns: undefined
+      }
+      void_match_event: {
+        Args: { p_event_id: string; p_reason: string }
+        Returns: {
+          created_at: string
+          event_type: string
+          id: string
+          match_id: string
+          minute: number
+          notes: string | null
+          organization_id: string
+          season_team_player_id: string
+          updated_at: string
+          void_reason: string | null
+          voided_at: string | null
+          voided_by_profile_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "match_events"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       void_team_charge: {
         Args: { p_charge_id: string; p_reason: string }

@@ -59,6 +59,9 @@ DECLARE
   match_wo uuid;
   mo_ref uuid;
   mo_del uuid;
+  v_venue uuid;
+  v_field uuid;
+  v_res uuid;
   ev_id uuid;
   v_count int;
   v_ok boolean;
@@ -80,6 +83,9 @@ BEGIN
   ALTER TABLE public.match_officials DISABLE TRIGGER USER;
   ALTER TABLE public.match_events DISABLE TRIGGER USER;
   ALTER TABLE public.discipline_suspensions DISABLE TRIGGER USER;
+  ALTER TABLE public.field_reservations DISABLE TRIGGER USER;
+  ALTER TABLE public.venues DISABLE TRIGGER USER;
+  ALTER TABLE public.fields DISABLE TRIGGER USER;
 
   DELETE FROM public.audit_log
   WHERE organization_id IN (
@@ -107,6 +113,9 @@ BEGIN
   ALTER TABLE public.competitions ENABLE TRIGGER USER;
   ALTER TABLE public.organizations ENABLE TRIGGER USER;
   ALTER TABLE public.organization_members ENABLE TRIGGER USER;
+  ALTER TABLE public.field_reservations ENABLE TRIGGER USER;
+  ALTER TABLE public.venues ENABLE TRIGGER USER;
+  ALTER TABLE public.fields ENABLE TRIGGER USER;
   ALTER TABLE public.audit_log ENABLE TRIGGER audit_log_prevent_mutation;
 
   INSERT INTO auth.users (
@@ -213,6 +222,19 @@ BEGIN
     (org_a, match_can, uid_ref, 'referee', 'confirmed'),
     (org_a, match_wo, uid_ref, 'referee', 'confirmed');
   EXECUTE 'RESET ROLE';
+
+  -- Migration 022: open capture window for field officials on match_open
+  INSERT INTO public.venues (organization_id, name, is_active)
+  VALUES (org_a, 'Venue Mig017', true) RETURNING id INTO v_venue;
+  INSERT INTO public.fields (organization_id, venue_id, name, is_active)
+  VALUES (org_a, v_venue, 'Field Mig017', true) RETURNING id INTO v_field;
+  INSERT INTO public.field_reservations (
+    organization_id, field_id, match_id, reservation_type, status, starts_at, ends_at
+  ) VALUES (
+    org_a, v_field, match_open, 'match', 'confirmed',
+    now() - interval '1 hour', now() + interval '1 hour'
+  ) RETURNING id INTO v_res;
+  UPDATE public.matches SET field_reservation_id = v_res WHERE id = match_open;
 
   -- 01 ref confirmed inserts via RPC
   PERFORM public.__mig017_as(uid_ref);

@@ -5,10 +5,10 @@
 | Vista | Fuente |
 | --- | --- |
 | Tabla de posiciones | Marcador oficial `matches.home_score` / `away_score` |
-| Goleadores | `match_events.event_type = 'goal'` |
+| Goleadores | `match_events.event_type = 'goal'` con `voided_at IS NULL` (022) |
 | Own goals | No acreditan al jugador; no cuentan en goleo |
 | Suspensiones | `discipline_suspensions` (no recalcular en TS) |
-| Tarjetas informativas | Conteos de `yellow_card` / `red_card` |
+| Tarjetas informativas | Conteos de `yellow_card` / `red_card` (`voided_at IS NULL`) |
 
 Partidos que cuentan para standings: `finished` o `walkover` **con ambos scores**.  
 No cuentan: `scheduled`, `in_progress`, `cancelled`, finished/walkover sin score completo.
@@ -48,8 +48,8 @@ Server Actions F6/F7/competiciones revalidan rutas privadas de posiciones/golead
 
 ## Limitaciones F8
 
-- Sin corrección/anulación de eventos
-- Sin reconciliación disciplinaria
+- Anulación de eventos vía `void_match_event` (022); sin edición de contenido
+- Sin reconciliación disciplinaria automática al anular
 - Sin desempates avanzados / playoffs / brackets
 - Sin asistencias ni stats avanzadas
 - Divergencia marcador vs eventos: alerta admin, no auto-corrección
