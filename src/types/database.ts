@@ -57,6 +57,42 @@ export type Database = {
         }
         Relationships: []
       }
+      __mig024_test_results: {
+        Row: {
+          details: string | null
+          passed: boolean
+          test_name: string
+        }
+        Insert: {
+          details?: string | null
+          passed: boolean
+          test_name: string
+        }
+        Update: {
+          details?: string | null
+          passed?: boolean
+          test_name?: string
+        }
+        Relationships: []
+      }
+      __mig025_test_results: {
+        Row: {
+          details: string | null
+          passed: boolean
+          test_name: string
+        }
+        Insert: {
+          details?: string | null
+          passed: boolean
+          test_name: string
+        }
+        Update: {
+          details?: string | null
+          passed?: boolean
+          test_name?: string
+        }
+        Relationships: []
+      }
       audit_log: {
         Row: {
           action: string
@@ -668,12 +704,14 @@ export type Database = {
         Row: {
           away_score: number | null
           away_season_team_id: string
+          bracket_slot: number | null
           calendar_status: string
           created_at: string
           field_reservation_id: string | null
           home_score: number | null
           home_season_team_id: string
           id: string
+          knockout_round_id: string | null
           leg_number: number | null
           organization_id: string
           round_label: string | null
@@ -686,12 +724,14 @@ export type Database = {
         Insert: {
           away_score?: number | null
           away_season_team_id: string
+          bracket_slot?: number | null
           calendar_status?: string
           created_at?: string
           field_reservation_id?: string | null
           home_score?: number | null
           home_season_team_id: string
           id?: string
+          knockout_round_id?: string | null
           leg_number?: number | null
           organization_id: string
           round_label?: string | null
@@ -704,12 +744,14 @@ export type Database = {
         Update: {
           away_score?: number | null
           away_season_team_id?: string
+          bracket_slot?: number | null
           calendar_status?: string
           created_at?: string
           field_reservation_id?: string | null
           home_score?: number | null
           home_season_team_id?: string
           id?: string
+          knockout_round_id?: string | null
           leg_number?: number | null
           organization_id?: string
           round_label?: string | null
@@ -739,6 +781,13 @@ export type Database = {
             columns: ["home_season_team_id"]
             isOneToOne: false
             referencedRelation: "season_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matches_knockout_round_id_fkey"
+            columns: ["knockout_round_id"]
+            isOneToOne: false
+            referencedRelation: "season_knockout_rounds"
             referencedColumns: ["id"]
           },
           {
@@ -1074,6 +1123,139 @@ export type Database = {
           },
           {
             foreignKeyName: "season_field_blocks_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      season_knockout_rounds: {
+        Row: {
+          bracket_size: number
+          created_at: string
+          id: string
+          is_two_legs: boolean
+          organization_id: string
+          round_label: string
+          round_number: number
+          season_id: string
+          updated_at: string
+        }
+        Insert: {
+          bracket_size: number
+          created_at?: string
+          id?: string
+          is_two_legs?: boolean
+          organization_id: string
+          round_label: string
+          round_number: number
+          season_id: string
+          updated_at?: string
+        }
+        Update: {
+          bracket_size?: number
+          created_at?: string
+          id?: string
+          is_two_legs?: boolean
+          organization_id?: string
+          round_label?: string
+          round_number?: number
+          season_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "season_knockout_rounds_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "season_knockout_rounds_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      season_knockout_ties: {
+        Row: {
+          away_season_team_id: string | null
+          bracket_slot: number
+          created_at: string
+          home_season_team_id: string
+          id: string
+          knockout_round_id: string
+          organization_id: string
+          penalty_winner_season_team_id: string | null
+          season_id: string
+          updated_at: string
+        }
+        Insert: {
+          away_season_team_id?: string | null
+          bracket_slot: number
+          created_at?: string
+          home_season_team_id: string
+          id?: string
+          knockout_round_id: string
+          organization_id: string
+          penalty_winner_season_team_id?: string | null
+          season_id: string
+          updated_at?: string
+        }
+        Update: {
+          away_season_team_id?: string | null
+          bracket_slot?: number
+          created_at?: string
+          home_season_team_id?: string
+          id?: string
+          knockout_round_id?: string
+          organization_id?: string
+          penalty_winner_season_team_id?: string | null
+          season_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "season_knockout_ties_away_season_team_id_fkey"
+            columns: ["away_season_team_id"]
+            isOneToOne: false
+            referencedRelation: "season_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "season_knockout_ties_home_season_team_id_fkey"
+            columns: ["home_season_team_id"]
+            isOneToOne: false
+            referencedRelation: "season_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "season_knockout_ties_knockout_round_id_fkey"
+            columns: ["knockout_round_id"]
+            isOneToOne: false
+            referencedRelation: "season_knockout_rounds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "season_knockout_ties_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "season_knockout_ties_penalty_winner_season_team_id_fkey"
+            columns: ["penalty_winner_season_team_id"]
+            isOneToOne: false
+            referencedRelation: "season_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "season_knockout_ties_season_id_fkey"
             columns: ["season_id"]
             isOneToOne: false
             referencedRelation: "seasons"
@@ -1777,6 +1959,29 @@ export type Database = {
         Args: { p_match_id: string; p_profile_id: string }
         Returns: string
       }
+      __knockout_create_tie_matches: {
+        Args: {
+          p_away: string
+          p_bracket_slot: number
+          p_home: string
+          p_is_two_legs: boolean
+          p_org: string
+          p_round_id: string
+          p_round_label: string
+          p_season_id: string
+        }
+        Returns: undefined
+      }
+      __knockout_next_power_of_two: { Args: { p_n: number }; Returns: number }
+      __knockout_resolve_tie_winner: {
+        Args: { p_tie_id: string }
+        Returns: string
+      }
+      __knockout_round_label: {
+        Args: { p_bracket_size: number; p_round_number: number }
+        Returns: string
+      }
+      __knockout_tie_is_tied: { Args: { p_tie_id: string }; Returns: boolean }
       __match_capture_window_bypass: {
         Args: { p_match_id: string }
         Returns: boolean
@@ -1848,6 +2053,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      advance_knockout_round: {
+        Args: { p_round_number: number; p_season_id: string }
+        Returns: Json
+      }
       apply_recurring_slot_to_season: {
         Args: {
           p_day_of_week: number
@@ -1858,6 +2067,10 @@ export type Database = {
       }
       can_capture_match: { Args: { p_match_id: string }; Returns: boolean }
       can_view_player_photo: { Args: { p_player_id: string }; Returns: boolean }
+      configure_knockout_round: {
+        Args: { p_is_two_legs: boolean; p_round_id: string }
+        Returns: undefined
+      }
       confirm_match_calendar: {
         Args: { p_match_id: string }
         Returns: undefined
@@ -1893,17 +2106,23 @@ export type Database = {
         }
         Returns: string
       }
+      create_season_knockout_bracket: {
+        Args: { p_season_id: string; p_seed_mode?: string }
+        Returns: Json
+      }
       create_season_round_robin_fixture: {
         Args: { p_matches: Json; p_mode: string; p_season_id: string }
         Returns: {
           away_score: number | null
           away_season_team_id: string
+          bracket_slot: number | null
           calendar_status: string
           created_at: string
           field_reservation_id: string | null
           home_score: number | null
           home_season_team_id: string
           id: string
+          knockout_round_id: string | null
           leg_number: number | null
           organization_id: string
           round_label: string | null
@@ -1969,10 +2188,13 @@ export type Database = {
         Returns: {
           away_score: number
           away_team_name: string
+          bracket_slot: number
           calendar_status: string
           field_name: string
           home_score: number
           home_team_name: string
+          knockout_round_number: number
+          leg_number: number
           round_label: string
           round_number: number
           sequence_in_round: number
@@ -2035,6 +2257,10 @@ export type Database = {
           team_name: string
           yellow_cards: number
         }[]
+      }
+      get_season_knockout_champion: {
+        Args: { p_season_id: string }
+        Returns: string
       }
       get_season_standings: {
         Args: { p_season_id: string }
@@ -2214,6 +2440,14 @@ export type Database = {
         Args: { p_field_id: string; p_match_id: string; p_starts_at: string }
         Returns: undefined
       }
+      set_knockout_tie_penalty_winner: {
+        Args: {
+          p_bracket_slot: number
+          p_round_id: string
+          p_winner_season_team_id: string
+        }
+        Returns: undefined
+      }
       set_organization_logo: {
         Args: { p_logo_path: string; p_organization_id: string }
         Returns: undefined
@@ -2314,12 +2548,14 @@ export type Database = {
         Returns: {
           away_score: number | null
           away_season_team_id: string
+          bracket_slot: number | null
           calendar_status: string
           created_at: string
           field_reservation_id: string | null
           home_score: number | null
           home_season_team_id: string
           id: string
+          knockout_round_id: string | null
           leg_number: number | null
           organization_id: string
           round_label: string | null

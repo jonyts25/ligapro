@@ -50,6 +50,7 @@ Server Actions F6/F7/competiciones revalidan rutas privadas de posiciones/golead
 
 - Anulación de eventos vía `void_match_event` (022); sin edición de contenido
 - Sin reconciliación disciplinaria automática al anular
-- Sin desempates avanzados / playoffs / brackets
+- Sin desempates avanzados / playoffs de liga / brackets en standings
+- Temporadas `knockout`: standings de liga no aplican; bracket y campeón vía motor 025 (`get_season_knockout_champion`). F8: `get_public_season_matches` expone ronda/llave de knockout (025)
 - Sin asistencias ni stats avanzadas
 - Divergencia marcador vs eventos: alerta admin, no auto-corrección

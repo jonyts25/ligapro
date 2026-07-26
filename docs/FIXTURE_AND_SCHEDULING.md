@@ -4,6 +4,8 @@
 
 Generación atómica de fixture **round-robin de liga** (una vuelta / ida y vuelta), calendario por jornadas y programación manual de partidos con reserva de cancha.
 
+Migration 025 añade motor de **eliminación directa** (`format_type = 'knockout'`) — ver ADR 0011. Migration 026 (posterior) agregará fase de grupos (`groups_knockout`).
+
 Migration 019 añade: estado dual de calendario, reagendado por consenso entre capitanes, slot recurrente bulk y confirmación admin. Ver ADR 0006.
 
 No incluye: captura de resultados, eventos, árbitros, standings, playoffs, páginas públicas ni regeneración destructiva. No incluye swap de rival entre jornadas (manual admin, modelo existente).
@@ -41,11 +43,46 @@ RPC `create_season_round_robin_fixture(p_season_id, p_mode, p_matches)`:
 - Requiere `seasons.platform_billing_status = 'pagado'` antes de generar fixture (Migration 021; candado pierde efecto práctico una vez existen matches).
 - Inserta atómicamente; no crea reservas ni fechas.
 
+## Motor knockout (Migration 025)
+
+Archivo: `supabase/migrations/20260720000000_knockout_bracket_engine.sql`  
+ADR: `docs/ADR/0011-motor-eliminacion-directa-y-grupos.md`
+
+Solo `format_type = 'knockout'`. **No** modifica `create_season_round_robin_fixture`.
+
+### Schema
+
+| Objeto | Rol |
+| --- | --- |
+| `season_knockout_rounds` | Rondas del bracket (`round_number`, `round_label`, `bracket_size`, `is_two_legs`) |
+| `season_knockout_ties` | Llave por `bracket_slot` dentro de una ronda; `penalty_winner_season_team_id` a nivel de llave (agregado ida-vuelta), no por partido |
+| `matches.knockout_round_id` / `bracket_slot` | Partidos de eliminatoria; `round_number`/`sequence_in_round` quedan NULL |
+
+**Byes:** fila en `season_knockout_ties` con `away_season_team_id IS NULL`; el equipo avanza sin partido en esa ronda.
+
+**Etiquetas de ronda:** derivadas automáticamente del `bracket_size` y `round_number` (`Octavos`, `Cuartos`, `Semifinal`, `Final`).
+
+### RPCs (owner/admin)
+
+| RPC | Efecto |
+| --- | --- |
+| `create_season_knockout_bracket(p_season_id, p_seed_mode default 'random')` | Ronda 1 únicamente: potencia de 2, byes, sorteo aleatorio. Gate `__assert_season_platform_billing_active`. Equipos `registered`/`confirmed`. |
+| `configure_knockout_round(p_round_id, p_is_two_legs)` | Antes de que partidos salgan de `scheduled`; agrega/elimina pierna 2 con localía invertida. |
+| `set_knockout_tie_penalty_winner(p_round_id, p_bracket_slot, p_winner_season_team_id)` | Solo si marcador (single) o agregado (two legs) está empatado. |
+| `advance_knockout_round(p_season_id, p_round_number)` | Requiere todas las llaves resueltas; empareja ganadores por posición de bracket (slot 1 vs 2, 3 vs 4…). No pre-genera rondas futuras. Final resuelta → devuelve campeón. |
+| `get_season_knockout_champion(p_season_id)` | Lectura del campeón si la final está resuelta. |
+
+Rondas 2+ se crean **solo** vía `advance_knockout_round`. Programación sigue siendo `schedule_match` / `unschedule_match` sobre `matches` normales.
+
+### Público (F8)
+
+`get_public_season_matches` expone de forma aditiva `knockout_round_number`, `bracket_slot`, `leg_number` y usa `round_label` de la ronda knockout cuando aplica.
+
 ## Facturación de plataforma (Migration 021)
 
 Columna `seasons.platform_billing_status`: `'pendiente'` (default) \| `'pagado'` \| `'vencido'`.
 
-- Candado en `create_season_round_robin_fixture` y `apply_recurring_slot_to_season` si `≠ 'pagado'`.
+- Candado en `create_season_round_robin_fixture`, `create_season_knockout_bracket` y `apply_recurring_slot_to_season` si `≠ 'pagado'`.
 - **Sin RPC** de cambio para `authenticated`; se gestiona en Supabase (service role / dashboard).
 - `REVOKE UPDATE (platform_billing_status)` + trigger que rechaza cambios con `auth.uid()` presente.
 

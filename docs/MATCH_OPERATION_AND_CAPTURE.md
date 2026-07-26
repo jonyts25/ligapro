@@ -137,7 +137,16 @@ En la pantalla de captura se listan ambos planteles con foto (o placeholder), do
 - Panel **Credenciales del partido** con enlaces por jugador.
 - El capturador confirmado ve credenciales de **ambos** equipos; la lectura de fotos en Storage respeta `can_view_player_photo` (misma lógica que `can_capture_match` / `match_officials` para oficiales de temporada).
 - Oficiales con rol de temporada (`referee`/`delegate`/`scorekeeper`) **no** obtienen acceso amplio por membresía org: solo ven fotos de jugadores en partidos donde tienen asignación confirmada.
-- Sin botón imprimir/exportar; páginas públicas F8 sin cambios (`get_public_season_*` no exponen `photo_path`).
+- Sin botón imprimir/exportar en captura; export PDF vive en credencial virtual (frontend aparte). Páginas públicas F8 sin foto (`get_public_season_*` no exponen `photo_path`).
+
+## Migration 025 — partidos de eliminatoria
+
+Los partidos de bracket son filas normales en `matches` (`knockout_round_id`, `bracket_slot`, `leg_number`).
+
+- **Sin RPCs duplicadas:** `schedule_match`, `confirm_match_calendar`, reagendado (019), `record_match_event`, `update_match_result`, ventana (022) y `void_match_event` aplican igual que en liga.
+- Resolución de llave (ganador por marcador, agregado ida-vuelta o penales) vive en el motor knockout (`advance_knockout_round`, `set_knockout_tie_penalty_winner`) — no en captura.
+- Sin tiempo extra como dato separado; el marcador final capturado es el resultado de cancha.
+- Sin gol de visitante como desempate.
 
 ## Siguiente paso
 

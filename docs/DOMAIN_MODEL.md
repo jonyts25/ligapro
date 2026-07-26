@@ -147,7 +147,7 @@ EXCLUDE: misma season + field + día no solapan; trigger adicional impide solape
 
 ## Bloque 003 — competitions, seasons, season_rules
 
-`visibility` en `seasons` **todavía no** controla acceso público real: los miembros de la organización leen todas las seasons de su org vía RLS. El acceso anon/público llegará con vistas explícitas (ADR 0005). `format_type` admite `groups_knockout` / `knockout` como etiquetas; no existen tablas de groups/stages/brackets en este bloque. Permisos de captura por `season_roles` implementados en Migration 008.
+`visibility` en `seasons` **todavía no** controla acceso público real: los miembros de la organización leen todas las seasons de su org vía RLS. El acceso anon/público llegará con vistas explícitas (ADR 0005). `format_type` admite `groups_knockout` / `knockout`; Migration 025 implementa bracket puro (`knockout`). Fase de grupos (`groups_knockout`) es Migration 026. Permisos de captura por `season_roles` implementados en Migration 008.
 
 **UI (Frontend F4):** módulo Torneos — CRUD competitions/seasons y edición de `season_rules` para owner/admin; members solo lectura. Categorías = competitions independientes (sin tabla `categories`). “Pendiente de equipos” es badge de presentación cuando no hay `season_teams`. Ver `docs/COMPETITIONS_AND_SEASONS.md`.
 
@@ -322,9 +322,15 @@ Captura de resultado por oficiales / `match_events` **no** está en este bloque 
 | `leg_number` | integer nullable | Migration 016; 1 \| 2 |
 | `sequence_in_round` | integer nullable | Migration 016; orden en jornada |
 | `calendar_status` | text NOT NULL | Migration 019; `programado` \| `confirmado` |
+| `knockout_round_id` | uuid nullable | Migration 025; FK → `season_knockout_rounds` |
+| `bracket_slot` | integer nullable | Migration 025; posición en ronda (1-based) |
 | `created_at` / `updated_at` | timestamptz | |
 
-RPCs F6 (016): `create_season_round_robin_fixture`, `schedule_match`, `unschedule_match`. Migration 019: `confirm_match_calendar`, `propose_match_reschedule`, `respond_match_reschedule`, `resolve_match_reschedule`, `apply_recurring_slot_to_season`. Ver `docs/FIXTURE_AND_SCHEDULING.md`.
+RPCs F6 (016): `create_season_round_robin_fixture`, `schedule_match`, `unschedule_match`. Migration 019: `confirm_match_calendar`, reagendado, `apply_recurring_slot_to_season`. Migration 025: `create_season_knockout_bracket`, `configure_knockout_round`, `set_knockout_tie_penalty_winner`, `advance_knockout_round`, `get_season_knockout_champion`. Ver `docs/FIXTURE_AND_SCHEDULING.md`.
+
+### `season_knockout_rounds` / `season_knockout_ties` (025)
+
+Motor de eliminatoria para `format_type = 'knockout'`. Una **llave** (`season_knockout_ties`) agrupa 1–2 partidos y el ganador por penales (`penalty_winner_season_team_id`). Byes: `away_season_team_id IS NULL`, sin filas en `matches`. Rondas futuras solo vía `advance_knockout_round`. Fase de grupos: Migration 026.
 
 ### `captain_invitations` / `match_reschedule_requests` (019)
 
