@@ -64,5 +64,5 @@ Migration 026 (grupos), frontend bracket, seeding no aleatorio, gol de visitante
 
 ## Commit
 
-`COMMIT_HASH_PLACEHOLDER` — `feat(db): add knockout bracket engine (migration 025)`  
+`1e43e7b` — `feat(db): add knockout bracket engine (migration 025)`  
 Push: `origin/main`
