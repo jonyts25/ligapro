@@ -123,8 +123,8 @@ Roles reales del schema:
 
 - `profiles.id = auth.users.id`
 - Creación automática por trigger `on_auth_user_created` → `handle_new_user()`
-- Columnas: `email`, `display_name`, timestamps
-- RLS: SELECT/UPDATE propios; INSERT solo por trigger
+- Columnas: `email`, `display_name`, `phone` (opcional, 021), timestamps
+- RLS: SELECT/UPDATE propios (incluye `phone`); INSERT solo por trigger
 
 ## Seguridad
 

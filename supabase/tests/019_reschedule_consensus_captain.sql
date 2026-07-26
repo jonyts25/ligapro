@@ -162,6 +162,18 @@ BEGIN
     competition_a, org_a, 'Temp 019', 'temp-019', 'round_robin', '2026-08-04'::date
   ) RETURNING id INTO season_a;
 
+  EXECUTE 'RESET ROLE';
+  PERFORM set_config('request.jwt.claim.sub', '', true);
+  PERFORM set_config('request.jwt.claims', '', true);
+  UPDATE public.seasons SET platform_billing_status = 'pagado' WHERE id = season_a;
+  EXECUTE 'SET LOCAL ROLE authenticated';
+  PERFORM set_config('request.jwt.claim.sub', uid_owner_a::text, true);
+  PERFORM set_config(
+    'request.jwt.claims',
+    json_build_object('sub', uid_owner_a::text, 'role', 'authenticated')::text,
+    true
+  );
+
   INSERT INTO public.teams (organization_id, name) VALUES (org_a, 'Alpha') RETURNING id INTO team_a;
   INSERT INTO public.teams (organization_id, name) VALUES (org_a, 'Beta') RETURNING id INTO team_b;
   INSERT INTO public.teams (organization_id, name) VALUES (org_a, 'Gamma') RETURNING id INTO team_c;
@@ -250,6 +262,17 @@ BEGIN
     competition_id, organization_id, name, slug, format_type
   ) VALUES (competition_b, org_b, 'Temp B', 'temp-b-019', 'round_robin')
   RETURNING id INTO season_b;
+  EXECUTE 'RESET ROLE';
+  PERFORM set_config('request.jwt.claim.sub', '', true);
+  PERFORM set_config('request.jwt.claims', '', true);
+  UPDATE public.seasons SET platform_billing_status = 'pagado' WHERE id = season_b;
+  EXECUTE 'SET LOCAL ROLE authenticated';
+  PERFORM set_config('request.jwt.claim.sub', uid_owner_b::text, true);
+  PERFORM set_config(
+    'request.jwt.claims',
+    json_build_object('sub', uid_owner_b::text, 'role', 'authenticated')::text,
+    true
+  );
   INSERT INTO public.teams (organization_id, name) VALUES (org_b, 'B1') RETURNING id INTO team_a;
   INSERT INTO public.teams (organization_id, name) VALUES (org_b, 'B2') RETURNING id INTO team_b;
   st_b1 := public.enroll_team_in_season(season_b, team_a);

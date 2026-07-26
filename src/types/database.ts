@@ -869,6 +869,7 @@ export type Database = {
           display_name: string | null
           email: string
           id: string
+          phone: string | null
           updated_at: string
         }
         Insert: {
@@ -876,6 +877,7 @@ export type Database = {
           display_name?: string | null
           email: string
           id: string
+          phone?: string | null
           updated_at?: string
         }
         Update: {
@@ -883,9 +885,68 @@ export type Database = {
           display_name?: string | null
           email?: string
           id?: string
+          phone?: string | null
           updated_at?: string
         }
         Relationships: []
+      }
+      season_field_blocks: {
+        Row: {
+          created_at: string
+          day_of_week: number
+          ends_at: string
+          field_id: string
+          id: string
+          organization_id: string
+          season_id: string
+          starts_at: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: number
+          ends_at: string
+          field_id: string
+          id?: string
+          organization_id: string
+          season_id: string
+          starts_at: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: number
+          ends_at?: string
+          field_id?: string
+          id?: string
+          organization_id?: string
+          season_id?: string
+          starts_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "season_field_blocks_field_id_fkey"
+            columns: ["field_id"]
+            isOneToOne: false
+            referencedRelation: "fields"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "season_field_blocks_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "season_field_blocks_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       season_roles: {
         Row: {
@@ -952,6 +1013,7 @@ export type Database = {
           created_at: string
           id: string
           match_duration_minutes: number
+          max_roster_size: number | null
           minimum_rest_minutes: number
           organization_id: string
           points_draw: number
@@ -960,6 +1022,7 @@ export type Database = {
           recurring_slot_day_of_week: number | null
           recurring_slot_field_id: string | null
           recurring_slot_start_time: string | null
+          registration_fee: number | null
           reschedule_request_ttl_hours: number
           season_id: string
           suspension_matches: number
@@ -971,6 +1034,7 @@ export type Database = {
           created_at?: string
           id?: string
           match_duration_minutes?: number
+          max_roster_size?: number | null
           minimum_rest_minutes?: number
           organization_id: string
           points_draw?: number
@@ -979,6 +1043,7 @@ export type Database = {
           recurring_slot_day_of_week?: number | null
           recurring_slot_field_id?: string | null
           recurring_slot_start_time?: string | null
+          registration_fee?: number | null
           reschedule_request_ttl_hours?: number
           season_id: string
           suspension_matches?: number
@@ -990,6 +1055,7 @@ export type Database = {
           created_at?: string
           id?: string
           match_duration_minutes?: number
+          max_roster_size?: number | null
           minimum_rest_minutes?: number
           organization_id?: string
           points_draw?: number
@@ -998,6 +1064,7 @@ export type Database = {
           recurring_slot_day_of_week?: number | null
           recurring_slot_field_id?: string | null
           recurring_slot_start_time?: string | null
+          registration_fee?: number | null
           reschedule_request_ttl_hours?: number
           season_id?: string
           suspension_matches?: number
@@ -1162,6 +1229,7 @@ export type Database = {
           id: string
           organization_id: string
           registration_status: string
+          roster_locked_by_captain: boolean
           season_id: string
           team_id: string
           updated_at: string
@@ -1173,6 +1241,7 @@ export type Database = {
           id?: string
           organization_id: string
           registration_status?: string
+          roster_locked_by_captain?: boolean
           season_id: string
           team_id: string
           updated_at?: string
@@ -1184,6 +1253,7 @@ export type Database = {
           id?: string
           organization_id?: string
           registration_status?: string
+          roster_locked_by_captain?: boolean
           season_id?: string
           team_id?: string
           updated_at?: string
@@ -1221,6 +1291,7 @@ export type Database = {
           id: string
           name: string
           organization_id: string
+          platform_billing_status: string
           slug: string
           starts_on: string | null
           updated_at: string
@@ -1234,6 +1305,7 @@ export type Database = {
           id?: string
           name: string
           organization_id: string
+          platform_billing_status?: string
           slug: string
           starts_on?: string | null
           updated_at?: string
@@ -1247,6 +1319,7 @@ export type Database = {
           id?: string
           name?: string
           organization_id?: string
+          platform_billing_status?: string
           slug?: string
           starts_on?: string | null
           updated_at?: string
@@ -1518,6 +1591,24 @@ export type Database = {
       }
     }
     Functions: {
+      __assert_captain_roster_add_allowed: {
+        Args: { p_season_team_id: string }
+        Returns: undefined
+      }
+      __assert_field_slot_not_blocked_by_other_season: {
+        Args: {
+          p_day_of_week: number
+          p_end_time: string
+          p_field_id: string
+          p_season_id: string
+          p_start_time: string
+        }
+        Returns: undefined
+      }
+      __assert_season_platform_billing_active: {
+        Args: { p_season_id: string }
+        Returns: undefined
+      }
       __assert_season_readable: {
         Args: { p_season_id: string }
         Returns: string
@@ -1664,7 +1755,7 @@ export type Database = {
         Args: {
           p_allow_draws: boolean
           p_competition_id: string
-          p_ends_on: string | null
+          p_ends_on: string
           p_format_type: string
           p_match_duration_minutes: number
           p_minimum_rest_minutes: number
@@ -1673,7 +1764,7 @@ export type Database = {
           p_points_loss: number
           p_points_win: number
           p_slug: string
-          p_starts_on: string | null
+          p_starts_on: string
           p_suspension_matches: number
           p_visibility: string
           p_yellow_card_limit: number
@@ -1902,6 +1993,30 @@ export type Database = {
         }
         Returns: string
       }
+      set_roster_lock: {
+        Args: { p_locked: boolean; p_season_team_id: string }
+        Returns: undefined
+      }
+      set_season_field_blocks: {
+        Args: { p_blocks: Json; p_season_id: string }
+        Returns: {
+          created_at: string
+          day_of_week: number
+          ends_at: string
+          field_id: string
+          id: string
+          organization_id: string
+          season_id: string
+          starts_at: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "season_field_blocks"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       set_season_team_captain: {
         Args: { p_player_id: string; p_season_team_id: string }
         Returns: {
@@ -1995,7 +2110,7 @@ export type Database = {
       update_season_with_rules: {
         Args: {
           p_allow_draws: boolean
-          p_ends_on: string | null
+          p_ends_on: string
           p_format_type: string
           p_match_duration_minutes: number
           p_minimum_rest_minutes: number
@@ -2004,7 +2119,7 @@ export type Database = {
           p_points_loss: number
           p_points_win: number
           p_season_id: string
-          p_starts_on: string | null
+          p_starts_on: string
           p_suspension_matches: number
           p_visibility: string
           p_yellow_card_limit: number

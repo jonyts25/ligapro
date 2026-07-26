@@ -33,6 +33,7 @@ Schema SQL: Migrations 001–020 aplicadas en `ligapro-dev`. Pendiente: correcci
 23. `captain_invitations` — **implementada (019)**
 24. `match_reschedule_requests` — **implementada (019)**
 25. `season_team_player_payment_marks` — **implementada (020)**
+26. `season_field_blocks` — **implementada (021)**
 
 ## Bloque 001 — identidad y multi-tenancy
 
@@ -43,6 +44,7 @@ Schema SQL: Migrations 001–020 aplicadas en `ligapro-dev`. Pendiente: correcci
 | `id` | uuid PK | FK → `auth.users(id)` ON DELETE CASCADE |
 | `email` | text NOT NULL | |
 | `display_name` | text nullable | |
+| `phone` | text nullable | Migration 021; contacto opcional (E.164 en cliente) |
 | `created_at` | timestamptz | default `now()` |
 | `updated_at` | timestamptz | trigger `set_updated_at` |
 
@@ -126,6 +128,21 @@ Visibilidad pública **NO** aplica todavía a estas tablas: solo miembros autent
 
 Informativo (horarios habituales). Migration 012: exclusion constraint anti-solape (`no_overlapping_field_availability`, bounds `[)` → contiguos OK) + RPC `replace_field_availability` para reemplazo semanal atómico. La ocupación dura de partidos vive en `field_reservations` (aún sin UI). Ver `docs/VENUES_AND_FIELDS.md`.
 
+### `season_field_blocks` (021)
+
+Bloqueo semanal de cancha **a favor de un torneo** (season). Separado de `field_reservations`.
+
+| Columna | Tipo | Notas |
+|--------|------|--------|
+| `id` | uuid PK | |
+| `organization_id` | uuid NOT NULL | denormalizado |
+| `season_id` | uuid NOT NULL | FK → `seasons` |
+| `field_id` | uuid NOT NULL | FK → `fields` |
+| `day_of_week` | integer NOT NULL | 0–6 |
+| `starts_at` / `ends_at` | time NOT NULL | `ends_at > starts_at` |
+
+EXCLUDE: misma season + field + día no solapan; trigger adicional impide solape entre **seasons distintas**. RPC `set_season_field_blocks`.
+
 ## Bloque 003 — competitions, seasons, season_rules
 
 `visibility` en `seasons` **todavía no** controla acceso público real: los miembros de la organización leen todas las seasons de su org vía RLS. El acceso anon/público llegará con vistas explícitas (ADR 0005). `format_type` admite `groups_knockout` / `knockout` como etiquetas; no existen tablas de groups/stages/brackets en este bloque. Permisos de captura por `season_roles` implementados en Migration 008.
@@ -157,6 +174,7 @@ Informativo (horarios habituales). Migration 012: exclusion constraint anti-sola
 | `visibility` | text NOT NULL | default `draft`; CHECK: `draft` \| `private` \| `unlisted` \| `public` \| `archived` |
 | `starts_on` | date nullable | |
 | `ends_on` | date nullable | CHECK `ends_on >= starts_on` cuando ambos no null |
+| `platform_billing_status` | text NOT NULL | default `pendiente`; CHECK `pendiente` \| `pagado` \| `vencido` (021); no app-writable |
 | `created_at` | timestamptz | |
 | `updated_at` | timestamptz | trigger `set_updated_at` |
 
@@ -182,6 +200,8 @@ Al insertar una season, un trigger AFTER INSERT crea automáticamente la fila `s
 | `reschedule_request_ttl_hours` | integer NOT NULL | default 72; TTL propuestas de reagendado |
 | `yellow_card_limit` | integer NOT NULL | default 5; CHECK > 0 |
 | `suspension_matches` | integer NOT NULL | default 1; CHECK > 0 |
+| `registration_fee` | numeric(12,2) nullable | Migration 021; ausente = sin cuota de inscripción |
+| `max_roster_size` | integer nullable | Migration 021; tope para altas del capitán |
 | `created_at` | timestamptz | |
 | `updated_at` | timestamptz | trigger `set_updated_at` |
 
@@ -193,7 +213,7 @@ El **capitán** vive en `season_team_players.is_captain` (máximo uno por `seaso
 
 **UI (Frontend F5):** módulo Equipos + inscripción/plantel por temporada. Ver `docs/TEAMS_AND_ROSTERS.md`.
 
-**RPCs (014 + 015 + 004 + 019 + 020):** `enroll_team_in_season`, `create_player_and_add_to_roster`, `add_player_to_season_team`, `set_season_team_player_status`, `deactivate_season_team_player`, `set_season_team_captain`, `set_season_team_vice_captain`, `invite_captain_to_roster`, `create_captain_player_with_invitation`, `accept_captain_invitation`, `set_player_payment_mark`. Retiro de plantel = `inactive` (no DELETE de `players`). Un player **no** puede estar `active`/`suspended` en dos equipos de la misma season (índice único parcial sobre `season_id, player_id`; Migration 015). `inactive` libera la plaza. Distintas seasons/competitions permitidas. Sin transferencia automática.
+**RPCs (014 + 015 + 004 + 019 + 020 + 021):** `enroll_team_in_season` (cuota automática si `registration_fee`), `create_player_and_add_to_roster`, `add_player_to_season_team` (capitán/vice alta en equipo propio), `set_season_team_player_status`, `deactivate_season_team_player`, `set_season_team_captain`, `set_season_team_vice_captain` (designación única capitán), `set_roster_lock`, `invite_captain_to_roster`, `create_captain_player_with_invitation`, `accept_captain_invitation`, `set_player_payment_mark`. Retiro de plantel = `inactive` (no DELETE de `players`). Un player **no** puede estar `active`/`suspended` en dos equipos de la misma season (índice único parcial sobre `season_id, player_id`; Migration 015). `inactive` libera la plaza. Distintas seasons/competitions permitidas. Sin transferencia automática.
 
 ### `teams`
 
@@ -227,6 +247,7 @@ El **capitán** vive en `season_team_players.is_captain` (máximo uno por `seaso
 | `display_name` | text nullable | si NULL, la app usa `teams.name` |
 | `group_name` | text nullable | manual para `groups_knockout` |
 | `registration_status` | text NOT NULL | default `registered`; CHECK `registered` \| `confirmed` \| `withdrawn` |
+| `roster_locked_by_captain` | boolean NOT NULL | default false (021); owner/admin vía `set_roster_lock` |
 | `created_at` | timestamptz | |
 | `updated_at` | timestamptz | trigger `set_updated_at` |
 

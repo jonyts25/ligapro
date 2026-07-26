@@ -52,6 +52,26 @@ RPC `replace_field_availability(p_field_id, p_intervals jsonb)`:
 
 La UI guarda la semana únicamente mediante esta RPC.
 
+## Bloqueos por torneo (Migration 021)
+
+Tabla separada: `season_field_blocks` — **no** es `field_reservations` ni bloqueo de partido individual.
+
+| Columna | Notas |
+| --- | --- |
+| `season_id`, `field_id`, `organization_id` | Consistencia por triggers |
+| `day_of_week` | 0–6 |
+| `starts_at` / `ends_at` | `ends_at > starts_at` |
+
+Reglas:
+
+- Varios bloqueos de la **misma** season en el mismo field/día **permitidos** (p. ej. jueves + domingo).
+- Dos **seasons distintas** no pueden solaparse en el mismo `field_id` + día + franja horaria (EXCLUDE intra-season + trigger cross-season).
+- RPC `set_season_field_blocks(p_season_id, p_blocks jsonb)`: reemplazo atómico por season (mismo patrón que `replace_field_availability`); solo owner/admin.
+
+`schedule_match` y `apply_recurring_slot_to_season` rechazan slots ocupados por bloqueo de **otra** season; bloqueo de la **misma** season no impide programar.
+
+**Pendiente frontend:** vista de disponibilidad cruzada (`field_availability_rules` + `season_field_blocks` + reservas) — 2–3 queries desde cliente o RPC de lectura en prompt siguiente.
+
 ## Permisos
 
 | Rol | Ver | Crear/editar venues/fields | Disponibilidad |

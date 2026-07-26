@@ -38,7 +38,16 @@ RPC `create_season_round_robin_fixture(p_season_id, p_mode, p_matches)`:
 - Solo owner/admin.
 - Valida JSON estricto, equipos elegibles (`registered`/`confirmed`), fixture matemático completo.
 - Rechaza si la season ya tiene matches (sin regenerar en F6).
+- Requiere `seasons.platform_billing_status = 'pagado'` antes de generar fixture (Migration 021; candado pierde efecto práctico una vez existen matches).
 - Inserta atómicamente; no crea reservas ni fechas.
+
+## Facturación de plataforma (Migration 021)
+
+Columna `seasons.platform_billing_status`: `'pendiente'` (default) \| `'pagado'` \| `'vencido'`.
+
+- Candado en `create_season_round_robin_fixture` y `apply_recurring_slot_to_season` si `≠ 'pagado'`.
+- **Sin RPC** de cambio para `authenticated`; se gestiona en Supabase (service role / dashboard).
+- `REVOKE UPDATE (platform_billing_status)` + trigger que rechaza cambios con `auth.uid()` presente.
 
 ## Programación
 
@@ -48,6 +57,7 @@ RPC `schedule_match(p_match_id, p_field_id, p_starts_at)`:
 
 - Calcula `ends_at` en servidor: `match_duration_minutes + minimum_rest_minutes`.
 - Valida field/venue activos y disponibilidad semanal del día.
+- Rechaza si el slot cae en `season_field_block` de **otra** season (Migration 021).
 - Crea o actualiza la única `field_reservation` del partido (source of truth de ocupación).
 - Deja `calendar_status = programado`.
 - El exclusion constraint `no_overlapping_reservations` protege concurrencia.
@@ -74,6 +84,7 @@ Config en `season_rules`:
 RPC `apply_recurring_slot_to_season(p_season_id, p_day_of_week, p_start_time)`:
 
 - Solo owner/admin; season con fixture y `starts_on` definido.
+- Requiere `seasons.platform_billing_status = 'pagado'` (Migration 021).
 - Programa partidos **sin** `field_reservation_id` por jornada (`round_number` + día/hora).
 - Resultado siempre `programado`; fallos parciales no abortan (JSON con `scheduled`, `skipped_already_scheduled`, `failed`).
 

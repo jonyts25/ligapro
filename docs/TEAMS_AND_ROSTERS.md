@@ -29,7 +29,9 @@ No existe `position` en el schema.
 - **Capitán:** `season_team_players.is_captain`. Máximo uno por plantel (índice único parcial). Debe estar `active`.
 - **Vicecapitán:** `is_vice_captain`. Máximo uno por plantel. Debe estar `active`. Un jugador **no** puede ser capitán y vice a la vez (CHECK).
 
-RPCs (004 + 020): `set_season_team_captain(p_season_team_id, p_player_id)`, `set_season_team_vice_captain(p_season_team_id, p_player_id)`. Al designar uno se limpia el flag del otro en el mismo plantel.
+RPCs (004 + 020 + 021): `set_season_team_captain(p_season_team_id, p_player_id)` (solo owner/admin), `set_season_team_vice_captain(p_season_team_id, p_player_id)`. Al designar capitán se limpia vice en el mismo plantel.
+
+**Vice de designación única (021):** capitán/subcapitán vinculado solo puede designar vice si el cargo está **vacío**; owner/admin puede designar o reemplazar en cualquier momento.
 
 ### Cuenta de capitán / vicecapitán (Migration 019, extendida 020)
 
@@ -42,11 +44,25 @@ Flujo F5 cuando `is_captain = true` **o** `is_vice_captain = true`:
 
 Privilegios RLS del capitán o vicecapitán **vinculado** (y solo estos):
 
+- Leer su `season_team`, plantel (`season_team_players`) y reservas de partidos donde participa (Migration 021).
 - Leer partidos donde participa su `season_team`.
 - Proponer y responder solicitudes de reagendado (`match_reschedule_requests` vía RPC).
 - Marcar pago informal de jugadores de su plantel (`season_team_player_payment_marks` vía `set_player_payment_mark`).
+- **Alta de jugadores** en su propio plantel vía `create_player_and_add_to_roster` / `add_player_to_season_team` (021); sujeto a `season_rules.max_roster_size` y `season_teams.roster_locked_by_captain`.
 
-**No** puede: editar roster, designar/quitar capitán, cargos oficiales, resultados, finanzas del admin, ni ver otras organizaciones/equipos.
+**No** puede: baja/status de jugadores, designar capitán, reemplazar vice si ya hay uno (salvo admin), cargos oficiales, resultados, finanzas del admin, ni ver otras organizaciones/equipos.
+
+## Cuota de inscripción (Migration 021)
+
+`season_rules.registration_fee` (numeric nullable). Si está definida, `enroll_team_in_season` crea automáticamente un `team_charge` (`charge_type = 'registration'`) en la misma transacción atómica.
+
+## Tope de plantel y candado (Migration 021)
+
+| Campo | Efecto |
+| --- | --- |
+| `season_rules.max_roster_size` | Capitán/subcapitán rechazado al llegar al tope; admin sin límite |
+| `season_teams.roster_locked_by_captain` | Si `true`, capitán no puede dar altas; admin sí |
+| RPC `set_roster_lock(p_season_team_id, p_locked)` | Solo owner/admin |
 
 ## Marcas de pago internas (Migration 020)
 
@@ -88,23 +104,28 @@ Reactivar: `add_player_to_season_team` / `set_season_team_player_status(..., 'ac
 
 | RPC | Uso |
 | --- | --- |
-| `enroll_team_in_season` | Inscribe team en season |
-| `create_player_and_add_to_roster` | Crea player + roster; si roster falla, no queda player |
+| `enroll_team_in_season` | Inscribe team en season; cuota automática si `registration_fee` |
+| `create_player_and_add_to_roster` | Crea player + roster; capitán/vice en equipo propio (021) |
 | `create_captain_player_with_invitation` | Crea player + capitán + invitación email |
 | `invite_captain_to_roster` | Invitación para capitán o vice ya en plantel |
 | `accept_captain_invitation` | Invitado vincula su profile |
-| `add_player_to_season_team` | Agrega o reactiva player existente |
+| `add_player_to_season_team` | Agrega o reactiva player existente; capitán/vice en equipo propio (021) |
 | `set_season_team_player_status` | Cambia active/inactive/suspended (quita capitán/vice si aplica) |
 | `deactivate_season_team_player` | Baja suave (= inactive) |
 | `set_season_team_captain` | Capitanía (004; solo roster active) |
-| `set_season_team_vice_captain` | Vicecapitanía (020; solo roster active) |
+| `set_season_team_vice_captain` | Vicecapitanía (020/021; designación única para capitán) |
+| `set_roster_lock` | Bloquea altas del capitán en plantel (021; owner/admin) |
 | `set_player_payment_mark` | Marca informal de pago por jugador (capitán/vice) |
 
 Sin `organization_id` / `profile_id` de actor en firmas. SECURITY DEFINER + grants authenticated.
 
 ## Permisos
 
-owner/admin: mutan roster e invitaciones. member: lee. tournament_admin: sin privilegio estructural. Capitán/vicecapitán vinculado: calendario/reagendado + marcas de pago internas de su equipo (019 + 020).
+owner/admin: mutan roster e invitaciones. member: lee. tournament_admin: sin privilegio estructural. Capitán/vicecapitán vinculado: lectura plantel/equipo/reservas propias, calendario/reagendado, marcas de pago, **altas** de jugador en plantel propio (021).
+
+## Portal del capitán (`/mi-equipo`)
+
+Con Migration 021 aplicada, el portal desplegado en `main` (commit `e5ed883`) queda **funcional de punta a punta** en backend: RLS de lectura, `profiles.phone`, roster delegado (alta). Pendiente frontend: wiring de `getOpponentCaptainPhone` → `profiles.phone`, UI de bloqueos de cancha, dashboard de disponibilidad.
 
 ## Rutas
 
