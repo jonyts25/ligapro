@@ -459,7 +459,7 @@ export async function recordMatchEventAction(
     p_season_team_player_id: seasonTeamPlayerId,
     p_event_type: eventType,
     p_minute: minute,
-    p_notes: notes || null,
+    p_notes: notes || undefined,
   });
 
   if (error) {

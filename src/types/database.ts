@@ -39,169 +39,7 @@ export type Database = {
   }
   public: {
     Tables: {
-      __mig001_test_results: {
-        Row: {
-          details: string | null
-          passed: boolean
-          test_name: string
-        }
-        Insert: {
-          details?: string | null
-          passed: boolean
-          test_name: string
-        }
-        Update: {
-          details?: string | null
-          passed?: boolean
-          test_name?: string
-        }
-        Relationships: []
-      }
-      __mig006b_test_results: {
-        Row: {
-          details: string | null
-          passed: boolean
-          test_name: string
-        }
-        Insert: {
-          details?: string | null
-          passed: boolean
-          test_name: string
-        }
-        Update: {
-          details?: string | null
-          passed?: boolean
-          test_name?: string
-        }
-        Relationships: []
-      }
-      __mig007_test_results: {
-        Row: {
-          details: string | null
-          passed: boolean
-          test_name: string
-        }
-        Insert: {
-          details?: string | null
-          passed: boolean
-          test_name: string
-        }
-        Update: {
-          details?: string | null
-          passed?: boolean
-          test_name?: string
-        }
-        Relationships: []
-      }
-      __mig008_test_results: {
-        Row: {
-          details: string | null
-          passed: boolean
-          test_name: string
-        }
-        Insert: {
-          details?: string | null
-          passed: boolean
-          test_name: string
-        }
-        Update: {
-          details?: string | null
-          passed?: boolean
-          test_name?: string
-        }
-        Relationships: []
-      }
-      __mig009_test_results: {
-        Row: {
-          details: string | null
-          passed: boolean
-          test_name: string
-        }
-        Insert: {
-          details?: string | null
-          passed: boolean
-          test_name: string
-        }
-        Update: {
-          details?: string | null
-          passed?: boolean
-          test_name?: string
-        }
-        Relationships: []
-      }
-      __mig010_test_results: {
-        Row: {
-          details: string | null
-          passed: boolean
-          test_name: string
-        }
-        Insert: {
-          details?: string | null
-          passed: boolean
-          test_name: string
-        }
-        Update: {
-          details?: string | null
-          passed?: boolean
-          test_name?: string
-        }
-        Relationships: []
-      }
-      __mig011_test_results: {
-        Row: {
-          details: string | null
-          passed: boolean
-          test_name: string
-        }
-        Insert: {
-          details?: string | null
-          passed: boolean
-          test_name: string
-        }
-        Update: {
-          details?: string | null
-          passed?: boolean
-          test_name?: string
-        }
-        Relationships: []
-      }
-      __mig012_test_results: {
-        Row: {
-          details: string | null
-          passed: boolean
-          test_name: string
-        }
-        Insert: {
-          details?: string | null
-          passed: boolean
-          test_name: string
-        }
-        Update: {
-          details?: string | null
-          passed?: boolean
-          test_name?: string
-        }
-        Relationships: []
-      }
-      __mig017_test_results: {
-        Row: {
-          details: string | null
-          passed: boolean
-          test_name: string
-        }
-        Insert: {
-          details?: string | null
-          passed: boolean
-          test_name: string
-        }
-        Update: {
-          details?: string | null
-          passed?: boolean
-          test_name?: string
-        }
-        Relationships: []
-      }
-      __mig018_test_results: {
+      __mig019_test_results: {
         Row: {
           details: string | null
           passed: boolean
@@ -272,6 +110,77 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      captain_invitations: {
+        Row: {
+          accepted_by_profile_id: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by_profile_id: string
+          organization_id: string
+          season_team_player_id: string
+          status: string
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_by_profile_id?: string | null
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+          invited_by_profile_id: string
+          organization_id: string
+          season_team_player_id: string
+          status?: string
+          token?: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_by_profile_id?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by_profile_id?: string
+          organization_id?: string
+          season_team_player_id?: string
+          status?: string
+          token?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "captain_invitations_accepted_by_profile_id_fkey"
+            columns: ["accepted_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "captain_invitations_invited_by_profile_id_fkey"
+            columns: ["invited_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "captain_invitations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "captain_invitations_season_team_player_id_fkey"
+            columns: ["season_team_player_id"]
+            isOneToOne: false
+            referencedRelation: "season_team_players"
             referencedColumns: ["id"]
           },
         ]
@@ -645,10 +554,105 @@ export type Database = {
           },
         ]
       }
+      match_reschedule_requests: {
+        Row: {
+          admin_resolution_notes: string | null
+          admin_resolved_by_profile_id: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          match_id: string
+          organization_id: string
+          proposed_by_profile_id: string
+          proposed_field_id: string | null
+          proposed_starts_at: string
+          responded_at: string | null
+          responded_by_profile_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_resolution_notes?: string | null
+          admin_resolved_by_profile_id?: string | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          match_id: string
+          organization_id: string
+          proposed_by_profile_id: string
+          proposed_field_id?: string | null
+          proposed_starts_at: string
+          responded_at?: string | null
+          responded_by_profile_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_resolution_notes?: string | null
+          admin_resolved_by_profile_id?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          match_id?: string
+          organization_id?: string
+          proposed_by_profile_id?: string
+          proposed_field_id?: string | null
+          proposed_starts_at?: string
+          responded_at?: string | null
+          responded_by_profile_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_reschedule_requests_admin_resolved_by_profile_id_fkey"
+            columns: ["admin_resolved_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_reschedule_requests_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_reschedule_requests_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_reschedule_requests_proposed_by_profile_id_fkey"
+            columns: ["proposed_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_reschedule_requests_proposed_field_id_fkey"
+            columns: ["proposed_field_id"]
+            isOneToOne: false
+            referencedRelation: "fields"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_reschedule_requests_responded_by_profile_id_fkey"
+            columns: ["responded_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       matches: {
         Row: {
           away_score: number | null
           away_season_team_id: string
+          calendar_status: string
           created_at: string
           field_reservation_id: string | null
           home_score: number | null
@@ -666,6 +670,7 @@ export type Database = {
         Insert: {
           away_score?: number | null
           away_season_team_id: string
+          calendar_status?: string
           created_at?: string
           field_reservation_id?: string | null
           home_score?: number | null
@@ -683,6 +688,7 @@ export type Database = {
         Update: {
           away_score?: number | null
           away_season_team_id?: string
+          calendar_status?: string
           created_at?: string
           field_reservation_id?: string | null
           home_score?: number | null
@@ -951,6 +957,10 @@ export type Database = {
           points_draw: number
           points_loss: number
           points_win: number
+          recurring_slot_day_of_week: number | null
+          recurring_slot_field_id: string | null
+          recurring_slot_start_time: string | null
+          reschedule_request_ttl_hours: number
           season_id: string
           suspension_matches: number
           updated_at: string
@@ -966,6 +976,10 @@ export type Database = {
           points_draw?: number
           points_loss?: number
           points_win?: number
+          recurring_slot_day_of_week?: number | null
+          recurring_slot_field_id?: string | null
+          recurring_slot_start_time?: string | null
+          reschedule_request_ttl_hours?: number
           season_id: string
           suspension_matches?: number
           updated_at?: string
@@ -981,6 +995,10 @@ export type Database = {
           points_draw?: number
           points_loss?: number
           points_win?: number
+          recurring_slot_day_of_week?: number | null
+          recurring_slot_field_id?: string | null
+          recurring_slot_start_time?: string | null
+          reschedule_request_ttl_hours?: number
           season_id?: string
           suspension_matches?: number
           updated_at?: string
@@ -992,6 +1010,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "season_rules_recurring_slot_field_id_fkey"
+            columns: ["recurring_slot_field_id"]
+            isOneToOne: false
+            referencedRelation: "fields"
             referencedColumns: ["id"]
           },
           {
@@ -1439,9 +1464,35 @@ export type Database = {
         Args: { p_season_id: string }
         Returns: string
       }
+      __captain_season_team_for_match: {
+        Args: { p_match_id: string; p_profile_id: string }
+        Returns: string
+      }
+      __mig019_fixture_4: {
+        Args: { p_st1: string; p_st2: string; p_st3: string; p_st4: string }
+        Returns: Json
+      }
       __resolve_public_season: {
         Args: { p_organization_id: string; p_season_slug: string }
         Returns: string
+      }
+      __round_slot_starts_at: {
+        Args: {
+          p_day_of_week: number
+          p_round_number: number
+          p_season_id: string
+          p_start_time: string
+        }
+        Returns: string
+      }
+      __schedule_match_core: {
+        Args: {
+          p_calendar_status?: string
+          p_field_id: string
+          p_match_id: string
+          p_starts_at: string
+        }
+        Returns: undefined
       }
       __season_standings_core: {
         Args: { p_season_id: string }
@@ -1462,6 +1513,7 @@ export type Database = {
           won: number
         }[]
       }
+      accept_captain_invitation: { Args: { p_token: string }; Returns: string }
       add_player_to_season_team: {
         Args: {
           p_jersey_number?: number
@@ -1471,7 +1523,28 @@ export type Database = {
         }
         Returns: string
       }
+      apply_recurring_slot_to_season: {
+        Args: {
+          p_day_of_week: number
+          p_season_id: string
+          p_start_time: string
+        }
+        Returns: Json
+      }
       can_capture_match: { Args: { p_match_id: string }; Returns: boolean }
+      confirm_match_calendar: {
+        Args: { p_match_id: string }
+        Returns: undefined
+      }
+      create_captain_player_with_invitation: {
+        Args: {
+          p_email: string
+          p_full_name: string
+          p_jersey_number?: number
+          p_season_team_id: string
+        }
+        Returns: string
+      }
       create_organization_with_owner: {
         Args: { p_brand_color?: string; p_name: string }
         Returns: string
@@ -1490,6 +1563,7 @@ export type Database = {
         Returns: {
           away_score: number | null
           away_season_team_id: string
+          calendar_status: string
           created_at: string
           field_reservation_id: string | null
           home_score: number | null
@@ -1515,7 +1589,7 @@ export type Database = {
         Args: {
           p_allow_draws: boolean
           p_competition_id: string
-          p_ends_on?: string | null
+          p_ends_on: string | null
           p_format_type: string
           p_match_duration_minutes: number
           p_minimum_rest_minutes: number
@@ -1524,7 +1598,7 @@ export type Database = {
           p_points_loss: number
           p_points_win: number
           p_slug: string
-          p_starts_on?: string | null
+          p_starts_on: string | null
           p_suspension_matches: number
           p_visibility: string
           p_yellow_card_limit: number
@@ -1545,6 +1619,7 @@ export type Database = {
         }
         Returns: string
       }
+      expire_stale_match_reschedule_requests: { Args: never; Returns: number }
       get_public_season_discipline: {
         Args: { p_organization_id: string; p_season_slug: string }
         Returns: {
@@ -1559,6 +1634,7 @@ export type Database = {
         Returns: {
           away_score: number
           away_team_name: string
+          calendar_status: string
           field_name: string
           home_score: number
           home_team_name: string
@@ -1663,6 +1739,18 @@ export type Database = {
         Args: { p_roles: string[]; p_season_id: string }
         Returns: boolean
       }
+      invite_captain_to_roster: {
+        Args: { p_email: string; p_season_team_player_id: string }
+        Returns: string
+      }
+      is_active_captain_of_match: {
+        Args: { p_match_id: string; p_profile_id?: string }
+        Returns: boolean
+      }
+      is_active_captain_of_season_team: {
+        Args: { p_profile_id?: string; p_season_team_id: string }
+        Returns: boolean
+      }
       is_member_of: { Args: { p_org_id: string }; Returns: boolean }
       is_valid_organization_logo_path: {
         Args: { p_logo_path: string; p_organization_id: string }
@@ -1670,12 +1758,20 @@ export type Database = {
       }
       is_valid_uuid_text: { Args: { p_value: string }; Returns: boolean }
       normalize_brand_color: { Args: { p_color: string }; Returns: string }
+      propose_match_reschedule: {
+        Args: {
+          p_match_id: string
+          p_proposed_field_id?: string
+          p_proposed_starts_at: string
+        }
+        Returns: string
+      }
       record_match_event: {
         Args: {
           p_event_type: string
           p_match_id: string
           p_minute: number
-          p_notes?: string | null
+          p_notes?: string
           p_season_team_player_id: string
         }
         Returns: string
@@ -1698,6 +1794,14 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      resolve_match_reschedule: {
+        Args: { p_action: string; p_notes?: string; p_request_id: string }
+        Returns: undefined
+      }
+      respond_match_reschedule: {
+        Args: { p_approve: boolean; p_request_id: string }
+        Returns: undefined
       }
       schedule_match: {
         Args: { p_field_id: string; p_match_id: string; p_starts_at: string }
@@ -1744,6 +1848,7 @@ export type Database = {
         Returns: {
           away_score: number | null
           away_season_team_id: string
+          calendar_status: string
           created_at: string
           field_reservation_id: string | null
           home_score: number | null
@@ -1776,7 +1881,7 @@ export type Database = {
       update_season_with_rules: {
         Args: {
           p_allow_draws: boolean
-          p_ends_on?: string | null
+          p_ends_on: string | null
           p_format_type: string
           p_match_duration_minutes: number
           p_minimum_rest_minutes: number
@@ -1785,7 +1890,7 @@ export type Database = {
           p_points_loss: number
           p_points_win: number
           p_season_id: string
-          p_starts_on?: string | null
+          p_starts_on: string | null
           p_suspension_matches: number
           p_visibility: string
           p_yellow_card_limit: number

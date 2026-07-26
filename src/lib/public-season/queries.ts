@@ -62,6 +62,7 @@ type MatchRpcRow = {
   home_team_name: string;
   away_team_name: string;
   status: string;
+  calendar_status: string;
   home_score: number | null;
   away_score: number | null;
   starts_at: string | null;
@@ -146,6 +147,7 @@ export async function getPublicSeasonMatches(
     homeTeamName: row.home_team_name,
     awayTeamName: row.away_team_name,
     status: row.status,
+    calendarStatus: row.calendar_status,
     homeScore: row.home_score,
     awayScore: row.away_score,
     startsAt: row.starts_at,

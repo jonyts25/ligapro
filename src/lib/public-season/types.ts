@@ -33,6 +33,7 @@ export type PublicMatchRow = {
   homeTeamName: string;
   awayTeamName: string;
   status: string;
+  calendarStatus: string;
   homeScore: number | null;
   awayScore: number | null;
   startsAt: string | null;

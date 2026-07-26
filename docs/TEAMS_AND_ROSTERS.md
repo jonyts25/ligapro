@@ -18,7 +18,7 @@ Campos de inscripción: `display_name` (opcional), `group_name` (informativo; no
 | **Player** | `players` | Persona en la org (`full_name`; `profile_id` opcional) |
 | **Roster** | `season_team_players` | Participación en un `season_team` |
 
-F5 no crea Auth users ni invita por correo. `profile_id` queda NULL en altas normales.
+Altas normales de jugador: `profile_id` NULL. **Capitanes** (Migration 019): se puede invitar por correo para vincular cuenta Auth sin crear usuario sin acción del invitado.
 
 Campos de roster: `jersey_number`, `is_captain`, `registration_status` (`active` \| `inactive` \| `suspended`).
 
@@ -29,6 +29,22 @@ No existe `position` en el schema.
 Solo `season_team_players.is_captain`. Máximo uno por plantel (índice único parcial). Debe estar `active`.
 
 RPC existente (004): `set_season_team_captain(p_season_team_id, p_player_id)`.
+
+### Cuenta de capitán (Migration 019)
+
+Flujo F5 extendido cuando `is_captain = true`:
+
+1. Admin crea jugador + capitán (`create_captain_player_with_invitation`) **o** designa capitán y envía invitación (`invite_captain_to_roster`).
+2. Tabla `captain_invitations` genera token + email (expira en 7 días).
+3. Invitado se registra/inicia sesión y acepta (`accept_captain_invitation(p_token)`) → `players.profile_id = auth.uid()`.
+4. **No** se crean cuentas Auth para jugadores no capitanes.
+
+Privilegios RLS del capitán vinculado (y solo estos):
+
+- Leer partidos donde participa su `season_team`.
+- Proponer y responder solicitudes de reagendado (`match_reschedule_requests` vía RPC).
+
+**No** puede: editar roster, cargos, resultados, finanzas, ni ver otras organizaciones/equipos.
 
 ## Un plantel activo por season (Migration 015)
 
@@ -58,12 +74,15 @@ RPC `deactivate_season_team_player(p_season_team_player_id)` (wrapper de status=
 
 Reactivar: `add_player_to_season_team` / `set_season_team_player_status(..., 'active')` solo si no ocupa otro plantel de la season.
 
-## Operaciones atómicas (Migration 014 + 015)
+## Operaciones atómicas (Migration 014 + 015 + 019)
 
 | RPC | Uso |
 | --- | --- |
 | `enroll_team_in_season` | Inscribe team en season |
 | `create_player_and_add_to_roster` | Crea player + roster; si roster falla, no queda player |
+| `create_captain_player_with_invitation` | Crea player + capitán + invitación email |
+| `invite_captain_to_roster` | Invitación para capitán ya en plantel |
+| `accept_captain_invitation` | Invitado vincula su profile |
 | `add_player_to_season_team` | Agrega o reactiva player existente |
 | `set_season_team_player_status` | Cambia active/inactive/suspended (quita capitán si aplica) |
 | `deactivate_season_team_player` | Baja suave (= inactive) |
@@ -73,7 +92,7 @@ Sin `organization_id` / `profile_id` de actor en firmas. SECURITY DEFINER + gran
 
 ## Permisos
 
-owner/admin: mutan. member: lee. tournament_admin: sin privilegio estructural. Capitán: dato deportivo, no permiso de app.
+owner/admin: mutan roster e invitaciones. member: lee. tournament_admin: sin privilegio estructural. Capitán vinculado: solo calendario/reagendado de su equipo (019).
 
 ## Rutas
 
@@ -90,5 +109,7 @@ owner/admin: mutan. member: lee. tournament_admin: sin privilegio estructural. C
 ## Limitaciones / siguiente paso
 
 Equipos elegibles para fixture F6: `registered` | `confirmed` (no `withdrawn`). Ver `docs/FIXTURE_AND_SCHEDULING.md`.
+
+UI de aceptación de invitación y flujo wa.me para avisos: fase frontend posterior a 019.
 
 Siguiente: captura de resultados.

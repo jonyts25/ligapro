@@ -2,11 +2,11 @@
 
 ## Estado
 
-**Diseño v0 congelado** + onboarding/branding (011) + sedes (012 / F3) + torneos (F4 / 013) + equipos/planteles (Frontend F5 / Migration 014–015) + fixture/programación (Frontend F6 / Migration 016) + captura (F7 / Migration 017) + standings/páginas públicas (F8 / Migration 018).
+**Diseño v0 congelado** + onboarding/branding (011) + sedes (012 / F3) + torneos (F4 / 013) + equipos/planteles (Frontend F5 / Migration 014–015) + fixture/programación (Frontend F6 / Migration 016) + captura (F7 / Migration 017) + standings/páginas públicas (F8 / Migration 018) + reagendado/capitán/calendario dual (Migration 019).
 
-Schema SQL: Migrations 001–018 aplicadas en `ligapro-dev`. Pendiente: corrección segura de eventos / desempates avanzados / F9.
+Schema SQL: Migrations 001–019 aplicadas en `ligapro-dev`. Pendiente: corrección segura de eventos / desempates avanzados / F9.
 
-## Entidades aprobadas (22)
+## Entidades aprobadas (24)
 
 1. `profiles` — **implementada (001)**
 2. `organizations` — **implementada (001)**
@@ -30,6 +30,8 @@ Schema SQL: Migrations 001–018 aplicadas en `ligapro-dev`. Pendiente: correcci
 20. `team_charges` — **implementada (009)**
 21. `team_payments` — **implementada (009)**
 22. `audit_log` — **implementada (010)**
+23. `captain_invitations` — **implementada (019)**
+24. `match_reschedule_requests` — **implementada (019)**
 
 ## Bloque 001 — identidad y multi-tenancy
 
@@ -173,6 +175,10 @@ Al insertar una season, un trigger AFTER INSERT crea automáticamente la fila `s
 | `allow_draws` | boolean NOT NULL | default true |
 | `match_duration_minutes` | integer NOT NULL | default 90; CHECK > 0 |
 | `minimum_rest_minutes` | integer NOT NULL | default 0; CHECK ≥ 0 |
+| `recurring_slot_field_id` | uuid nullable | Migration 019; FK → `fields` |
+| `recurring_slot_day_of_week` | integer nullable | 0–6; persistido al aplicar slot |
+| `recurring_slot_start_time` | time nullable | hora local MX |
+| `reschedule_request_ttl_hours` | integer NOT NULL | default 72; TTL propuestas de reagendado |
 | `yellow_card_limit` | integer NOT NULL | default 5; CHECK > 0 |
 | `suspension_matches` | integer NOT NULL | default 1; CHECK > 0 |
 | `created_at` | timestamptz | |
@@ -182,11 +188,11 @@ Columnas tipadas (no JSON). Sin `season_rule_templates`.
 
 ## Bloque 004 — teams, players, season_teams, season_team_players
 
-El **capitán** vive únicamente en `season_team_players.is_captain` (máximo uno por `season_team` vía UNIQUE parcial). No existe `season_role` de captain. `profile_id` en `players` es opcional; no es requisito de BD para ser capitán. Permisos de capitán a nivel RLS / `season_roles` son un bloque futuro. Sin acceso anon/público todavía.
+El **capitán** vive únicamente en `season_team_players.is_captain` (máximo uno por `season_team` vía UNIQUE parcial). `profile_id` en `players` es opcional; Migration 019 permite vincularlo al capitán vía invitación (`captain_invitations` + `accept_captain_invitation`). Capitán con perfil vinculado: RLS limitada (leer partidos propios, proponer/responder reagendados). Sin permisos de roster, cargos ni resultados.
 
 **UI (Frontend F5):** módulo Equipos + inscripción/plantel por temporada. Ver `docs/TEAMS_AND_ROSTERS.md`.
 
-**RPCs (014 + 015 + 004):** `enroll_team_in_season`, `create_player_and_add_to_roster`, `add_player_to_season_team`, `set_season_team_player_status`, `deactivate_season_team_player`, `set_season_team_captain`. Retiro de plantel = `inactive` (no DELETE de `players`). Un player **no** puede estar `active`/`suspended` en dos equipos de la misma season (índice único parcial sobre `season_id, player_id`; Migration 015). `inactive` libera la plaza. Distintas seasons/competitions permitidas. Sin transferencia automática.
+**RPCs (014 + 015 + 004 + 019):** `enroll_team_in_season`, `create_player_and_add_to_roster`, `add_player_to_season_team`, `set_season_team_player_status`, `deactivate_season_team_player`, `set_season_team_captain`, `invite_captain_to_roster`, `create_captain_player_with_invitation`, `accept_captain_invitation`. Retiro de plantel = `inactive` (no DELETE de `players`). Un player **no** puede estar `active`/`suspended` en dos equipos de la misma season (índice único parcial sobre `season_id, player_id`; Migration 015). `inactive` libera la plaza. Distintas seasons/competitions permitidas. Sin transferencia automática.
 
 ### `teams`
 
@@ -283,9 +289,14 @@ Captura de resultado por oficiales / `match_events` **no** está en este bloque 
 | `round_number` | integer nullable | Migration 016; jornada > 0 |
 | `leg_number` | integer nullable | Migration 016; 1 \| 2 |
 | `sequence_in_round` | integer nullable | Migration 016; orden en jornada |
+| `calendar_status` | text NOT NULL | Migration 019; `programado` \| `confirmado` |
 | `created_at` / `updated_at` | timestamptz | |
 
-RPCs F6 (016): `create_season_round_robin_fixture`, `schedule_match`, `unschedule_match`. Ver `docs/FIXTURE_AND_SCHEDULING.md`.
+RPCs F6 (016): `create_season_round_robin_fixture`, `schedule_match`, `unschedule_match`. Migration 019: `confirm_match_calendar`, `propose_match_reschedule`, `respond_match_reschedule`, `resolve_match_reschedule`, `apply_recurring_slot_to_season`. Ver `docs/FIXTURE_AND_SCHEDULING.md`.
+
+### `captain_invitations` / `match_reschedule_requests` (019)
+
+Invitación de capitán por email (`captain_invitations`) y propuestas de reagendado con consenso (`match_reschedule_requests`). Detalle de columnas y estados: ver `docs/reports/MIGRATION_019_REPORT.md` y ADR 0006.
 
 ### `match_officials`
 
