@@ -2,11 +2,11 @@
 
 ## Estado
 
-**Diseño v0 congelado** + onboarding/branding (011) + sedes (012 / F3) + torneos (F4 / 013) + equipos/planteles (Frontend F5 / Migration 014–015) + fixture/programación (Frontend F6 / Migration 016) + captura (F7 / Migration 017) + standings/páginas públicas (F8 / Migration 018) + reagendado/capitán/calendario dual (Migration 019) + disciplina/vicecapitán/marcas de pago internas (Migration 020) + bloqueos/cuota/roster/candado (021) + cédula arbitral ventana/anulación (022).
+**Diseño v0 congelado** + … + cédula arbitral ventana/anulación (022) + verificación efímera/candado transferencia (023).
 
-Schema SQL: Migrations 001–022 aplicadas en `ligapro-dev`. Pendiente: desempates avanzados / F9 frontend captura.
+Schema SQL: Migrations 001–023 aplicadas en `ligapro-dev`.
 
-## Entidades aprobadas (25)
+## Entidades aprobadas (28)
 
 1. `profiles` — **implementada (001)**
 2. `organizations` — **implementada (001)**
@@ -34,6 +34,8 @@ Schema SQL: Migrations 001–022 aplicadas en `ligapro-dev`. Pendiente: desempat
 24. `match_reschedule_requests` — **implementada (019)**
 25. `season_team_player_payment_marks` — **implementada (020)**
 26. `season_field_blocks` — **implementada (021)**
+27. `player_verification_reviews` — **implementada (023)**
+28. `player_transfer_lock_releases` — **implementada (023)**
 
 ## Bloque 001 — identidad y multi-tenancy
 
@@ -202,6 +204,8 @@ Al insertar una season, un trigger AFTER INSERT crea automáticamente la fila `s
 | `suspension_matches` | integer NOT NULL | default 1; CHECK > 0 |
 | `registration_fee` | numeric(12,2) nullable | Migration 021; ausente = sin cuota de inscripción |
 | `max_roster_size` | integer nullable | Migration 021; tope para altas del capitán |
+| `require_player_verification` | boolean NOT NULL | default false (023) |
+| `transfer_lock_days` | integer NOT NULL | default 0 (023); candado entre planteles |
 | `created_at` | timestamptz | |
 | `updated_at` | timestamptz | trigger `set_updated_at` |
 
@@ -213,7 +217,7 @@ El **capitán** vive en `season_team_players.is_captain` (máximo uno por `seaso
 
 **UI (Frontend F5):** módulo Equipos + inscripción/plantel por temporada. Ver `docs/TEAMS_AND_ROSTERS.md`.
 
-**RPCs (014 + 015 + 004 + 019 + 020 + 021):** `enroll_team_in_season` (cuota automática si `registration_fee`), `create_player_and_add_to_roster`, `add_player_to_season_team` (capitán/vice alta en equipo propio), `set_season_team_player_status`, `deactivate_season_team_player`, `set_season_team_captain`, `set_season_team_vice_captain` (designación única capitán), `set_roster_lock`, `invite_captain_to_roster`, `create_captain_player_with_invitation`, `accept_captain_invitation`, `set_player_payment_mark`. Retiro de plantel = `inactive` (no DELETE de `players`). Un player **no** puede estar `active`/`suspended` en dos equipos de la misma season (índice único parcial sobre `season_id, player_id`; Migration 015). `inactive` libera la plaza. Distintas seasons/competitions permitidas. Sin transferencia automática.
+**RPCs (014 + 015 + 004 + 019 + 020 + 021 + 023):** … + `request_player_verification`, `review_player_verification`, `release_player_transfer_lock`. Activación sujeta a verificación (023) y candado de transferencia (023) vía `__assert_player_activation_allowed` en altas/reactivaciones.
 
 ### `teams`
 
@@ -233,6 +237,7 @@ El **capitán** vive en `season_team_players.is_captain` (máximo uno por `seaso
 | `organization_id` | uuid NOT NULL | FK → `organizations(id)` ON DELETE CASCADE |
 | `profile_id` | uuid nullable | FK → `profiles(id)` ON DELETE SET NULL; UNIQUE parcial `(organization_id, profile_id)` WHERE NOT NULL |
 | `full_name` | text NOT NULL | |
+| `verification_status` | text NOT NULL | default `not_required`; CHECK (023); sin documento adjunto |
 | `created_at` | timestamptz | |
 | `updated_at` | timestamptz | trigger `set_updated_at` |
 

@@ -837,6 +837,117 @@ export type Database = {
           },
         ]
       }
+      player_transfer_lock_releases: {
+        Row: {
+          id: string
+          organization_id: string
+          player_id: string
+          reason: string
+          released_at: string
+          released_by_profile_id: string
+          season_id: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          player_id: string
+          reason: string
+          released_at?: string
+          released_by_profile_id: string
+          season_id: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          player_id?: string
+          reason?: string
+          released_at?: string
+          released_by_profile_id?: string
+          season_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_transfer_lock_releases_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_transfer_lock_releases_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_transfer_lock_releases_released_by_profile_id_fkey"
+            columns: ["released_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_transfer_lock_releases_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      player_verification_reviews: {
+        Row: {
+          id: string
+          organization_id: string
+          player_id: string
+          reason: string | null
+          reviewed_at: string
+          reviewed_by_profile_id: string
+          status: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          player_id: string
+          reason?: string | null
+          reviewed_at?: string
+          reviewed_by_profile_id: string
+          status: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          player_id?: string
+          reason?: string | null
+          reviewed_at?: string
+          reviewed_by_profile_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_verification_reviews_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_verification_reviews_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_verification_reviews_reviewed_by_profile_id_fkey"
+            columns: ["reviewed_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       players: {
         Row: {
           created_at: string
@@ -845,6 +956,7 @@ export type Database = {
           organization_id: string
           profile_id: string | null
           updated_at: string
+          verification_status: string
         }
         Insert: {
           created_at?: string
@@ -853,6 +965,7 @@ export type Database = {
           organization_id: string
           profile_id?: string | null
           updated_at?: string
+          verification_status?: string
         }
         Update: {
           created_at?: string
@@ -861,6 +974,7 @@ export type Database = {
           organization_id?: string
           profile_id?: string | null
           updated_at?: string
+          verification_status?: string
         }
         Relationships: [
           {
@@ -1039,9 +1153,11 @@ export type Database = {
           recurring_slot_field_id: string | null
           recurring_slot_start_time: string | null
           registration_fee: number | null
+          require_player_verification: boolean
           reschedule_request_ttl_hours: number
           season_id: string
           suspension_matches: number
+          transfer_lock_days: number
           updated_at: string
           yellow_card_limit: number
         }
@@ -1060,9 +1176,11 @@ export type Database = {
           recurring_slot_field_id?: string | null
           recurring_slot_start_time?: string | null
           registration_fee?: number | null
+          require_player_verification?: boolean
           reschedule_request_ttl_hours?: number
           season_id: string
           suspension_matches?: number
+          transfer_lock_days?: number
           updated_at?: string
           yellow_card_limit?: number
         }
@@ -1081,9 +1199,11 @@ export type Database = {
           recurring_slot_field_id?: string | null
           recurring_slot_start_time?: string | null
           registration_fee?: number | null
+          require_player_verification?: boolean
           reschedule_request_ttl_hours?: number
           season_id?: string
           suspension_matches?: number
+          transfer_lock_days?: number
           updated_at?: string
           yellow_card_limit?: number
         }
@@ -1625,6 +1745,15 @@ export type Database = {
         Args: { p_match_id: string }
         Returns: undefined
       }
+      __assert_player_activation_allowed: {
+        Args: {
+          p_bypass: boolean
+          p_player_id: string
+          p_season_id: string
+          p_target_season_team_id: string
+        }
+        Returns: undefined
+      }
       __assert_season_platform_billing_active: {
         Args: { p_season_id: string }
         Returns: undefined
@@ -1632,6 +1761,10 @@ export type Database = {
       __assert_season_readable: {
         Args: { p_season_id: string }
         Returns: string
+      }
+      __can_request_player_verification: {
+        Args: { p_player_id: string }
+        Returns: boolean
       }
       __captain_season_team_for_match: {
         Args: { p_match_id: string; p_profile_id: string }
@@ -1978,6 +2111,24 @@ export type Database = {
         }
         Returns: string
       }
+      release_player_transfer_lock: {
+        Args: { p_player_id: string; p_reason: string; p_season_id: string }
+        Returns: {
+          id: string
+          organization_id: string
+          player_id: string
+          reason: string
+          released_at: string
+          released_by_profile_id: string
+          season_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "player_transfer_lock_releases"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       replace_field_availability: {
         Args: { p_field_id: string; p_intervals: Json }
         Returns: {
@@ -1997,6 +2148,24 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      request_player_verification: {
+        Args: { p_player_id: string }
+        Returns: {
+          created_at: string
+          full_name: string
+          id: string
+          organization_id: string
+          profile_id: string | null
+          updated_at: string
+          verification_status: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "players"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       resolve_match_reschedule: {
         Args: { p_action: string; p_notes?: string; p_request_id: string }
         Returns: undefined
@@ -2004,6 +2173,24 @@ export type Database = {
       respond_match_reschedule: {
         Args: { p_approve: boolean; p_request_id: string }
         Returns: undefined
+      }
+      review_player_verification: {
+        Args: { p_approved: boolean; p_player_id: string; p_reason?: string }
+        Returns: {
+          created_at: string
+          full_name: string
+          id: string
+          organization_id: string
+          profile_id: string | null
+          updated_at: string
+          verification_status: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "players"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       schedule_match: {
         Args: { p_field_id: string; p_match_id: string; p_starts_at: string }

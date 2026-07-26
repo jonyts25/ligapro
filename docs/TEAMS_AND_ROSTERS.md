@@ -56,6 +56,35 @@ Privilegios RLS del capitán o vicecapitán **vinculado** (y solo estos):
 
 `season_rules.registration_fee` (numeric nullable). Si está definida, `enroll_team_in_season` crea automáticamente un `team_charge` (`charge_type = 'registration'`) en la misma transacción atómica.
 
+## Candado de transferencia y verificación (Migration 023)
+
+ADR: `docs/ADR/0009-verificacion-identidad-efimera.md` — **Opción C: sin almacenamiento de documentos.**
+
+| Campo / tabla | Efecto |
+| --- | --- |
+| `season_rules.require_player_verification` | Si true, jugadores `pending`/`rejected` no se activan en roster de esa season (admin bypass) |
+| `players.verification_status` | `not_required` \| `pending` \| `approved` \| `rejected` — persistente en org |
+| `player_verification_reviews` | Historial de decisiones admin (sin documento adjunto) |
+| `season_rules.transfer_lock_days` | Días tras baja antes de activar en otro plantel de la misma season (0 = off) |
+| `player_transfer_lock_releases` | Excepción puntual admin con motivo |
+
+### RPCs verificación
+
+| RPC | Actor |
+| --- | --- |
+| `request_player_verification(p_player_id)` | owner/admin o capitán/sub del plantel donde el jugador está activo |
+| `review_player_verification(p_player_id, p_approved, p_reason?)` | **solo owner/admin**; motivo obligatorio si rechazo |
+
+Capitán/sub **no** aprueban ni rechazan — solo solicitan.
+
+### RPC candado
+
+| RPC | Actor |
+| --- | --- |
+| `release_player_transfer_lock(p_player_id, p_season_id, p_reason)` | owner/admin; motivo obligatorio |
+
+Fecha de liberación para el candado: `season_team_players.updated_at` al pasar a `inactive`. Owner/admin no están sujetos al candado.
+
 ## Tope de plantel y candado (Migration 021)
 
 | Campo | Efecto |
@@ -116,6 +145,9 @@ Reactivar: `add_player_to_season_team` / `set_season_team_player_status(..., 'ac
 | `set_season_team_vice_captain` | Vicecapitanía (020/021; designación única para capitán) |
 | `set_roster_lock` | Bloquea altas del capitán en plantel (021; owner/admin) |
 | `set_player_payment_mark` | Marca informal de pago por jugador (capitán/vice) |
+| `request_player_verification` | Solicita verificación de identidad (023) |
+| `review_player_verification` | Aprueba/rechaza verificación (023; owner/admin) |
+| `release_player_transfer_lock` | Libera candado de transferencia (023; owner/admin) |
 
 Sin `organization_id` / `profile_id` de actor en firmas. SECURITY DEFINER + grants authenticated.
 
