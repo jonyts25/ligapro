@@ -5,9 +5,14 @@ import { requireUser } from "@/lib/auth/require-user";
 import { requireOrganizationMembership } from "@/lib/auth/require-organization-membership";
 import { getSeasonDetails } from "@/lib/competitions/queries";
 import { getSeasonDisciplineSummary } from "@/lib/standings/queries";
+import {
+  getActiveDisciplineSuspensions,
+  getSeasonRosterPlayerOptions,
+} from "@/lib/discipline/queries";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { DisciplineTable } from "@/components/standings/DisciplineTable";
 import { SeasonStandingsNav } from "@/components/standings/SeasonStandingsNav";
+import { DisciplineAdminPanel } from "@/components/discipline/DisciplineAdminPanel";
 
 type PageProps = {
   params: Promise<{
@@ -20,7 +25,13 @@ type PageProps = {
 export default async function SeasonDisciplinePage({ params }: PageProps) {
   const { organizationId, competitionId, seasonId } = await params;
   const user = await requireUser();
-  await requireOrganizationMembership(user.id, organizationId);
+  const membership = await requireOrganizationMembership(
+    user.id,
+    organizationId
+  );
+  const canManage =
+    membership.role === "organization_owner" ||
+    membership.role === "organization_admin";
 
   const season = await getSeasonDetails(
     organizationId,
@@ -29,7 +40,15 @@ export default async function SeasonDisciplinePage({ params }: PageProps) {
   );
   if (!season) notFound();
 
-  const rows = await getSeasonDisciplineSummary(seasonId);
+  const [rows, activeSuspensions, rosterPlayers] = await Promise.all([
+    getSeasonDisciplineSummary(seasonId),
+    canManage
+      ? getActiveDisciplineSuspensions(organizationId, seasonId)
+      : Promise.resolve([]),
+    canManage
+      ? getSeasonRosterPlayerOptions(organizationId, seasonId)
+      : Promise.resolve([]),
+  ]);
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -42,7 +61,18 @@ export default async function SeasonDisciplinePage({ params }: PageProps) {
         competitionId={competitionId}
         seasonId={seasonId}
         active="disciplina"
+        canManage={canManage}
       />
+
+      {canManage && (
+        <DisciplineAdminPanel
+          organizationId={organizationId}
+          competitionId={competitionId}
+          seasonId={seasonId}
+          activeSuspensions={activeSuspensions}
+          rosterPlayers={rosterPlayers}
+        />
+      )}
 
       <DisciplineTable
         rows={rows.map((row) => ({

@@ -21,7 +21,13 @@ type PageProps = {
 export default async function SeasonTopScorersPage({ params }: PageProps) {
   const { organizationId, competitionId, seasonId } = await params;
   const user = await requireUser();
-  await requireOrganizationMembership(user.id, organizationId);
+  const membership = await requireOrganizationMembership(
+    user.id,
+    organizationId
+  );
+  const canManage =
+    membership.role === "organization_owner" ||
+    membership.role === "organization_admin";
 
   const season = await getSeasonDetails(
     organizationId,
@@ -43,6 +49,7 @@ export default async function SeasonTopScorersPage({ params }: PageProps) {
         competitionId={competitionId}
         seasonId={seasonId}
         active="goleadores"
+        canManage={canManage}
       />
 
       <DataCompletenessWarning

@@ -5,8 +5,10 @@ import {
   deactivateRosterPlayerAction,
   setCaptainAction,
   setRosterStatusAction,
+  setViceCaptainAction,
 } from "@/lib/teams/actions";
 import { CaptainBadge } from "@/components/teams/CaptainBadge";
+import { ViceCaptainBadge } from "@/components/teams/ViceCaptainBadge";
 import { SubmitButton } from "@/components/auth/SubmitButton";
 import { Card } from "@/components/ui/Card";
 import { StatusBadge } from "@/components/ui/StatusBadge";
@@ -27,6 +29,7 @@ type RosterPlayerCardProps = {
   player: RosterListItem;
   canManage: boolean;
   hasCaptain: boolean;
+  hasViceCaptain: boolean;
 };
 
 function rosterStatusVariant(
@@ -67,9 +70,14 @@ export function RosterPlayerCard({
   player,
   canManage,
   hasCaptain,
+  hasViceCaptain,
 }: RosterPlayerCardProps) {
   const [captainState, captainAction, captainPending] = useActionState(
     setCaptainAction,
+    initialTeamsActionState
+  );
+  const [viceState, viceAction, vicePending] = useActionState(
+    setViceCaptainAction,
     initialTeamsActionState
   );
   const [deactivateState, deactivateAction, deactivatePending] = useActionState(
@@ -81,6 +89,7 @@ export function RosterPlayerCard({
     initialTeamsActionState
   );
   const [confirmReplace, setConfirmReplace] = useState(false);
+  const [confirmReplaceVice, setConfirmReplaceVice] = useState(false);
   const [confirmDeactivate, setConfirmDeactivate] = useState(false);
   const [nextStatus, setNextStatus] = useState<RosterRegistrationStatus>(
     player.registration_status
@@ -89,6 +98,12 @@ export function RosterPlayerCard({
   const showCaptainForm =
     canManage &&
     !player.is_captain &&
+    !player.is_vice_captain &&
+    player.registration_status === "active";
+  const showViceForm =
+    canManage &&
+    !player.is_vice_captain &&
+    !player.is_captain &&
     player.registration_status === "active";
   const showStatusForm = canManage;
   const showDeactivateForm =
@@ -96,8 +111,12 @@ export function RosterPlayerCard({
     (player.registration_status === "active" ||
       player.registration_status === "suspended");
   const requiresConfirm = hasCaptain && !player.is_captain;
+  const requiresViceConfirm = hasViceCaptain && !player.is_vice_captain;
   const willLoseCaptain =
     player.is_captain &&
+    (nextStatus === "inactive" || nextStatus === "suspended");
+  const willLoseVice =
+    player.is_vice_captain &&
     (nextStatus === "inactive" || nextStatus === "suspended");
 
   return (
@@ -109,6 +128,7 @@ export function RosterPlayerCard({
               {player.full_name}
             </h3>
             {player.is_captain && <CaptainBadge />}
+            {player.is_vice_captain && <ViceCaptainBadge />}
           </div>
           <p className="mt-1 text-sm text-text-secondary">
             {player.jersey_number != null
@@ -168,6 +188,42 @@ export function RosterPlayerCard({
         </div>
       )}
 
+      {showViceForm && (
+        <div className="space-y-3 border-t border-border pt-4">
+          <ActionMessage ok={viceState.ok} message={viceState.message} />
+          <form action={viceAction} className="space-y-3">
+            <input
+              type="hidden"
+              name="organizationId"
+              value={organizationId}
+            />
+            <input type="hidden" name="competitionId" value={competitionId} />
+            <input type="hidden" name="seasonId" value={seasonId} />
+            <input type="hidden" name="seasonTeamId" value={seasonTeamId} />
+            <input type="hidden" name="playerId" value={player.player_id} />
+            {requiresViceConfirm && (
+              <label className="flex items-start gap-3 text-sm text-text-secondary">
+                <input
+                  type="checkbox"
+                  checked={confirmReplaceVice}
+                  onChange={(e) => setConfirmReplaceVice(e.target.checked)}
+                  disabled={vicePending}
+                  className="mt-0.5 min-h-4 min-w-4"
+                />
+                Confirmo reemplazar vicecapitán
+              </label>
+            )}
+            <SubmitButton
+              pending={vicePending}
+              className="w-auto"
+              disabled={requiresViceConfirm && !confirmReplaceVice}
+            >
+              Asignar vicecapitán
+            </SubmitButton>
+          </form>
+        </div>
+      )}
+
       {showStatusForm && (
         <div className="space-y-3 border-t border-border pt-4">
           <ActionMessage ok={statusState.ok} message={statusState.message} />
@@ -211,6 +267,12 @@ export function RosterPlayerCard({
                 capitanía.
               </p>
             )}
+            {willLoseVice && (
+              <p className="text-xs text-warning" role="status">
+                Al pasar a {rosterStatusLabel(nextStatus)} se quitará la
+                vicecapitanía.
+              </p>
+            )}
             <SubmitButton
               pending={statusPending}
               className="w-auto"
@@ -250,7 +312,9 @@ export function RosterPlayerCard({
                 Confirmo marcar como inactivo.
                 {player.is_captain
                   ? " Perderá la capitanía."
-                  : ""}{" "}
+                  : player.is_vice_captain
+                    ? " Perderá la vicecapitanía."
+                    : ""}{" "}
                 El historial se conserva y podrá agregarse a otro equipo de esta
                 temporada.
               </span>

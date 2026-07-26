@@ -89,6 +89,7 @@ export default async function SeasonCalendarPage({
         competitionId={competitionId}
         seasonId={seasonId}
         active="calendario"
+        canManage={canManage}
       />
 
       <SeasonFixtureSummary stats={data.stats} />

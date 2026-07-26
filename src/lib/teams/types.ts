@@ -53,6 +53,7 @@ export type RosterEntryRecord = {
   season_id: string;
   jersey_number: number | null;
   is_captain: boolean;
+  is_vice_captain: boolean;
   registration_status: RosterRegistrationStatus;
 };
 

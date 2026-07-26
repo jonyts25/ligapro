@@ -60,6 +60,7 @@ export default async function SeasonStandingsPage({ params }: PageProps) {
         competitionId={competitionId}
         seasonId={seasonId}
         active="posiciones"
+        canManage={canManage}
       />
 
       {canManage && mismatches.length > 0 && (

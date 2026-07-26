@@ -59,6 +59,7 @@ export type MatchListItem = {
   homeScore: number | null;
   awayScore: number | null;
   isProgrammed: boolean;
+  calendarStatus: "programado" | "confirmado";
   schedule: MatchScheduleInfo;
 };
 
@@ -116,6 +117,19 @@ export type FixtureActionState = {
 export const initialFixtureActionState: FixtureActionState = {
   ok: false,
   message: null,
+};
+
+export type MatchRescheduleRequestRow = {
+  id: string;
+  matchId: string;
+  status: string;
+  proposedStartsAt: string;
+  proposedFieldId: string | null;
+  proposedFieldName: string | null;
+  proposedVenueName: string | null;
+  proposedByDisplayName: string;
+  expiresAt: string;
+  respondedAt: string | null;
 };
 
 export type OrganizationMatchStats = {

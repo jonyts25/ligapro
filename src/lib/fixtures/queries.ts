@@ -43,6 +43,7 @@ function mapMatchRow(
     home_score: number | null;
     away_score: number | null;
     field_reservation_id: string | null;
+    calendar_status?: string;
   },
   names: Map<string, string>,
   reservations: Map<
@@ -80,6 +81,8 @@ function mapMatchRow(
     homeScore: row.home_score,
     awayScore: row.away_score,
     isProgrammed: Boolean(row.field_reservation_id && res),
+    calendarStatus:
+      row.calendar_status === "confirmado" ? "confirmado" : "programado",
     schedule: {
       reservationId: res?.id ?? null,
       fieldId: res?.field_id ?? null,
@@ -308,7 +311,7 @@ export async function getSeasonMatchesGroupedByRound(
   const { data: matches } = await supabase
     .from("matches")
     .select(
-      "id, season_id, organization_id, round_number, leg_number, sequence_in_round, round_label, status, home_season_team_id, away_season_team_id, home_score, away_score, field_reservation_id"
+      "id, season_id, organization_id, round_number, leg_number, sequence_in_round, round_label, status, home_season_team_id, away_season_team_id, home_score, away_score, field_reservation_id, calendar_status"
     )
     .eq("organization_id", organizationId)
     .eq("season_id", seasonId)
@@ -390,7 +393,7 @@ export async function getMatchSchedulingDetails(
   const { data: match } = await supabase
     .from("matches")
     .select(
-      "id, season_id, organization_id, round_number, leg_number, sequence_in_round, round_label, status, home_season_team_id, away_season_team_id, home_score, away_score, field_reservation_id"
+      "id, season_id, organization_id, round_number, leg_number, sequence_in_round, round_label, status, home_season_team_id, away_season_team_id, home_score, away_score, field_reservation_id, calendar_status"
     )
     .eq("id", matchId)
     .eq("organization_id", organizationId)
@@ -575,4 +578,57 @@ export async function getOrganizationMatchStats(
     .slice(0, 5);
 
   return { totalMatches, scheduledMatches, upcoming };
+}
+
+export async function getMatchRescheduleRequest(
+  organizationId: string,
+  matchId: string
+): Promise<import("@/lib/fixtures/types").MatchRescheduleRequestRow | null> {
+  const supabase = await createClient();
+
+  const { data } = await supabase
+    .from("match_reschedule_requests")
+    .select(
+      "id, match_id, status, proposed_starts_at, proposed_field_id, proposed_by_profile_id, expires_at, responded_at, profiles!match_reschedule_requests_proposed_by_profile_id_fkey(display_name, email), fields(name, venues(name))"
+    )
+    .eq("organization_id", organizationId)
+    .eq("match_id", matchId)
+    .in("status", ["proposed", "approved_by_opponent"])
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!data) return null;
+
+  const profileRel = data.profiles as
+    | { display_name: string | null; email: string }
+    | { display_name: string | null; email: string }[]
+    | null;
+  const profile = Array.isArray(profileRel) ? profileRel[0] : profileRel;
+  const proposedByDisplayName =
+    profile?.display_name?.trim() || profile?.email || "Capitán";
+
+  const fieldRel = data.fields as
+    | {
+        name: string;
+        venues: { name: string } | { name: string }[] | null;
+      }
+    | null
+    | Array<unknown>;
+  const field = Array.isArray(fieldRel) ? null : fieldRel;
+  const venueRel = field?.venues ?? null;
+  const venue = Array.isArray(venueRel) ? venueRel[0] : venueRel;
+
+  return {
+    id: data.id,
+    matchId: data.match_id,
+    status: data.status,
+    proposedStartsAt: data.proposed_starts_at,
+    proposedFieldId: data.proposed_field_id,
+    proposedFieldName: field?.name ?? null,
+    proposedVenueName: venue?.name ?? null,
+    proposedByDisplayName,
+    expiresAt: data.expires_at,
+    respondedAt: data.responded_at,
+  };
 }

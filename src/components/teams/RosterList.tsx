@@ -20,6 +20,7 @@ export function RosterList({
   canManage,
 }: RosterListProps) {
   const hasCaptain = roster.some((p) => p.is_captain);
+  const hasViceCaptain = roster.some((p) => p.is_vice_captain);
 
   if (roster.length === 0) {
     return (
@@ -42,6 +43,7 @@ export function RosterList({
             player={player}
             canManage={canManage}
             hasCaptain={hasCaptain}
+            hasViceCaptain={hasViceCaptain}
           />
         </li>
       ))}

@@ -7,18 +7,26 @@ type SeasonStandingsNavProps = {
   seasonId: string;
   active:
     | "temporada"
+    | "dashboard"
     | "calendario"
     | "posiciones"
     | "goleadores"
-    | "disciplina";
+    | "disciplina"
+    | "finanzas";
+  canManage?: boolean;
 };
 
-const LINKS = [
+const BASE_LINKS = [
   { key: "temporada", label: "Temporada", path: "" },
+  { key: "dashboard", label: "Dashboard", path: "/dashboard" },
   { key: "calendario", label: "Calendario", path: "/calendario" },
   { key: "posiciones", label: "Posiciones", path: "/posiciones" },
   { key: "goleadores", label: "Goleadores", path: "/goleadores" },
   { key: "disciplina", label: "Disciplina", path: "/disciplina" },
+] as const;
+
+const ADMIN_LINKS = [
+  { key: "finanzas", label: "Finanzas", path: "/finanzas" },
 ] as const;
 
 export function SeasonStandingsNav({
@@ -26,15 +34,17 @@ export function SeasonStandingsNav({
   competitionId,
   seasonId,
   active,
+  canManage = false,
 }: SeasonStandingsNavProps) {
   const base = `/organizaciones/${organizationId}/torneos/${competitionId}/temporadas/${seasonId}`;
+  const links = canManage ? [...BASE_LINKS, ...ADMIN_LINKS] : BASE_LINKS;
 
   return (
     <nav
       aria-label="Secciones de la temporada"
       className="flex flex-wrap gap-2"
     >
-      {LINKS.map((link) => {
+      {links.map((link) => {
         const href = `${base}${link.path}`;
         const isActive = link.key === active;
         return (

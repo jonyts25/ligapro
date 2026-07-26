@@ -30,6 +30,7 @@ async function revalidateFixturePaths(
   revalidatePath(`${base}/posiciones`);
   revalidatePath(`${base}/goleadores`);
   revalidatePath(`${base}/disciplina`);
+  revalidatePath(`${base}/dashboard`);
   revalidatePath(`${base}/fixture/generar`);
   revalidatePath(`/organizaciones/${organizationId}/inicio`);
   revalidatePath(`/organizaciones/${organizationId}/calendario`);
@@ -250,5 +251,80 @@ export async function unscheduleMatchAction(
   return {
     ok: true,
     message: "El partido quedó pendiente de programación.",
+  };
+}
+
+export async function resolveMatchRescheduleAction(
+  _prev: FixtureActionState,
+  formData: FormData
+): Promise<FixtureActionState> {
+  const user = await requireUser();
+  const organizationId = String(formData.get("organizationId") ?? "");
+  const competitionId = String(formData.get("competitionId") ?? "");
+  const seasonId = String(formData.get("seasonId") ?? "");
+  const matchId = String(formData.get("matchId") ?? "");
+  const requestId = String(formData.get("requestId") ?? "");
+  const action = String(formData.get("resolutionAction") ?? "");
+
+  await requireOrganizationAdmin(user.id, organizationId);
+
+  if (!requestId || !["confirm", "no_availability"].includes(action)) {
+    return { ok: false, message: "Solicitud o acción no válida." };
+  }
+
+  const notes = String(formData.get("notes") ?? "").trim();
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("resolve_match_reschedule", {
+    p_request_id: requestId,
+    p_action: action,
+    p_notes: notes || undefined,
+  });
+
+  if (error) {
+    return {
+      ok: false,
+      message: humanizeScheduleError(error.message),
+    };
+  }
+
+  await revalidateFixturePaths(organizationId, competitionId, seasonId, matchId);
+  return {
+    ok: true,
+    message:
+      action === "confirm"
+        ? "Reagendado confirmado y calendario actualizado."
+        : "Solicitud cerrada sin cambiar el partido.",
+  };
+}
+
+export async function confirmMatchCalendarAction(
+  _prev: FixtureActionState,
+  formData: FormData
+): Promise<FixtureActionState> {
+  const user = await requireUser();
+  const organizationId = String(formData.get("organizationId") ?? "");
+  const competitionId = String(formData.get("competitionId") ?? "");
+  const seasonId = String(formData.get("seasonId") ?? "");
+  const matchId = String(formData.get("matchId") ?? "");
+
+  await requireOrganizationAdmin(user.id, organizationId);
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("confirm_match_calendar", {
+    p_match_id: matchId,
+  });
+
+  if (error) {
+    return {
+      ok: false,
+      message: humanizeScheduleError(error.message),
+    };
+  }
+
+  await revalidateFixturePaths(organizationId, competitionId, seasonId, matchId);
+  return {
+    ok: true,
+    message: "Calendario confirmado para este partido.",
   };
 }

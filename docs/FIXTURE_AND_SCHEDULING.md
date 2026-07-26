@@ -94,6 +94,8 @@ Un solo request abierto por partido. Expiración lazy en RPCs (sin cron).
 
 WhatsApp: solo deep-links `wa.me` del lado cliente (sin API en 019).
 
+**UI admin (frontend):** en detalle de partido, owner/admin ven `MatchRescheduleAdminPanel` — propuesta pendiente (informativa), aprobada por rival (confirmar / sin disponibilidad), y confirmación directa de calendario (`confirm_match_calendar`) en partidos programados.
+
 ## Semántica UI
 
 | Concepto | Criterio |

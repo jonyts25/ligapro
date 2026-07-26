@@ -76,6 +76,8 @@ async function revalidateTeamPaths(
     revalidatePath(`${base}/posiciones`);
     revalidatePath(`${base}/goleadores`);
     revalidatePath(`${base}/disciplina`);
+    revalidatePath(`${base}/dashboard`);
+    revalidatePath(`${base}/finanzas`);
     if (opts.seasonTeamId) {
       revalidatePath(`${base}/equipos/${opts.seasonTeamId}`);
     }
@@ -687,4 +689,42 @@ export async function setCaptainAction(
     seasonTeamId,
   });
   return { ok: true, message: "Capitán actualizado." };
+}
+
+export async function setViceCaptainAction(
+  _prev: TeamsActionState,
+  formData: FormData
+): Promise<TeamsActionState> {
+  const user = await requireUser();
+  const organizationId = String(formData.get("organizationId") ?? "");
+  const competitionId = String(formData.get("competitionId") ?? "");
+  const seasonId = String(formData.get("seasonId") ?? "");
+  const seasonTeamId = String(formData.get("seasonTeamId") ?? "");
+  const playerId = String(formData.get("playerId") ?? "");
+  await requireOrganizationAdmin(user.id, organizationId);
+
+  if (!playerId) {
+    return { ok: false, message: "Selecciona un jugador del plantel." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("set_season_team_vice_captain", {
+    p_season_team_id: seasonTeamId,
+    p_player_id: playerId,
+  });
+
+  if (error) {
+    return {
+      ok: false,
+      message:
+        "No pudimos asignar al vicecapitán. Debe estar activo en este plantel.",
+    };
+  }
+
+  await revalidateTeamPaths(organizationId, {
+    competitionId,
+    seasonId,
+    seasonTeamId,
+  });
+  return { ok: true, message: "Vicecapitán actualizado." };
 }

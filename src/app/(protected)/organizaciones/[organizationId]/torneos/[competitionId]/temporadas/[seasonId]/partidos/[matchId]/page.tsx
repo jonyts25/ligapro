@@ -7,7 +7,9 @@ import {
   getOrganizationMemberOptions,
 } from "@/lib/matches/queries";
 import { formatMatchDateTime } from "@/lib/fixtures/format";
+import { getMatchRescheduleRequest } from "@/lib/fixtures/queries";
 import { MatchStatusBadge } from "@/components/fixtures/MatchStatusBadge";
+import { MatchRescheduleAdminPanel } from "@/components/fixtures/MatchRescheduleAdminPanel";
 import { MatchOfficialsManager } from "@/components/matches/MatchOfficialsManager";
 import { MatchTimeline } from "@/components/matches/MatchTimeline";
 import { MatchDisciplineSummary } from "@/components/matches/MatchDisciplineSummary";
@@ -53,6 +55,9 @@ export default async function MatchDetailPage({ params }: PageProps) {
   const members = canManage
     ? await getOrganizationMemberOptions(organizationId)
     : [];
+  const rescheduleRequest = canManage
+    ? await getMatchRescheduleRequest(organizationId, matchId)
+    : null;
 
   const inactiveInfra =
     match.isProgrammed &&
@@ -141,6 +146,18 @@ export default async function MatchDetailPage({ params }: PageProps) {
         >
           {match.isProgrammed ? "Reprogramar" : "Programar"}
         </Link>
+      )}
+
+      {canManage && (
+        <MatchRescheduleAdminPanel
+          organizationId={organizationId}
+          competitionId={competitionId}
+          seasonId={seasonId}
+          matchId={matchId}
+          isProgrammed={match.isProgrammed}
+          calendarStatus={match.calendarStatus}
+          rescheduleRequest={rescheduleRequest}
+        />
       )}
 
       <MatchOfficialsManager
