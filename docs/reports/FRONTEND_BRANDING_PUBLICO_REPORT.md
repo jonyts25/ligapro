@@ -40,5 +40,5 @@ Tier/suscripción, layout/tipografía custom, cambios a bucket `organization-log
 
 ## Commit
 
-`COMMIT_HASH_PLACEHOLDER` — `feat(public): apply org branding and powered-by footer on public season pages`  
+`cbbf227` — `feat(public): apply org branding and powered-by footer on public season pages`  
 Push: `origin/main`
