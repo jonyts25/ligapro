@@ -4,6 +4,7 @@ import { getPublicSeasonOverview } from "@/lib/public-season/queries";
 import { sanitizeAccentForCss } from "@/lib/branding/sanitize-accent";
 import { PublicSeasonHeader } from "@/components/public-season/PublicSeasonHeader";
 import { PublicSeasonNavigation } from "@/components/public-season/PublicSeasonNavigation";
+import { PoweredByFooter } from "@/components/public-season/PoweredByFooter";
 import type { PublicSeasonTab } from "@/lib/public-season/types";
 
 type PublicSeasonShellProps = {
@@ -44,9 +45,7 @@ export async function PublicSeasonShell({
         <main id="main-content" className="mt-6 flex-1 space-y-8">
           {children}
         </main>
-        <footer className="mt-10 border-t border-border pt-4 text-center text-xs text-muted">
-          Gestionado con LigaPro
-        </footer>
+        <PoweredByFooter />
       </div>
     </div>
   );

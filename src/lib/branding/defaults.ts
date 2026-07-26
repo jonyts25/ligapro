@@ -1,8 +1,9 @@
 import type { OrganizationBranding } from "@/types/branding";
+import { PLATFORM_NAME } from "@/lib/platform/config";
 
 export const LIGAPRO_DEFAULT_BRANDING: OrganizationBranding = {
-  name: "LigaPro",
-  shortName: "LigaPro",
+  name: PLATFORM_NAME,
+  shortName: PLATFORM_NAME,
   logoUrl: null,
   accentColor: null,
 };

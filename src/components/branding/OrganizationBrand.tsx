@@ -1,6 +1,7 @@
 import Image from "next/image";
 import type { OrganizationBranding } from "@/types/branding";
 import { LIGAPRO_DEFAULT_BRANDING } from "@/lib/branding/defaults";
+import { PLATFORM_NAME } from "@/lib/platform/config";
 import { cn } from "@/lib/utils/cn";
 
 type OrganizationBrandProps = {
@@ -59,7 +60,7 @@ export function OrganizationBrand({
           </p>
           {!isLigaProFallback && (
             <p className="truncate text-xs text-text-secondary">
-              Operado con LigaPro
+              Operado con {PLATFORM_NAME}
             </p>
           )}
         </div>

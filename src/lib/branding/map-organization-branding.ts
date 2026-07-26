@@ -1,8 +1,6 @@
-import type {
-  OrganizationBranding,
-  OrganizationRecord,
-} from "@/types/branding";
+import type { OrganizationBranding, OrganizationRecord } from "@/types/branding";
 import { sanitizeAccentForCss } from "@/lib/branding/sanitize-accent";
+import type { PublicSeasonOverview } from "@/lib/public-season/types";
 
 const BUCKET = "organization-logos";
 
@@ -24,4 +22,17 @@ export function mapOrganizationBranding(
     logoUrl: getOrganizationLogoPublicUrl(organization.logo_path),
     accentColor: sanitizeAccentForCss(organization.brand_color),
   };
+}
+
+export function mapPublicSeasonOverviewToBranding(
+  overview: Pick<
+    PublicSeasonOverview,
+    "organizationName" | "organizationLogoPath" | "organizationBrandColor"
+  >
+): OrganizationBranding {
+  return mapOrganizationBranding({
+    name: overview.organizationName,
+    brand_color: overview.organizationBrandColor,
+    logo_path: overview.organizationLogoPath,
+  });
 }
