@@ -72,6 +72,25 @@ export function CaptainShell({
             >
               Calendario y plantel
             </Link>
+            <Link
+              href="/mi-equipo/perfil"
+              className="text-text-secondary hover:text-brand hover:underline"
+            >
+              Mi perfil
+            </Link>
+          </nav>
+        )}
+        {!activeSeasonTeamId && (
+          <nav
+            className="mx-auto flex max-w-3xl gap-4 border-t border-border px-4 py-2 text-sm sm:px-6"
+            aria-label="Secciones"
+          >
+            <Link
+              href="/mi-equipo/perfil"
+              className="text-text-secondary hover:text-brand hover:underline"
+            >
+              Mi perfil
+            </Link>
           </nav>
         )}
       </header>

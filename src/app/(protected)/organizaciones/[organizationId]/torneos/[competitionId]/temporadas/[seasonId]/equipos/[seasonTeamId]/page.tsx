@@ -17,6 +17,7 @@ import { StatusBadge } from "@/components/ui/StatusBadge";
 import { SeasonRosterSummary } from "@/components/teams/SeasonRosterSummary";
 import { RosterList } from "@/components/teams/RosterList";
 import { AddRosterPlayerForm } from "@/components/teams/AddRosterPlayerForm";
+import { CreateCaptainPlayerForm } from "@/components/teams/CreateCaptainPlayerForm";
 
 type PageProps = {
   params: Promise<{
@@ -88,18 +89,28 @@ export default async function SeasonTeamRosterPage({ params }: PageProps) {
         competitionId={competitionId}
         seasonId={seasonId}
         seasonTeamId={seasonTeamId}
+        teamLabel={title}
         roster={detail.roster}
         canManage={canManage}
       />
 
       {canManage && (
-        <AddRosterPlayerForm
+        <>
+          <CreateCaptainPlayerForm
+            organizationId={organizationId}
+            competitionId={competitionId}
+            seasonId={seasonId}
+            seasonTeamId={seasonTeamId}
+            teamLabel={title}
+          />
+          <AddRosterPlayerForm
           organizationId={organizationId}
           competitionId={competitionId}
           seasonId={seasonId}
           seasonTeamId={seasonTeamId}
           availablePlayers={availablePlayers}
         />
+        </>
       )}
     </div>
   );

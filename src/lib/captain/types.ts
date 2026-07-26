@@ -72,6 +72,8 @@ export type CaptainActionState = {
   ok: boolean;
   message: string | null;
   fieldErrors?: Record<string, string>;
+  inviteUrl?: string | null;
+  whatsAppHref?: string | null;
 };
 
 export const initialCaptainActionState: CaptainActionState = {

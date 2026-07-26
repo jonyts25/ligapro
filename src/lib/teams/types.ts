@@ -81,6 +81,7 @@ export type SeasonTeamListItem = SeasonTeamRecord & {
 
 export type RosterListItem = RosterEntryRecord & {
   full_name: string;
+  profile_id: string | null;
 };
 
 export type SeasonTeamDetail = SeasonTeamRecord & {
@@ -104,6 +105,8 @@ export type TeamsActionState = {
   message: string | null;
   fieldErrors?: Record<string, string>;
   values?: Record<string, string | number | boolean | null>;
+  inviteUrl?: string | null;
+  whatsAppHref?: string | null;
 };
 
 export const initialTeamsActionState: TeamsActionState = {

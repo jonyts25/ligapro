@@ -419,8 +419,8 @@ export async function getCaptainMatchRescheduleRequest(
 }
 
 export async function getOpponentCaptainPhone(
-  profileId: string,
-  team: CaptainTeamLink,
+  _profileId: string,
+  _team: CaptainTeamLink,
   match: CaptainMatchListItem
 ): Promise<string | null> {
   const opponentTeamId = match.isOwnHome
@@ -428,21 +428,66 @@ export async function getOpponentCaptainPhone(
     : match.homeSeasonTeamId;
 
   const supabase = await createClient();
-  const { data: captainRow } = await supabase
+  const { data: leaders } = await supabase
     .from("season_team_players")
-    .select("players(profile_id)")
+    .select("is_captain, is_vice_captain, players(profile_id)")
     .eq("season_team_id", opponentTeamId)
-    .eq("is_captain", true)
     .eq("registration_status", "active")
+    .or("is_captain.eq.true,is_vice_captain.eq.true");
+
+  if (!leaders?.length) return null;
+
+  const sorted = [...leaders].sort((a, b) => {
+    if (a.is_captain && !b.is_captain) return -1;
+    if (!a.is_captain && b.is_captain) return 1;
+    return 0;
+  });
+
+  const profileIds = sorted
+    .map((row) => {
+      const player = row.players as { profile_id: string | null } | null;
+      return player?.profile_id ?? null;
+    })
+    .filter((id): id is string => Boolean(id));
+
+  if (profileIds.length === 0) return null;
+
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("id, phone")
+    .in("id", profileIds);
+
+  const phoneById = new Map(
+    (profiles ?? []).map((p) => [p.id, p.phone] as const)
+  );
+
+  for (const id of profileIds) {
+    const phone = phoneById.get(id)?.trim();
+    if (phone) return phone;
+  }
+
+  return null;
+}
+
+export async function getCaptainProfile(profileId: string): Promise<{
+  displayName: string | null;
+  email: string;
+  phone: string | null;
+} | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("profiles")
+    .select("display_name, email, phone")
+    .eq("id", profileId)
     .maybeSingle();
 
-  if (!captainRow) return null;
+  if (!data) return null;
 
-  // profiles.phone is not in schema (Migration 021+). WhatsApp deep-links need it.
-  void profileId;
-  void team;
-  void captainRow;
-  return null;
+  return {
+    displayName: data.display_name,
+    email: data.email,
+    phone: data.phone,
+  };
 }
 
 export async function getCaptainInvitationByToken(

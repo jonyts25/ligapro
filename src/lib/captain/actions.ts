@@ -9,8 +9,10 @@ import { hasCaptainTeamAccess } from "@/lib/auth/get-captain-teams";
 import {
   humanizeCaptainInvitationError,
   humanizeCaptainPaymentMarkError,
+  humanizeCaptainProfileError,
   humanizeCaptainRescheduleError,
 } from "@/lib/captain/errors";
+import { humanizeCaptainRosterAddError } from "@/lib/captain/roster-errors";
 import type { CaptainActionState } from "@/lib/captain/types";
 
 function revalidateCaptainPaths(seasonTeamId: string, matchId?: string) {
@@ -174,5 +176,113 @@ export async function setPlayerPaymentMarkCaptainAction(
   return {
     ok: true,
     message: markedPaid ? "Marcado como pagado." : "Marcado como pendiente.",
+  };
+}
+
+function parseOptionalJersey(
+  raw: string
+): { value: number | null; error?: string } {
+  const trimmed = raw.trim();
+  if (!trimmed) return { value: null };
+  if (!/^\d+$/.test(trimmed)) {
+    return { value: null, error: "El dorsal debe ser un número entero positivo." };
+  }
+  const value = Number(trimmed);
+  if (value <= 0) {
+    return { value: null, error: "El dorsal debe ser mayor que cero." };
+  }
+  return { value };
+}
+
+export async function updateCaptainProfileAction(
+  _prev: CaptainActionState,
+  formData: FormData
+): Promise<CaptainActionState> {
+  const user = await requireUser("/iniciar-sesion?next=/mi-equipo/perfil");
+  const displayName = String(formData.get("displayName") ?? "").trim();
+  const phoneRaw = String(formData.get("phone") ?? "").trim();
+
+  if (displayName.length > 0 && displayName.length < 2) {
+    return {
+      ok: false,
+      message: "El nombre debe tener al menos 2 caracteres.",
+      fieldErrors: { displayName: "Mínimo 2 caracteres." },
+    };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("profiles")
+    .update({
+      display_name: displayName || null,
+      phone: phoneRaw || null,
+    })
+    .eq("id", user.id);
+
+  if (error) {
+    return {
+      ok: false,
+      message: humanizeCaptainProfileError(error.message),
+    };
+  }
+
+  revalidatePath("/mi-equipo");
+  revalidatePath("/mi-equipo/perfil");
+  return {
+    ok: true,
+    message: "Perfil actualizado.",
+  };
+}
+
+export async function createPlayerAndAddCaptainAction(
+  _prev: CaptainActionState,
+  formData: FormData
+): Promise<CaptainActionState> {
+  const user = await requireUser();
+  const seasonTeamId = String(formData.get("seasonTeamId") ?? "");
+  const fullName = String(formData.get("fullName") ?? "").trim();
+  const jerseyRaw = String(formData.get("jerseyNumber") ?? "");
+
+  const allowed = await hasCaptainTeamAccess(user.id, seasonTeamId);
+  if (!allowed) {
+    return { ok: false, message: "No tienes acceso a este equipo." };
+  }
+
+  if (fullName.length < 2 || fullName.length > 100) {
+    return {
+      ok: false,
+      message: "El nombre debe tener entre 2 y 100 caracteres.",
+      fieldErrors: { fullName: "Entre 2 y 100 caracteres." },
+    };
+  }
+
+  const jersey = parseOptionalJersey(jerseyRaw);
+  if (jersey.error) {
+    return {
+      ok: false,
+      message: jersey.error,
+      fieldErrors: { jerseyNumber: jersey.error },
+    };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("create_player_and_add_to_roster", {
+    p_season_team_id: seasonTeamId,
+    p_full_name: fullName,
+    p_jersey_number: jersey.value ?? undefined,
+    p_registration_status: "active",
+  });
+
+  if (error) {
+    return {
+      ok: false,
+      message: humanizeCaptainRosterAddError(error.message),
+    };
+  }
+
+  revalidateCaptainPaths(seasonTeamId);
+  return {
+    ok: true,
+    message: "Jugador agregado al plantel.",
   };
 }

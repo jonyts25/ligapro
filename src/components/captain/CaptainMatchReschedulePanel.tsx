@@ -286,10 +286,10 @@ export function CaptainMatchReschedulePanel({
                   >
                     Avisar por WhatsApp
                   </button>
-                  <p className="text-xs text-muted">
-                    No hay teléfono del capitán rival en el sistema. Se requiere
-                    agregar `profiles.phone` en una migración futura.
-                  </p>
+                        <p className="text-xs text-muted">
+                          El capitán rival no tiene teléfono registrado. Puede
+                          agregarlo en su perfil del portal.
+                        </p>
                 </div>
               )}
             </div>

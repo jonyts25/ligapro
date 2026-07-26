@@ -42,3 +42,25 @@ export function humanizeCaptainPaymentMarkError(message: string): string {
   }
   return "No pudimos actualizar la marca de pago.";
 }
+
+export function humanizeCaptainProfileError(message: string): string {
+  const lower = message.toLowerCase();
+  if (lower.includes("not authorized") || lower.includes("permission")) {
+    return "No pudimos actualizar tu perfil.";
+  }
+  return "No pudimos guardar los cambios. Inténtalo nuevamente.";
+}
+
+export function humanizeCaptainInvitationAdminError(message: string): string {
+  const lower = message.toLowerCase();
+  if (lower.includes("valid email")) {
+    return "Indica un correo electrónico válido.";
+  }
+  if (lower.includes("must be marked as captain") || lower.includes("captain or vice")) {
+    return "Designa al jugador como capitán o subcapitán antes de enviar la invitación.";
+  }
+  if (lower.includes("not authorized")) {
+    return "No tienes permiso para enviar invitaciones.";
+  }
+  return "No pudimos enviar la invitación. Inténtalo nuevamente.";
+}

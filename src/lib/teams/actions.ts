@@ -16,6 +16,9 @@ import {
   isSeasonRosterSeatConflict,
   seasonRosterSeatConflictMessage,
 } from "@/lib/teams/roster-errors";
+import { getPublicSiteUrl } from "@/lib/site-url";
+import { buildCaptainWhatsAppLink } from "@/lib/captain/whatsapp";
+import { humanizeCaptainInvitationAdminError } from "@/lib/captain/errors";
 
 function validateName(name: string, label: string): string | null {
   const trimmed = name.trim();
@@ -78,6 +81,7 @@ async function revalidateTeamPaths(
     revalidatePath(`${base}/disciplina`);
     revalidatePath(`${base}/dashboard`);
     revalidatePath(`${base}/finanzas`);
+    revalidatePath(`${base}/canchas`);
     if (opts.seasonTeamId) {
       revalidatePath(`${base}/equipos/${opts.seasonTeamId}`);
     }
@@ -727,4 +731,189 @@ export async function setViceCaptainAction(
     seasonTeamId,
   });
   return { ok: true, message: "Vicecapitán actualizado." };
+}
+
+function buildCaptainInviteWhatsAppHref(
+  phoneRaw: string,
+  inviteUrl: string,
+  teamLabel: string
+): string | null {
+  const digits = phoneRaw.replace(/\D/g, "");
+  if (!digits) return null;
+  const message = `Hola, te invitamos como capitán de ${teamLabel} en LigaPro. Acepta tu invitación aquí: ${inviteUrl}`;
+  return buildCaptainWhatsAppLink(digits, message);
+}
+
+async function fetchPendingInvitationToken(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  seasonTeamPlayerId: string
+): Promise<string | null> {
+  const { data } = await supabase
+    .from("captain_invitations")
+    .select("token")
+    .eq("season_team_player_id", seasonTeamPlayerId)
+    .eq("status", "pending")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  return data?.token ?? null;
+}
+
+export async function createCaptainPlayerWithInvitationAction(
+  _prev: TeamsActionState,
+  formData: FormData
+): Promise<TeamsActionState> {
+  const user = await requireUser();
+  const organizationId = String(formData.get("organizationId") ?? "");
+  const competitionId = String(formData.get("competitionId") ?? "");
+  const seasonId = String(formData.get("seasonId") ?? "");
+  const seasonTeamId = String(formData.get("seasonTeamId") ?? "");
+  const teamLabel = String(formData.get("teamLabel") ?? "tu equipo");
+  await requireOrganizationAdmin(user.id, organizationId);
+
+  const fullName = String(formData.get("fullName") ?? "").trim();
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const phoneRaw = String(formData.get("phone") ?? "").trim();
+  const jerseyRaw = String(formData.get("jerseyNumber") ?? "");
+  const values = { fullName, email, phone: phoneRaw, jerseyNumber: jerseyRaw };
+
+  const nameError = validateName(fullName, "nombre del capitán");
+  if (nameError) {
+    return {
+      ok: false,
+      message: nameError,
+      fieldErrors: { fullName: nameError },
+      values,
+    };
+  }
+
+  if (!email || !email.includes("@")) {
+    return {
+      ok: false,
+      message: "Indica un correo electrónico válido.",
+      fieldErrors: { email: "Correo requerido." },
+      values,
+    };
+  }
+
+  const jersey = parseOptionalJersey(jerseyRaw);
+  if (jersey.error) {
+    return {
+      ok: false,
+      message: jersey.error,
+      fieldErrors: { jerseyNumber: jersey.error },
+      values,
+    };
+  }
+
+  const supabase = await createClient();
+  const { data: stpId, error } = await supabase.rpc(
+    "create_captain_player_with_invitation",
+    {
+      p_season_team_id: seasonTeamId,
+      p_full_name: fullName,
+      p_email: email,
+      p_jersey_number: jersey.value ?? undefined,
+    }
+  );
+
+  if (error || !stpId) {
+    return {
+      ok: false,
+      message: humanizeCaptainInvitationAdminError(error?.message ?? ""),
+      values,
+    };
+  }
+
+  const token = await fetchPendingInvitationToken(supabase, stpId);
+  const inviteUrl = token
+    ? `${getPublicSiteUrl()}/invitacion/${token}`
+    : null;
+  const whatsAppHref =
+    inviteUrl && phoneRaw
+      ? buildCaptainInviteWhatsAppHref(phoneRaw, inviteUrl, teamLabel)
+      : null;
+
+  await revalidateTeamPaths(organizationId, {
+    competitionId,
+    seasonId,
+    seasonTeamId,
+  });
+
+  return {
+    ok: true,
+    message: inviteUrl
+      ? "Capitán creado. Comparte el enlace de invitación."
+      : "Capitán creado e invitación enviada.",
+    inviteUrl,
+    whatsAppHref,
+    values: { fullName: "", email: "", phone: "", jerseyNumber: "" },
+  };
+}
+
+export async function inviteCaptainToRosterAction(
+  _prev: TeamsActionState,
+  formData: FormData
+): Promise<TeamsActionState> {
+  const user = await requireUser();
+  const organizationId = String(formData.get("organizationId") ?? "");
+  const competitionId = String(formData.get("competitionId") ?? "");
+  const seasonId = String(formData.get("seasonId") ?? "");
+  const seasonTeamId = String(formData.get("seasonTeamId") ?? "");
+  const rosterId = String(formData.get("rosterId") ?? "");
+  const teamLabel = String(formData.get("teamLabel") ?? "tu equipo");
+  await requireOrganizationAdmin(user.id, organizationId);
+
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const phoneRaw = String(formData.get("phone") ?? "").trim();
+  const values = { email, phone: phoneRaw };
+
+  if (!email || !email.includes("@")) {
+    return {
+      ok: false,
+      message: "Indica un correo electrónico válido.",
+      fieldErrors: { email: "Correo requerido." },
+      values,
+    };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("invite_captain_to_roster", {
+    p_season_team_player_id: rosterId,
+    p_email: email,
+  });
+
+  if (error) {
+    return {
+      ok: false,
+      message: humanizeCaptainInvitationAdminError(error.message),
+      values,
+    };
+  }
+
+  const token = await fetchPendingInvitationToken(supabase, rosterId);
+  const inviteUrl = token
+    ? `${getPublicSiteUrl()}/invitacion/${token}`
+    : null;
+  const whatsAppHref =
+    inviteUrl && phoneRaw
+      ? buildCaptainInviteWhatsAppHref(phoneRaw, inviteUrl, teamLabel)
+      : null;
+
+  await revalidateTeamPaths(organizationId, {
+    competitionId,
+    seasonId,
+    seasonTeamId,
+  });
+
+  return {
+    ok: true,
+    message: inviteUrl
+      ? "Invitación creada. Comparte el enlace con el capitán."
+      : "Invitación enviada.",
+    inviteUrl,
+    whatsAppHref,
+    values: { email: "", phone: "" },
+  };
 }

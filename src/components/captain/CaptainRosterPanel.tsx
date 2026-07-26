@@ -9,6 +9,7 @@ import { ViceCaptainBadge } from "@/components/teams/ViceCaptainBadge";
 import { Card } from "@/components/ui/Card";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { CaptainAddPlayerForm } from "@/components/captain/CaptainAddPlayerForm";
 import { cn } from "@/lib/utils/cn";
 
 type CaptainRosterPanelProps = {
@@ -108,7 +109,7 @@ export function CaptainRosterPanel({
     <Card className="space-y-4">
       <SectionHeader
         title="Plantel"
-        description="Solo lectura. Puedes marcar pagos de forma informal para tu control."
+        description="Lista de jugadores activos. Puedes marcar pagos de forma informal y agregar jugadores nuevos."
       />
       <p className="rounded-xl border border-warning/30 bg-warning/5 px-3 py-2 text-sm text-text-secondary">
         Las marcas de pago son un control interno del capitán. No reemplazan ni
@@ -130,6 +131,7 @@ export function CaptainRosterPanel({
           ))}
         </ul>
       )}
+      <CaptainAddPlayerForm seasonTeamId={seasonTeamId} />
     </Card>
   );
 }

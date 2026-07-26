@@ -19,6 +19,7 @@ import {
   type RosterListItem,
   type RosterRegistrationStatus,
 } from "@/lib/teams/types";
+import { InviteCaptainToRosterForm } from "@/components/teams/InviteCaptainToRosterForm";
 import { cn } from "@/lib/utils/cn";
 
 type RosterPlayerCardProps = {
@@ -26,6 +27,7 @@ type RosterPlayerCardProps = {
   competitionId: string;
   seasonId: string;
   seasonTeamId: string;
+  teamLabel: string;
   player: RosterListItem;
   canManage: boolean;
   hasCaptain: boolean;
@@ -67,6 +69,7 @@ export function RosterPlayerCard({
   competitionId,
   seasonId,
   seasonTeamId,
+  teamLabel,
   player,
   canManage,
   hasCaptain,
@@ -118,6 +121,11 @@ export function RosterPlayerCard({
   const willLoseVice =
     player.is_vice_captain &&
     (nextStatus === "inactive" || nextStatus === "suspended");
+  const showInviteForm =
+    canManage &&
+    (player.is_captain || player.is_vice_captain) &&
+    player.registration_status === "active" &&
+    !player.profile_id;
 
   return (
     <Card className="space-y-4">
@@ -331,6 +339,19 @@ export function RosterPlayerCard({
             </button>
           </form>
         </div>
+      )}
+
+      {showInviteForm && (
+        <InviteCaptainToRosterForm
+          organizationId={organizationId}
+          competitionId={competitionId}
+          seasonId={seasonId}
+          seasonTeamId={seasonTeamId}
+          rosterId={player.id}
+          teamLabel={teamLabel}
+          playerName={player.full_name}
+          roleLabel={player.is_captain ? "capitán" : "subcapitán"}
+        />
       )}
     </Card>
   );

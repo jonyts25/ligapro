@@ -1,12 +1,14 @@
 # Frontend — Portal del capitán/vicecapitán
 
-**Fecha:** 2026-07-26  
-**Alcance:** UI de invitación, portal `/mi-equipo`, reagendado, marcas de pago informales, enrutamiento post-login.  
-**Sin migraciones ni RPCs nuevos.**
+**Fecha:** 2026-07-26 (actualizado tras Migration 021 + frontend cancha/portal)  
+**Alcance:** UI de invitación, portal `/mi-equipo`, reagendado, marcas de pago informales, enrutamiento post-login, WhatsApp, perfil, alta de jugadores.  
+**Sin migraciones ni RPCs nuevos en este entregable.**
 
 ## Resumen
 
 Se implementó el portal para capitán/vicecapitán fuera del namespace `/organizaciones/...`, con layout propio (`CaptainShell`), flujo de invitación pública y reglas de redirección post-login que evitan mandar capitanes a `/onboarding`.
+
+Con Migration 021 aplicada y el frontend de este entregable, el portal es **funcional de punta a punta**: plantel, fechas, WhatsApp rival (cuando hay teléfono), perfil propio y alta de jugadores nuevos.
 
 ## Enrutamiento post-login
 
@@ -30,15 +32,16 @@ Documentado en `docs/AUTHENTICATION.md`.
 | --- | --- | --- |
 | `/invitacion/[token]` | Público (aceptar requiere sesión) | Valida invitación vía RLS invitee; login/registro con `next`; `accept_captain_invitation` |
 | `/mi-equipo` | Autenticado + capitanía | Selector multi-equipo |
-| `/mi-equipo/[seasonTeamId]` | Autenticado + acceso al equipo | Calendario + plantel |
-| `/mi-equipo/.../partidos/[matchId]` | Autenticado + partido propio | Detalle + reagendado |
+| `/mi-equipo/[seasonTeamId]` | Autenticado + acceso al equipo | Calendario + plantel + alta jugador |
+| `/mi-equipo/perfil` | Autenticado + capitanía | Nombre para mostrar + teléfono |
+| `/mi-equipo/.../partidos/[matchId]` | Autenticado + partido propio | Detalle + reagendado + WhatsApp |
 
 ## Módulos
 
 | Área | Archivos |
 | --- | --- |
 | Auth / routing | `get-captain-teams.ts`, `resolve-auth-destination.ts`, `validation.ts`, `proxy.ts` |
-| Captain lib | `src/lib/captain/{types,queries,actions,errors,whatsapp}.ts` |
+| Captain lib | `src/lib/captain/{types,queries,actions,errors,whatsapp,roster-errors}.ts` |
 | UI | `src/components/captain/*` |
 | Páginas | `src/app/invitacion/[token]`, `src/app/(protected)/mi-equipo/**` |
 
@@ -49,12 +52,14 @@ Documentado en `docs/AUTHENTICATION.md`.
 - Mensajes explícitos: token inválido, expirado, ya usado, correo distinto.
 - Reutiliza Auth existente (correo/contraseña + Google) con `next=/invitacion/{token}`.
 - Tras aceptar → portal (`/mi-equipo`), no onboarding.
+- Admin puede capturar teléfono opcional al invitar (solo para armar `wa.me`; persistencia en `profiles.phone` tras aceptar y editar perfil).
 
 ### Portal
 
 - Selector si hay varios `season_team` activos como capitán/vice.
-- Calendario: partidos próximos con `calendar_status`, rival, sede/cancha, fecha (cuando RLS lo permite).
-- Plantel: solo lectura + marcas de pago (`set_player_payment_mark`) con aviso de control informal.
+- Calendario: partidos próximos con `calendar_status`, rival, sede/cancha, fecha (RLS `*_select_team_leader` de Migration 021).
+- Plantel: lectura + marcas de pago (`set_player_payment_mark`) + **formulario de alta** (`create_player_and_add_to_roster`).
+- Perfil: `/mi-equipo/perfil` para `display_name` y `phone`.
 
 ### Reagendado
 
@@ -62,46 +67,41 @@ Documentado en `docs/AUTHENTICATION.md`.
 - Request `proposed` del rival → aprobar/rechazar (`respond_match_reschedule`).
 - Request propia → pendiente, sin acción.
 - Estados terminales → solo lectura.
-- WhatsApp: deep-link `wa.me` junto a propuesta propia; botón deshabilitado si no hay teléfono.
+- WhatsApp: deep-link `wa.me` junto a propuesta propia; `getOpponentCaptainPhone` lee `profiles.phone` del capitán/sub rival; botón deshabilitado con explicación si no hay teléfono.
+
+### Alta de jugador (capitán)
+
+- Solo **alta** — sin baja, edición de status ni capitanía.
+- Errores claros: tope de plantel, bloqueo `roster_locked_by_captain`, conflicto de cupo en la misma season.
 
 ### Marcas de pago
 
 - Toggle pagado/pendiente por jugador activo.
 - Texto visible: no reemplaza cobro oficial de la liga.
 
-## Bloqueantes RLS (requieren migración futura)
+## RLS (Migration 021 — resuelto)
 
-Verificado en proyecto remoto (`akgcamaegpboewsbbevl`): las policies actuales limitan SELECT de tablas base a `is_member_of(organization_id)`. Capitanes **no** son miembros.
-
-| Necesidad UI | Tabla / columna | Estado actual |
-| --- | --- | --- |
-| Listar plantel | `season_team_players`, `players` | Solo `organization_member` |
-| Nombres de equipos | `season_teams`, `teams` | Solo miembro |
-| Fecha/sede programada | `field_reservations`, `fields`, `venues` | Solo miembro |
-| Descubrir capitanías sin partidos | join `players` → `season_team_players` | Solo miembro |
-| WhatsApp rival | `profiles.phone` | **Columna no existe** |
-
-**Mitigación en código:** fallback vía partidos visibles al capitán (`matches` SELECT) + RPC `is_active_captain_or_vice_of_season_team`. Funciona parcialmente cuando ya hay fixture; plantel/fechas pueden aparecer vacíos hasta ampliar RLS.
-
-**Recomendación Migration 021:** policies `*_select_team_leader` en roster/equipos/reservas de partidos propios; columna `profiles.phone` opcional.
+Policies `*_select_team_leader` en roster, equipos y reservas de partidos propios; columna `profiles.phone` disponible. Ya no hay bloqueantes de backend para el portal.
 
 ## WhatsApp
 
 - Solo cliente: `buildCaptainWhatsAppLink` → `https://wa.me/{digits}?text=...`
 - Sin WhatsApp Business API.
-- Botón deshabilitado con explicación hasta existir `profiles.phone`.
+- Teléfono rival vía `getOpponentCaptainPhone` (capitán/sub → `profiles.phone`).
+- Capitán captura su propio teléfono en `/mi-equipo/perfil`.
 
 ## Seguridad
 
 - Acceso a `/mi-equipo/[seasonTeamId]` validado con `is_active_captain_or_vice_of_season_team`.
 - Partidos ajenos → `notFound()` (RLS + comprobación de IDs).
 - Sin reutilizar `AppShell` ni nav de organización.
-- Sin privilegios admin: solo invitación, reagendado propio, marcas de pago.
+- Sin privilegios admin: invitación, reagendado propio, marcas de pago, alta de jugador (no baja).
 
 ## Tests
 
 - `src/lib/auth/resolve-auth-destination.test.ts` — política de routing + paths seguros
 - `src/lib/captain/whatsapp.test.ts` — deep-links wa.me
+- `src/lib/captain/roster-errors.test.ts` — mensajes de rechazo de alta
 
 ## Verificación local
 
@@ -111,6 +111,11 @@ npm run build
 npm test
 ```
 
+## Relacionado
+
+- Admin canchas/disponibilidad: `docs/reports/FRONTEND_CANCHA_PORTAL_COMPLETO_REPORT.md`
+- Backend: `docs/reports/MIGRATION_021_REPORT.md`
+
 ## Fuera de alcance (confirmado)
 
-WhatsApp Business API, push, schema changes, edición de roster, finanzas oficiales.
+WhatsApp Business API, push, schema changes, baja/edición de roster por capitán, finanzas oficiales, panel `platform_billing_status`.

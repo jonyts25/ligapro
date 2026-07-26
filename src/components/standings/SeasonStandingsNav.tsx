@@ -12,7 +12,8 @@ type SeasonStandingsNavProps = {
     | "posiciones"
     | "goleadores"
     | "disciplina"
-    | "finanzas";
+    | "finanzas"
+    | "canchas";
   canManage?: boolean;
 };
 
@@ -26,6 +27,7 @@ const BASE_LINKS = [
 ] as const;
 
 const ADMIN_LINKS = [
+  { key: "canchas", label: "Canchas", path: "/canchas" },
   { key: "finanzas", label: "Finanzas", path: "/finanzas" },
 ] as const;
 

@@ -29,12 +29,20 @@ export default async function VenuesPage({ params }: PageProps) {
         description={`${venues.length} sede${venues.length === 1 ? "" : "s"} · ${totalFields} cancha${totalFields === 1 ? "" : "s"}`}
         actions={
           canManage ? (
-            <Link
-              href={`/organizaciones/${organizationId}/sedes/nueva`}
-              className="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand px-4 text-sm font-semibold text-brand-foreground"
-            >
-              Nueva sede
-            </Link>
+            <div className="flex flex-wrap gap-2">
+              <Link
+                href={`/organizaciones/${organizationId}/sedes/disponibilidad`}
+                className="inline-flex min-h-11 items-center rounded-xl border border-border px-4 text-sm font-medium text-text-secondary"
+              >
+                Disponibilidad
+              </Link>
+              <Link
+                href={`/organizaciones/${organizationId}/sedes/nueva`}
+                className="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand px-4 text-sm font-semibold text-brand-foreground"
+              >
+                Nueva sede
+              </Link>
+            </div>
           ) : undefined
         }
       />
