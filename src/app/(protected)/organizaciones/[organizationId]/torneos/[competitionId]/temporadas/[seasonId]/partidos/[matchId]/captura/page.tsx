@@ -5,6 +5,7 @@ import { requireOrganizationMembership } from "@/lib/auth/require-organization-m
 import { getMatchCaptureContext } from "@/lib/matches/queries";
 import { MatchCaptureHeader } from "@/components/matches/MatchCaptureHeader";
 import { CapturePermissionBadge } from "@/components/matches/CapturePermissionBadge";
+import { CaptureWindowStatus } from "@/components/matches/CaptureWindowStatus";
 import { MatchScoreForm } from "@/components/matches/MatchScoreForm";
 import { MatchEventForm } from "@/components/matches/MatchEventForm";
 import { MatchTimeline } from "@/components/matches/MatchTimeline";
@@ -70,6 +71,11 @@ export default async function MatchCapturePage({ params }: PageProps) {
         canCaptureEvents={permissions.canCaptureEvents}
         canUpdateResult={permissions.canUpdateResult}
       />
+      <CaptureWindowStatus
+        canCaptureEvents={permissions.canCaptureEvents}
+        captureWindowOpen={permissions.captureWindowOpen}
+        captureWindowBypass={permissions.captureWindowBypass}
+      />
 
       {scoreMismatch && (
         <p
@@ -121,7 +127,14 @@ export default async function MatchCapturePage({ params }: PageProps) {
         requirePlayerVerification={requirePlayerVerification}
       />
 
-      <MatchTimeline events={timeline} />
+      <MatchTimeline
+        organizationId={organizationId}
+        competitionId={competitionId}
+        seasonId={seasonId}
+        matchId={matchId}
+        events={timeline}
+        canVoidEvents={permissions.canVoidEvents}
+      />
       <MatchDisciplineSummary items={discipline} />
     </div>
   );

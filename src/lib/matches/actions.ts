@@ -17,6 +17,7 @@ import {
   type MatchStatusValue,
   type SeasonRoleValue,
 } from "@/lib/matches/types";
+import { humanizeCaptureError } from "@/lib/matches/capture-errors";
 
 async function revalidateMatchPaths(
   organizationId: string,
@@ -72,18 +73,13 @@ function isMatchStatus(value: string): value is MatchStatusValue {
   return MATCH_STATUS_OPTIONS.some((o) => o.value === value);
 }
 
-function humanError(message: string): string {
-  const lower = message.toLowerCase();
-  if (lower.includes("unique") || lower.includes("duplicate")) {
-    return "Esa asignación ya existe.";
-  }
-  if (lower.includes("not authorized") || lower.includes("row-level")) {
-    return "No tienes permiso para esta acción.";
-  }
-  if (lower.includes("organization_members")) {
-    return "El usuario debe ser miembro vigente de la organización.";
-  }
-  return message || "No se pudo completar la operación.";
+function humanError(message: string): CaptureActionState {
+  const parsed = humanizeCaptureError(message);
+  return {
+    ok: false,
+    message: parsed.message,
+    errorKind: parsed.kind,
+  };
 }
 
 export async function assignSeasonRoleAction(
@@ -112,7 +108,7 @@ export async function assignSeasonRoleAction(
   });
 
   if (error) {
-    return { ok: false, message: humanError(error.message) };
+    return humanError(error.message);
   }
 
   await revalidateMatchPaths(organizationId, competitionId, seasonId);
@@ -140,7 +136,7 @@ export async function removeSeasonRoleAction(
     .eq("season_id", seasonId);
 
   if (error) {
-    return { ok: false, message: humanError(error.message) };
+    return humanError(error.message);
   }
 
   await revalidateMatchPaths(organizationId, competitionId, seasonId);
@@ -220,7 +216,7 @@ export async function assignMatchOfficialAction(
   });
 
   if (error) {
-    return { ok: false, message: humanError(error.message) };
+    return humanError(error.message);
   }
 
   await revalidateMatchPaths(organizationId, competitionId, seasonId, matchId);
@@ -249,7 +245,7 @@ export async function confirmMatchOfficialAction(
     .eq("match_id", matchId);
 
   if (error) {
-    return { ok: false, message: humanError(error.message) };
+    return humanError(error.message);
   }
 
   await revalidateMatchPaths(organizationId, competitionId, seasonId, matchId);
@@ -295,7 +291,7 @@ export async function removeMatchOfficialAction(
     .eq("match_id", matchId);
 
   if (error) {
-    return { ok: false, message: humanError(error.message) };
+    return humanError(error.message);
   }
 
   await revalidateMatchPaths(organizationId, competitionId, seasonId, matchId);
@@ -384,7 +380,7 @@ export async function updateMatchResultAction(
   });
 
   if (error) {
-    return { ok: false, message: humanError(error.message) };
+    return humanError(error.message);
   }
 
   await revalidateMatchPaths(organizationId, competitionId, seasonId, matchId);
@@ -428,7 +424,11 @@ export async function recordMatchEventAction(
     p_match_id: matchId,
   });
   if (!canCapture) {
-    return { ok: false, message: "No tienes permiso para capturar este partido." };
+    return {
+      ok: false,
+      message: "No tienes permiso para capturar este partido.",
+      errorKind: "not_authorized",
+    };
   }
 
   const { data: match } = await supabase
@@ -463,9 +463,60 @@ export async function recordMatchEventAction(
   });
 
   if (error) {
-    return { ok: false, message: humanError(error.message) };
+    return humanError(error.message);
   }
 
   await revalidateMatchPaths(organizationId, competitionId, seasonId, matchId);
   return { ok: true, message: "Evento registrado." };
+}
+
+export async function voidMatchEventAction(
+  _prev: CaptureActionState,
+  formData: FormData
+): Promise<CaptureActionState> {
+  const user = await requireUser();
+  const organizationId = String(formData.get("organizationId") ?? "");
+  const competitionId = String(formData.get("competitionId") ?? "");
+  const seasonId = String(formData.get("seasonId") ?? "");
+  const matchId = String(formData.get("matchId") ?? "");
+  const eventId = String(formData.get("eventId") ?? "");
+  const reason = String(formData.get("reason") ?? "").trim();
+
+  await requireOrganizationAdmin(user.id, organizationId);
+
+  if (!eventId) {
+    return { ok: false, message: "Evento no válido." };
+  }
+  if (!reason) {
+    return {
+      ok: false,
+      message: "El motivo de anulación es obligatorio.",
+      fieldErrors: { reason: "Indica por qué se anula el evento." },
+    };
+  }
+
+  const supabase = await createClient();
+  const { data: event } = await supabase
+    .from("match_events")
+    .select("id, match_id, organization_id")
+    .eq("id", eventId)
+    .eq("organization_id", organizationId)
+    .eq("match_id", matchId)
+    .maybeSingle();
+
+  if (!event) {
+    return { ok: false, message: "Evento no encontrado." };
+  }
+
+  const { error } = await supabase.rpc("void_match_event", {
+    p_event_id: eventId,
+    p_reason: reason,
+  });
+
+  if (error) {
+    return humanError(error.message);
+  }
+
+  await revalidateMatchPaths(organizationId, competitionId, seasonId, matchId);
+  return { ok: true, message: "Evento anulado." };
 }

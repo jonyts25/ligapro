@@ -2,6 +2,7 @@
 
 import { useActionState, useMemo, useState } from "react";
 import { recordMatchEventAction } from "@/lib/matches/actions";
+import { captureErrorAlertClass } from "@/lib/matches/capture-errors";
 import {
   MATCH_EVENT_TYPE_OPTIONS,
   initialCaptureActionState,
@@ -73,7 +74,7 @@ export function MatchEventForm({
             "rounded-xl border px-3 py-2 text-sm",
             state.ok
               ? "border-success/40 bg-success/10 text-success"
-              : "border-danger/40 bg-danger/10 text-danger"
+              : captureErrorAlertClass(state.errorKind ?? "generic")
           )}
         >
           {state.message}

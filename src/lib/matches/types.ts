@@ -1,3 +1,5 @@
+import type { CaptureErrorKind } from "@/lib/matches/capture-errors";
+
 export const SEASON_ROLE_OPTIONS = [
   { value: "tournament_admin", label: "Admin de torneo" },
   { value: "referee", label: "Árbitro" },
@@ -50,6 +52,7 @@ export type MatchStatusValue = (typeof MATCH_STATUS_OPTIONS)[number]["value"];
 export type CaptureActionState = {
   ok: boolean;
   message: string | null;
+  errorKind?: CaptureErrorKind;
   fieldErrors?: Record<string, string>;
   values?: Record<string, string | number | null>;
 };
@@ -94,6 +97,8 @@ export type MatchTimelineEvent = {
   teamName: string;
   seasonTeamId: string;
   seasonTeamPlayerId: string;
+  voidedAt: string | null;
+  voidReason: string | null;
 };
 
 export type MatchDisciplineItem = {
@@ -112,6 +117,9 @@ export type MatchCapturePermissions = {
   canUpdateResult: boolean;
   canManageOfficials: boolean;
   canManageSeasonRoles: boolean;
+  canVoidEvents: boolean;
+  captureWindowOpen: boolean;
+  captureWindowBypass: boolean;
   actorLabel: string;
 };
 
@@ -174,6 +182,7 @@ export function goalsFromEvents(
   let home = 0;
   let away = 0;
   for (const event of events) {
+    if (event.voidedAt) continue;
     if (event.eventType === "goal") {
       if (event.seasonTeamId === homeSeasonTeamId) home += 1;
       if (event.seasonTeamId === awaySeasonTeamId) away += 1;

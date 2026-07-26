@@ -13,7 +13,9 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { DisciplineTable } from "@/components/standings/DisciplineTable";
 import { SeasonStandingsNav } from "@/components/standings/SeasonStandingsNav";
 import { DisciplineAdminPanel } from "@/components/discipline/DisciplineAdminPanel";
+import { VerificationReviewPanel } from "@/components/verification/VerificationReviewPanel";
 import { isOrganizationAdminRole } from "@/lib/auth/is-organization-admin";
+import { getPendingVerificationPlayers } from "@/lib/verification/queries";
 
 type PageProps = {
   params: Promise<{
@@ -39,13 +41,17 @@ export default async function SeasonDisciplinePage({ params }: PageProps) {
   );
   if (!season) notFound();
 
-  const [rows, activeSuspensions, rosterPlayers] = await Promise.all([
+  const [rows, activeSuspensions, rosterPlayers, pendingVerification] =
+    await Promise.all([
     getSeasonDisciplineSummary(seasonId),
     canManage
       ? getActiveDisciplineSuspensions(organizationId, seasonId)
       : Promise.resolve([]),
     canManage
       ? getSeasonRosterPlayerOptions(organizationId, seasonId)
+      : Promise.resolve([]),
+    canManage
+      ? getPendingVerificationPlayers(organizationId, seasonId)
       : Promise.resolve([]),
   ]);
 
@@ -62,6 +68,15 @@ export default async function SeasonDisciplinePage({ params }: PageProps) {
         active="disciplina"
         canManage={canManage}
       />
+
+      {canManage && (
+        <VerificationReviewPanel
+          organizationId={organizationId}
+          competitionId={competitionId}
+          seasonId={seasonId}
+          pendingPlayers={pendingVerification}
+        />
+      )}
 
       {canManage && (
         <DisciplineAdminPanel

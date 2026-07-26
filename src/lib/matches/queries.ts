@@ -143,7 +143,7 @@ export async function getMatchTimeline(
   const { data } = await supabase
     .from("match_events")
     .select(
-      "id, event_type, minute, notes, created_at, season_team_player_id, season_team_players(season_team_id, registration_status, players(full_name), season_teams(display_name, teams(name)))"
+      "id, event_type, minute, notes, created_at, voided_at, void_reason, season_team_player_id, season_team_players(season_team_id, registration_status, players(full_name), season_teams(display_name, teams(name)))"
     )
     .eq("organization_id", organizationId)
     .eq("match_id", matchId)
@@ -193,6 +193,8 @@ export async function getMatchTimeline(
       teamName,
       seasonTeamId: stp?.season_team_id ?? "",
       seasonTeamPlayerId: row.season_team_player_id,
+      voidedAt: row.voided_at,
+      voidReason: row.void_reason,
     };
   });
 }
@@ -315,26 +317,35 @@ export async function getUserMatchCapturePermissions(
   seasonId: string,
   matchId: string,
   userId: string,
-  orgRole: string
+  orgRole: string,
+  windowContext?: {
+    startsAt: string | null;
+    calendarConfirmed: boolean;
+  }
 ): Promise<MatchCapturePermissions> {
   const supabase = await createClient();
   const isOrgAdmin =
     orgRole === "organization_owner" || orgRole === "organization_admin";
 
-  const { data: canCapture } = await supabase.rpc("can_capture_match", {
-    p_match_id: matchId,
-  });
-
-  const { data: seasonRoles } = await supabase
-    .from("season_roles")
-    .select("role")
-    .eq("organization_id", organizationId)
-    .eq("season_id", seasonId)
-    .eq("profile_id", userId);
+  const [{ data: canCapture }, { data: seasonRoles }] = await Promise.all([
+    supabase.rpc("can_capture_match", { p_match_id: matchId }),
+    supabase
+      .from("season_roles")
+      .select("role")
+      .eq("organization_id", organizationId)
+      .eq("season_id", seasonId)
+      .eq("profile_id", userId),
+  ]);
 
   const roles = (seasonRoles ?? []).map((r) => r.role);
   const isTournamentAdmin = roles.includes("tournament_admin");
   const canUpdateResult = isOrgAdmin || isTournamentAdmin;
+  const captureWindowBypass = isOrgAdmin || isTournamentAdmin;
+
+  const { isCaptureWindowOpen } = await import("@/lib/matches/capture-window");
+  const captureWindowOpen =
+    windowContext?.calendarConfirmed === true &&
+    isCaptureWindowOpen(windowContext.startsAt);
 
   const actorBits: string[] = [];
   if (orgRole === "organization_owner") actorBits.push("Owner");
@@ -349,6 +360,9 @@ export async function getUserMatchCapturePermissions(
     canUpdateResult,
     canManageOfficials: isOrgAdmin,
     canManageSeasonRoles: isOrgAdmin,
+    canVoidEvents: isOrgAdmin,
+    captureWindowOpen,
+    captureWindowBypass,
     actorLabel: actorBits.join(" · "),
   };
 }
@@ -378,15 +392,20 @@ export async function getMatchCaptureContext(
   );
   if (!details) return null;
 
-  const [permissions, timeline, discipline, officials, roster, seasonRules] =
+  const permissions = await getUserMatchCapturePermissions(
+    organizationId,
+    seasonId,
+    matchId,
+    userId,
+    orgRole,
+    {
+      startsAt: details.match.schedule.startsAt,
+      calendarConfirmed: details.match.calendarStatus === "confirmado",
+    }
+  );
+
+  const [timeline, discipline, officials, roster, seasonRules] =
     await Promise.all([
-      getUserMatchCapturePermissions(
-        organizationId,
-        seasonId,
-        matchId,
-        userId,
-        orgRole
-      ),
       getMatchTimeline(organizationId, matchId),
       getMatchDiscipline(organizationId, seasonId, matchId),
       getMatchOfficials(organizationId, matchId, seasonId),

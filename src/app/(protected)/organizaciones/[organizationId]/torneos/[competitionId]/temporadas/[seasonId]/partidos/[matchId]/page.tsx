@@ -170,7 +170,14 @@ export default async function MatchDetailPage({ params }: PageProps) {
         canManage={canManage}
       />
 
-      <MatchTimeline events={timeline} />
+      <MatchTimeline
+        organizationId={organizationId}
+        competitionId={competitionId}
+        seasonId={seasonId}
+        matchId={matchId}
+        events={timeline}
+        canVoidEvents={canManage}
+      />
       <MatchDisciplineSummary items={discipline} />
     </div>
   );
