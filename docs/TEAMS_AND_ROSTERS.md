@@ -85,6 +85,25 @@ Capitán/sub **no** aprueban ni rechazan — solo solicitan.
 
 Fecha de liberación para el candado: `season_team_players.updated_at` al pasar a `inactive`. Owner/admin no están sujetos al candado.
 
+## Foto de jugador y credencial virtual (Migration 024)
+
+ADR: `docs/ADR/0010-foto-jugador-credencial-virtual.md`
+
+| Campo / recurso | Detalle |
+| --- | --- |
+| `players.photo_path` | Nullable. Path en bucket privado `player-photos`, nunca URL pública |
+| Bucket `player-photos` | Privado, 2 MB, PNG/JPEG/WebP — mismo patrón MIME/tamaño que `organization-logos` |
+| RPC `set_player_photo(p_player_id, p_photo_path)` | owner/admin o capitán/subcapitán activo del plantel del jugador |
+| Lectura de foto | `can_view_player_photo` — miembros de org (excepto oficiales de temporada acotados a partido), capitán/sub del equipo, oficial confirmado solo en roster del partido asignado |
+
+La foto es **opcional**: `create_player_and_add_to_roster` y altas existentes no la exigen.
+
+### Credencial virtual (frontend)
+
+- Portal capitán (`/mi-equipo/[seasonTeamId]`): plantel con avatar, dorsal, insignia de verificación (si `require_player_verification`) y enlace a credencial.
+- Ruta credencial capitán: `/mi-equipo/[seasonTeamId]/jugadores/[seasonTeamPlayerId]/credencial` — solo lectura; capitán/admin pueden subir foto opcional.
+- **Sin** PDF, impresión ni exportación en esta migración.
+
 ## Tope de plantel y candado (Migration 021)
 
 | Campo | Efecto |

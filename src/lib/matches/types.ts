@@ -118,9 +118,12 @@ export type MatchCapturePermissions = {
 export type MatchRosterPlayer = {
   seasonTeamPlayerId: string;
   seasonTeamId: string;
+  playerId: string;
   playerName: string;
   jerseyNumber: number | null;
   registrationStatus: string;
+  photoPath: string | null;
+  verificationStatus: string;
 };
 
 export function eventTypeLabel(value: string): string {

@@ -34,6 +34,7 @@ export type CaptainMatchListItem = {
 
 export type CaptainRosterPlayer = {
   id: string;
+  playerId: string;
   fullName: string;
   jerseyNumber: number | null;
   isCaptain: boolean;
@@ -41,6 +42,8 @@ export type CaptainRosterPlayer = {
   registrationStatus: string;
   markedPaid: boolean;
   paymentNotes: string | null;
+  photoUrl: string | null;
+  verificationStatus: string;
 };
 
 export type CaptainInvitationPreview = {

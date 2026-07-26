@@ -1,11 +1,14 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 import { setPlayerPaymentMarkCaptainAction } from "@/lib/captain/actions";
 import type { CaptainRosterPlayer } from "@/lib/captain/types";
 import { initialCaptainActionState } from "@/lib/captain/types";
 import { CaptainBadge } from "@/components/teams/CaptainBadge";
 import { ViceCaptainBadge } from "@/components/teams/ViceCaptainBadge";
+import { PlayerAvatar } from "@/components/players/PlayerAvatar";
+import { PlayerVerificationBadge } from "@/components/players/PlayerVerificationBadge";
 import { Card } from "@/components/ui/Card";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { StatusBadge } from "@/components/ui/StatusBadge";
@@ -15,14 +18,17 @@ import { cn } from "@/lib/utils/cn";
 type CaptainRosterPanelProps = {
   seasonTeamId: string;
   roster: CaptainRosterPlayer[];
+  requirePlayerVerification: boolean;
 };
 
 function PaymentMarkRow({
   seasonTeamId,
   player,
+  requirePlayerVerification,
 }: {
   seasonTeamId: string;
   player: CaptainRosterPlayer;
+  requirePlayerVerification: boolean;
 }) {
   const [state, action, pending] = useActionState(
     setPlayerPaymentMarkCaptainAction,
@@ -32,27 +38,44 @@ function PaymentMarkRow({
   return (
     <li className="rounded-xl border border-border p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="space-y-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="font-medium">{player.fullName}</p>
-            {player.isCaptain && <CaptainBadge />}
-            {player.isViceCaptain && <ViceCaptainBadge />}
-            <StatusBadge
-              label={
-                player.registrationStatus === "active"
-                  ? "Activo"
-                  : player.registrationStatus
-              }
-              variant={
-                player.registrationStatus === "active" ? "success" : "warning"
-              }
-            />
+        <div className="flex min-w-0 flex-1 gap-3">
+          <PlayerAvatar
+            photoUrl={player.photoUrl}
+            name={player.fullName}
+            size="sm"
+          />
+          <div className="min-w-0 space-y-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="font-medium">{player.fullName}</p>
+              {player.isCaptain && <CaptainBadge />}
+              {player.isViceCaptain && <ViceCaptainBadge />}
+              <PlayerVerificationBadge
+                status={player.verificationStatus}
+                visible={requirePlayerVerification}
+              />
+              <StatusBadge
+                label={
+                  player.registrationStatus === "active"
+                    ? "Activo"
+                    : player.registrationStatus
+                }
+                variant={
+                  player.registrationStatus === "active" ? "success" : "warning"
+                }
+              />
+            </div>
+            {player.jerseyNumber != null && (
+              <p className="text-sm text-text-secondary">
+                Dorsal {player.jerseyNumber}
+              </p>
+            )}
+            <Link
+              href={`/mi-equipo/${seasonTeamId}/jugadores/${player.id}/credencial`}
+              className="inline-flex text-sm font-medium text-accent"
+            >
+              Ver credencial
+            </Link>
           </div>
-          {player.jerseyNumber != null && (
-            <p className="text-sm text-text-secondary">
-              Dorsal {player.jerseyNumber}
-            </p>
-          )}
         </div>
         <form action={action} className="flex items-center gap-2">
           <input type="hidden" name="seasonTeamId" value={seasonTeamId} />
@@ -102,6 +125,7 @@ function PaymentMarkRow({
 export function CaptainRosterPanel({
   seasonTeamId,
   roster,
+  requirePlayerVerification,
 }: CaptainRosterPanelProps) {
   const active = roster.filter((p) => p.registrationStatus === "active");
 
@@ -127,6 +151,7 @@ export function CaptainRosterPanel({
               key={player.id}
               seasonTeamId={seasonTeamId}
               player={player}
+              requirePlayerVerification={requirePlayerVerification}
             />
           ))}
         </ul>

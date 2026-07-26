@@ -323,18 +323,28 @@ export async function getCaptainMatchDetail(
 export async function getCaptainRoster(
   profileId: string,
   team: CaptainTeamLink
-): Promise<CaptainRosterPlayer[]> {
+): Promise<{
+  roster: CaptainRosterPlayer[];
+  requirePlayerVerification: boolean;
+}> {
   const allowed = await hasCaptainTeamAccess(profileId, team.seasonTeamId);
-  if (!allowed) return [];
+  if (!allowed) return { roster: [], requirePlayerVerification: false };
 
   const supabase = await createClient();
-  const { data: rosterRows } = await supabase
-    .from("season_team_players")
-    .select(
-      "id, jersey_number, is_captain, is_vice_captain, registration_status, players(full_name)"
-    )
-    .eq("season_team_id", team.seasonTeamId)
-    .order("jersey_number", { ascending: true, nullsFirst: false });
+  const [{ data: rosterRows }, { data: rules }] = await Promise.all([
+    supabase
+      .from("season_team_players")
+      .select(
+        "id, player_id, jersey_number, is_captain, is_vice_captain, registration_status, players(full_name, photo_path, verification_status)"
+      )
+      .eq("season_team_id", team.seasonTeamId)
+      .order("jersey_number", { ascending: true, nullsFirst: false }),
+    supabase
+      .from("season_rules")
+      .select("require_player_verification")
+      .eq("season_id", team.seasonId)
+      .maybeSingle(),
+  ]);
 
   const { data: marks } = await supabase
     .from("season_team_player_payment_marks")
@@ -348,26 +358,52 @@ export async function getCaptainRoster(
     ])
   );
 
-  return (rosterRows ?? []).map((row) => {
+  const { resolvePlayerPhotoUrlMap } = await import("@/lib/players/photo-url");
+  const photoPaths = (rosterRows ?? []).map((row) => {
     const playerRel = row.players as
-      | { full_name: string }
-      | { full_name: string }[]
+      | { photo_path: string | null }
+      | { photo_path: string | null }[]
       | null;
-    const fullName = Array.isArray(playerRel)
-      ? playerRel[0]?.full_name
-      : playerRel?.full_name;
+    const player = Array.isArray(playerRel) ? playerRel[0] : playerRel;
+    return player?.photo_path ?? null;
+  });
+  const photoUrls = await resolvePlayerPhotoUrlMap(photoPaths);
+
+  const roster = (rosterRows ?? []).map((row) => {
+    const playerRel = row.players as
+      | {
+          full_name: string;
+          photo_path: string | null;
+          verification_status: string;
+        }
+      | {
+          full_name: string;
+          photo_path: string | null;
+          verification_status: string;
+        }[]
+      | null;
+    const player = Array.isArray(playerRel) ? playerRel[0] : playerRel;
     const mark = markMap.get(row.id);
+    const photoPath = player?.photo_path ?? null;
     return {
       id: row.id,
-      fullName: fullName ?? "Jugador",
+      playerId: row.player_id,
+      fullName: player?.full_name ?? "Jugador",
       jerseyNumber: row.jersey_number,
       isCaptain: row.is_captain,
       isViceCaptain: row.is_vice_captain,
       registrationStatus: row.registration_status,
       markedPaid: mark?.markedPaid ?? false,
       paymentNotes: mark?.notes ?? null,
+      photoUrl: photoPath ? (photoUrls.get(photoPath) ?? null) : null,
+      verificationStatus: player?.verification_status ?? "not_required",
     };
   });
+
+  return {
+    roster,
+    requirePlayerVerification: rules?.require_player_verification ?? false,
+  };
 }
 
 export async function getCaptainMatchRescheduleRequest(

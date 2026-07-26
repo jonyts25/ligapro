@@ -9,6 +9,7 @@ import { MatchScoreForm } from "@/components/matches/MatchScoreForm";
 import { MatchEventForm } from "@/components/matches/MatchEventForm";
 import { MatchTimeline } from "@/components/matches/MatchTimeline";
 import { MatchDisciplineSummary } from "@/components/matches/MatchDisciplineSummary";
+import { MatchRosterCredentials } from "@/components/matches/MatchRosterCredentials";
 import type { MatchStatusValue } from "@/lib/matches/types";
 
 type PageProps = {
@@ -38,7 +39,7 @@ export default async function MatchCapturePage({ params }: PageProps) {
   );
   if (!ctx) notFound();
 
-  const { details, permissions, timeline, discipline, roster, scoreMismatch } =
+  const { details, permissions, timeline, discipline, roster, scoreMismatch, requirePlayerVerification } =
     ctx;
   const match = details.match;
   const base = `/organizaciones/${organizationId}/torneos/${competitionId}/temporadas/${seasonId}`;
@@ -105,6 +106,19 @@ export default async function MatchCapturePage({ params }: PageProps) {
         roster={roster}
         canCapture={permissions.canCaptureEvents}
         matchClosed={matchClosed}
+      />
+
+      <MatchRosterCredentials
+        organizationId={organizationId}
+        competitionId={competitionId}
+        seasonId={seasonId}
+        matchId={matchId}
+        homeName={match.homeName}
+        awayName={match.awayName}
+        homeSeasonTeamId={match.homeSeasonTeamId}
+        awaySeasonTeamId={match.awaySeasonTeamId}
+        roster={roster}
+        requirePlayerVerification={requirePlayerVerification}
       />
 
       <MatchTimeline events={timeline} />

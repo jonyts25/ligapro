@@ -277,7 +277,7 @@ export async function getMatchRosterPlayers(
   const { data } = await supabase
     .from("season_team_players")
     .select(
-      "id, season_team_id, jersey_number, registration_status, players(full_name)"
+      "id, season_team_id, jersey_number, registration_status, player_id, players(full_name, photo_path, verification_status)"
     )
     .eq("organization_id", organizationId)
     .in("season_team_id", [homeSeasonTeamId, awaySeasonTeamId])
@@ -285,16 +285,27 @@ export async function getMatchRosterPlayers(
 
   return (data ?? []).map((row) => {
     const playerRel = row.players as
-      | { full_name: string }
-      | { full_name: string }[]
+      | {
+          full_name: string;
+          photo_path: string | null;
+          verification_status: string;
+        }
+      | {
+          full_name: string;
+          photo_path: string | null;
+          verification_status: string;
+        }[]
       | null;
     const player = Array.isArray(playerRel) ? playerRel[0] : playerRel;
     return {
       seasonTeamPlayerId: row.id,
       seasonTeamId: row.season_team_id,
+      playerId: row.player_id,
       playerName: player?.full_name ?? "Jugador",
       jerseyNumber: row.jersey_number,
       registrationStatus: row.registration_status,
+      photoPath: player?.photo_path ?? null,
+      verificationStatus: player?.verification_status ?? "not_required",
     };
   });
 }
@@ -357,6 +368,7 @@ export async function getMatchCaptureContext(
   officials: MatchOfficialListItem[];
   roster: MatchRosterPlayer[];
   scoreMismatch: boolean;
+  requirePlayerVerification: boolean;
 } | null> {
   const details = await getMatchSchedulingDetails(
     organizationId,
@@ -366,7 +378,7 @@ export async function getMatchCaptureContext(
   );
   if (!details) return null;
 
-  const [permissions, timeline, discipline, officials, roster] =
+  const [permissions, timeline, discipline, officials, roster, seasonRules] =
     await Promise.all([
       getUserMatchCapturePermissions(
         organizationId,
@@ -383,6 +395,7 @@ export async function getMatchCaptureContext(
         details.match.homeSeasonTeamId,
         details.match.awaySeasonTeamId
       ),
+      getSeasonRequirePlayerVerification(seasonId),
     ]);
 
   const { goalsFromEvents } = await import("@/lib/matches/types");
@@ -405,7 +418,21 @@ export async function getMatchCaptureContext(
     officials,
     roster,
     scoreMismatch,
+    requirePlayerVerification:
+      seasonRules,
   };
+}
+
+async function getSeasonRequirePlayerVerification(
+  seasonId: string
+): Promise<boolean> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("season_rules")
+    .select("require_player_verification")
+    .eq("season_id", seasonId)
+    .maybeSingle();
+  return data?.require_player_verification ?? false;
 }
 
 export async function getRecentMatchResults(

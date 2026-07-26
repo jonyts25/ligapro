@@ -19,7 +19,7 @@ export default async function CaptainTeamPage({ params }: PageProps) {
 
   if (!team) notFound();
 
-  const [matches, roster] = await Promise.all([
+  const [matches, rosterData] = await Promise.all([
     getCaptainUpcomingMatches(user.id, team),
     getCaptainRoster(user.id, team),
   ]);
@@ -27,7 +27,11 @@ export default async function CaptainTeamPage({ params }: PageProps) {
   return (
     <div className="space-y-6">
       <CaptainUpcomingMatches seasonTeamId={seasonTeamId} matches={matches} />
-      <CaptainRosterPanel seasonTeamId={seasonTeamId} roster={roster} />
+      <CaptainRosterPanel
+        seasonTeamId={seasonTeamId}
+        roster={rosterData.roster}
+        requirePlayerVerification={rosterData.requirePlayerVerification}
+      />
     </div>
   );
 }

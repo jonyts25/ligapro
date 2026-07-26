@@ -128,6 +128,16 @@ Sin máquina formal en DB. UI limita: `scheduled` → `in_progress`/`finished`/`
 - `.../temporadas/[seasonId]/oficiales`
 - `.../partidos/[matchId]` (detalle + oficiales)
 - `.../partidos/[matchId]/captura`
+- `.../partidos/[matchId]/captura/jugadores/[seasonTeamPlayerId]` — credencial virtual del jugador (solo lectura)
+
+## Migration 024 — credenciales en captura
+
+En la pantalla de captura se listan ambos planteles con foto (o placeholder), dorsal e insignia de `verification_status` cuando la temporada exige verificación.
+
+- Panel **Credenciales del partido** con enlaces por jugador.
+- El capturador confirmado ve credenciales de **ambos** equipos; la lectura de fotos en Storage respeta `can_view_player_photo` (misma lógica que `can_capture_match` / `match_officials` para oficiales de temporada).
+- Oficiales con rol de temporada (`referee`/`delegate`/`scorekeeper`) **no** obtienen acceso amplio por membresía org: solo ven fotos de jugadores en partidos donde tienen asignación confirmada.
+- Sin botón imprimir/exportar; páginas públicas F8 sin cambios (`get_public_season_*` no exponen `photo_path`).
 
 ## Siguiente paso
 

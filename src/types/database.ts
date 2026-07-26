@@ -954,6 +954,7 @@ export type Database = {
           full_name: string
           id: string
           organization_id: string
+          photo_path: string | null
           profile_id: string | null
           updated_at: string
           verification_status: string
@@ -963,6 +964,7 @@ export type Database = {
           full_name: string
           id?: string
           organization_id: string
+          photo_path?: string | null
           profile_id?: string | null
           updated_at?: string
           verification_status?: string
@@ -972,6 +974,7 @@ export type Database = {
           full_name?: string
           id?: string
           organization_id?: string
+          photo_path?: string | null
           profile_id?: string | null
           updated_at?: string
           verification_status?: string
@@ -1766,6 +1769,10 @@ export type Database = {
         Args: { p_player_id: string }
         Returns: boolean
       }
+      __can_set_player_photo: {
+        Args: { p_player_id: string }
+        Returns: boolean
+      }
       __captain_season_team_for_match: {
         Args: { p_match_id: string; p_profile_id: string }
         Returns: string
@@ -1850,6 +1857,7 @@ export type Database = {
         Returns: Json
       }
       can_capture_match: { Args: { p_match_id: string }; Returns: boolean }
+      can_view_player_photo: { Args: { p_player_id: string }; Returns: boolean }
       confirm_match_calendar: {
         Args: { p_match_id: string }
         Returns: undefined
@@ -2091,6 +2099,14 @@ export type Database = {
         Args: { p_logo_path: string; p_organization_id: string }
         Returns: boolean
       }
+      is_valid_player_photo_path: {
+        Args: {
+          p_organization_id: string
+          p_photo_path: string
+          p_player_id: string
+        }
+        Returns: boolean
+      }
       is_valid_uuid_text: { Args: { p_value: string }; Returns: boolean }
       normalize_brand_color: { Args: { p_color: string }; Returns: string }
       propose_match_reschedule: {
@@ -2155,6 +2171,7 @@ export type Database = {
           full_name: string
           id: string
           organization_id: string
+          photo_path: string | null
           profile_id: string | null
           updated_at: string
           verification_status: string
@@ -2181,6 +2198,7 @@ export type Database = {
           full_name: string
           id: string
           organization_id: string
+          photo_path: string | null
           profile_id: string | null
           updated_at: string
           verification_status: string
@@ -2207,6 +2225,10 @@ export type Database = {
           p_season_team_player_id: string
         }
         Returns: string
+      }
+      set_player_photo: {
+        Args: { p_photo_path: string; p_player_id: string }
+        Returns: undefined
       }
       set_roster_lock: {
         Args: { p_locked: boolean; p_season_team_id: string }
