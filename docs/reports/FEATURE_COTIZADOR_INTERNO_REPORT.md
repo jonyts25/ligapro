@@ -92,4 +92,4 @@ Persistencia de cotizaciones/líneas, localStorage, logo en PDF, acceso no-staff
 
 - `ebb3724` — release inicial cotizador
 - `ddd9d94` — multi-línea, bandas duración, PDF
-- *(actualizar tras push Migration 028)*
+- `e76c135` — feat(028): persist cotizador pricing defaults and fix PDF ASCII
