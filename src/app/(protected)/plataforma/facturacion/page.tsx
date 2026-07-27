@@ -8,6 +8,7 @@ import {
 } from "@/lib/platform-billing/queries";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { PlatformBillingPanel } from "@/components/platform-billing/PlatformBillingPanel";
+import { PlatformPlataformaNav } from "@/components/platform-billing/PlatformPlataformaNav";
 
 type PageProps = {
   searchParams: Promise<{ estado?: string }>;
@@ -31,6 +32,7 @@ export default async function PlatformBillingPage({ searchParams }: PageProps) {
         title="Facturación de plataforma"
         description="Panel interno LigaPro — estados de facturación por temporada."
       />
+      <PlatformPlataformaNav />
       <PlatformBillingPanel rows={rows} initialFilter={filter} />
     </div>
   );
