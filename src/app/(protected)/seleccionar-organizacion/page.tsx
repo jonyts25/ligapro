@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { OrganizationBrand } from "@/components/branding/OrganizationBrand";
 import { SignOutButton } from "@/components/layout/SignOutButton";
+import { PlatformStaffLink } from "@/components/platform-billing/PlatformStaffLink";
 
 export default async function SelectOrganizationPage() {
   const user = await requireUser();
@@ -39,6 +40,7 @@ export default async function SelectOrganizationPage() {
           title="Seleccionar organización"
           description={`Hola ${user.displayName ?? user.email}. Elige la organización con la que quieres trabajar.`}
         />
+        <PlatformStaffLink />
         {captainTeams.length > 0 && (
           <p className="mb-4 text-sm text-text-secondary">
             También capitaneas {captainTeams.length} equipo

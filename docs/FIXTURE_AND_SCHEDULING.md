@@ -110,13 +110,13 @@ Solo `format_type = 'groups_knockout'`. Reutiliza round-robin (por grupo) y moto
 
 Rondas 2+ siguen con `advance_knockout_round` (025).
 
-## Facturación de plataforma (Migration 021)
+## Facturación de plataforma (Migration 021 + 027)
 
 Columna `seasons.platform_billing_status`: `'pendiente'` (default) \| `'pagado'` \| `'vencido'`.
 
 - Candado en `create_season_round_robin_fixture`, `create_season_knockout_bracket`, `generate_knockout_from_groups` y `apply_recurring_slot_to_season` si `≠ 'pagado'`.
-- **Sin RPC** de cambio para `authenticated`; se gestiona en Supabase (service role / dashboard).
-- `REVOKE UPDATE (platform_billing_status)` + trigger que rechaza cambios con `auth.uid()` presente.
+- **Migration 021:** `REVOKE UPDATE (platform_billing_status)` + trigger que rechaza cambios con `auth.uid()` presente (sin vía app).
+- **Migration 027:** tabla `platform_staff` (población manual en Supabase; sin acceso cliente). RPC `set_platform_billing_status(season_id, status, reason?)` — solo `is_platform_staff(auth.uid())`; bypass controlado del trigger vía `app.platform_billing_status_rpc`. RPC `get_platform_billing_overview()` — lectura mínima cross-org para panel `/plataforma/facturacion`. Sin UI/RPC para gestionar quién es staff.
 
 ## Programación
 

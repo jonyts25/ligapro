@@ -36,6 +36,7 @@ Schema SQL: Migrations 001–023 aplicadas en `ligapro-dev`.
 26. `season_field_blocks` — **implementada (021)**
 27. `player_verification_reviews` — **implementada (023)**
 28. `player_transfer_lock_releases` — **implementada (023)**
+29. `platform_staff` — **implementada (027)**
 
 ## Bloque 001 — identidad y multi-tenancy
 
@@ -51,6 +52,10 @@ Schema SQL: Migrations 001–023 aplicadas en `ligapro-dev`.
 | `updated_at` | timestamptz | trigger `set_updated_at` |
 
 Creación: trigger `AFTER INSERT ON auth.users` (`handle_new_user`), no desde el cliente. Si el trigger falla, el signup completo aborta.
+
+### `platform_staff` (027)
+
+Operadores internos LigaPro. **Sin acceso cliente** (`REVOKE ALL`, RLS sin policies). Población manual en Supabase. Referencia `profile_id` → `profiles`. Helper `is_platform_staff(profile_id)` (`SECURITY DEFINER`). No otorga acceso a tablas operativas de organizaciones.
 
 ### `organizations`
 
@@ -176,7 +181,7 @@ EXCLUDE: misma season + field + día no solapan; trigger adicional impide solape
 | `visibility` | text NOT NULL | default `draft`; CHECK: `draft` \| `private` \| `unlisted` \| `public` \| `archived` |
 | `starts_on` | date nullable | |
 | `ends_on` | date nullable | CHECK `ends_on >= starts_on` cuando ambos no null |
-| `platform_billing_status` | text NOT NULL | default `pendiente`; CHECK `pendiente` \| `pagado` \| `vencido` (021); no app-writable |
+| `platform_billing_status` | text NOT NULL | default `pendiente`; CHECK `pendiente` \| `pagado` \| `vencido` (021); writable solo vía `set_platform_billing_status` (027, platform staff) |
 | `created_at` | timestamptz | |
 | `updated_at` | timestamptz | trigger `set_updated_at` |
 

@@ -111,6 +111,24 @@ export type Database = {
         }
         Relationships: []
       }
+      __mig027_test_results: {
+        Row: {
+          details: string | null
+          passed: boolean
+          test_name: string
+        }
+        Insert: {
+          details?: string | null
+          passed: boolean
+          test_name: string
+        }
+        Update: {
+          details?: string | null
+          passed?: boolean
+          test_name?: string
+        }
+        Relationships: []
+      }
       audit_log: {
         Row: {
           action: string
@@ -909,6 +927,42 @@ export type Database = {
             foreignKeyName: "organizations_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      platform_staff: {
+        Row: {
+          granted_at: string
+          granted_by_profile_id: string | null
+          id: string
+          profile_id: string
+        }
+        Insert: {
+          granted_at?: string
+          granted_by_profile_id?: string | null
+          id?: string
+          profile_id: string
+        }
+        Update: {
+          granted_at?: string
+          granted_by_profile_id?: string | null
+          id?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_staff_granted_by_profile_id_fkey"
+            columns: ["granted_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "platform_staff_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -2297,6 +2351,17 @@ export type Database = {
         Args: { p_season_id: string }
         Returns: Json
       }
+      get_platform_billing_overview: {
+        Args: never
+        Returns: {
+          enrolled_team_count: number
+          has_fixture: boolean
+          organization_name: string
+          platform_billing_status: string
+          season_id: string
+          season_name: string
+        }[]
+      }
       get_public_season_discipline: {
         Args: { p_organization_id: string; p_season_slug: string }
         Returns: {
@@ -2451,6 +2516,7 @@ export type Database = {
         Returns: boolean
       }
       is_member_of: { Args: { p_org_id: string }; Returns: boolean }
+      is_platform_staff: { Args: { p_profile_id: string }; Returns: boolean }
       is_team_leader_for_roster_player: {
         Args: { p_profile_id?: string; p_season_team_player_id: string }
         Returns: boolean
@@ -2584,6 +2650,10 @@ export type Database = {
       }
       set_organization_logo: {
         Args: { p_logo_path: string; p_organization_id: string }
+        Returns: undefined
+      }
+      set_platform_billing_status: {
+        Args: { p_reason?: string; p_season_id: string; p_status: string }
         Returns: undefined
       }
       set_player_payment_mark: {
