@@ -2,6 +2,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth/require-user";
 import { requireOrganizationMembership } from "@/lib/auth/require-organization-membership";
+import { getSeasonDetails } from "@/lib/competitions/queries";
+import {
+  canManageActiveSeason,
+  isSeasonArchived,
+} from "@/lib/competitions/season-visibility";
 import {
   getMatchCaptureContext,
   getOrganizationMemberOptions,
@@ -37,24 +42,30 @@ export default async function MatchDetailPage({ params }: PageProps) {
   );
   const canManage = isOrganizationAdminRole(membership.role);
 
-  const ctx = await getMatchCaptureContext(
-    organizationId,
-    competitionId,
-    seasonId,
-    matchId,
-    user.id,
-    membership.role
-  );
-  if (!ctx) notFound();
+  const [ctx, season] = await Promise.all([
+    getMatchCaptureContext(
+      organizationId,
+      competitionId,
+      seasonId,
+      matchId,
+      user.id,
+      membership.role
+    ),
+    getSeasonDetails(organizationId, competitionId, seasonId),
+  ]);
+  if (!ctx || !season) notFound();
+
+  const canManageActive = canManageActiveSeason(season, canManage);
+  const seasonActive = !isSeasonArchived(season.visibility);
 
   const { details, permissions, timeline, discipline, officials, scoreMismatch } =
     ctx;
   const match = details.match;
   const base = `/organizaciones/${organizationId}/torneos/${competitionId}/temporadas/${seasonId}`;
-  const members = canManage
+  const members = canManageActive
     ? await getOrganizationMemberOptions(organizationId)
     : [];
-  const rescheduleRequest = canManage
+  const rescheduleRequest = canManageActive
     ? await getMatchRescheduleRequest(organizationId, matchId)
     : null;
 
@@ -76,7 +87,8 @@ export default async function MatchDetailPage({ params }: PageProps) {
             >
               Calendario
             </Link>
-            {(permissions.canCaptureEvents || permissions.canUpdateResult) && (
+            {seasonActive &&
+              (permissions.canCaptureEvents || permissions.canUpdateResult) && (
               <Link
                 href={`${base}/partidos/${match.id}/captura`}
                 className="inline-flex min-h-11 items-center rounded-xl bg-brand px-4 text-sm font-semibold text-brand-foreground"
@@ -138,7 +150,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
         )}
       </Card>
 
-      {canManage && match.status === "scheduled" && (
+      {canManageActive && match.status === "scheduled" && (
         <Link
           href={`${base}/partidos/${match.id}/programar`}
           className="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-border px-4 text-sm font-medium"
@@ -147,7 +159,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
         </Link>
       )}
 
-      {canManage && (
+      {canManageActive && (
         <MatchRescheduleAdminPanel
           organizationId={organizationId}
           competitionId={competitionId}
@@ -167,7 +179,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
         matchStatus={match.status}
         members={members}
         officials={officials}
-        canManage={canManage}
+        canManage={canManageActive}
       />
 
       <MatchTimeline
@@ -176,7 +188,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
         seasonId={seasonId}
         matchId={matchId}
         events={timeline}
-        canVoidEvents={canManage}
+        canVoidEvents={canManageActive}
       />
       <MatchDisciplineSummary items={discipline} />
     </div>

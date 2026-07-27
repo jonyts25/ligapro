@@ -15,6 +15,7 @@ import { SeasonStandingsNav } from "@/components/standings/SeasonStandingsNav";
 import { DisciplineAdminPanel } from "@/components/discipline/DisciplineAdminPanel";
 import { VerificationReviewPanel } from "@/components/verification/VerificationReviewPanel";
 import { isOrganizationAdminRole } from "@/lib/auth/is-organization-admin";
+import { canManageActiveSeason } from "@/lib/competitions/season-visibility";
 import { getPendingVerificationPlayers } from "@/lib/verification/queries";
 import { SeasonExportButtons } from "@/components/export/ExportButtons";
 
@@ -42,16 +43,18 @@ export default async function SeasonDisciplinePage({ params }: PageProps) {
   );
   if (!season) notFound();
 
+  const canManageActive = canManageActiveSeason(season, canManage);
+
   const [rows, activeSuspensions, rosterPlayers, pendingVerification] =
     await Promise.all([
     getSeasonDisciplineSummary(seasonId),
-    canManage
+    canManageActive
       ? getActiveDisciplineSuspensions(organizationId, seasonId)
       : Promise.resolve([]),
-    canManage
+    canManageActive
       ? getSeasonRosterPlayerOptions(organizationId, seasonId)
       : Promise.resolve([]),
-    canManage
+    canManageActive
       ? getPendingVerificationPlayers(organizationId, seasonId)
       : Promise.resolve([]),
   ]);
@@ -68,10 +71,11 @@ export default async function SeasonDisciplinePage({ params }: PageProps) {
         seasonId={seasonId}
         active="disciplina"
         canManage={canManage}
+        canManageActive={canManageActive}
         formatType={season.format_type}
       />
 
-      {canManage && (
+      {canManageActive && (
         <VerificationReviewPanel
           organizationId={organizationId}
           competitionId={competitionId}
@@ -80,7 +84,7 @@ export default async function SeasonDisciplinePage({ params }: PageProps) {
         />
       )}
 
-      {canManage && (
+      {canManageActive && (
         <DisciplineAdminPanel
           organizationId={organizationId}
           competitionId={competitionId}

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth/require-user";
 import { requireOrganizationMembership } from "@/lib/auth/require-organization-membership";
 import { getSeasonDetails } from "@/lib/competitions/queries";
+import { canManageActiveSeason } from "@/lib/competitions/season-visibility";
 import { getSeasonTeams } from "@/lib/teams/queries";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SeasonTeamList } from "@/components/teams/SeasonTeamList";
@@ -33,6 +34,8 @@ export default async function SeasonTeamsPage({ params }: PageProps) {
   );
   if (!season) notFound();
 
+  const canManageActive = canManageActiveSeason(season, canManage);
+
   const seasonTeams = await getSeasonTeams(organizationId, seasonId);
 
   return (
@@ -48,7 +51,7 @@ export default async function SeasonTeamsPage({ params }: PageProps) {
             >
               Volver a temporada
             </Link>
-            {canManage && (
+            {canManageActive && (
               <Link
                 href={`/organizaciones/${organizationId}/torneos/${competitionId}/temporadas/${seasonId}/equipos/inscribir`}
                 className="inline-flex min-h-11 items-center rounded-xl bg-brand px-4 text-sm font-semibold text-brand-foreground"
@@ -68,7 +71,7 @@ export default async function SeasonTeamsPage({ params }: PageProps) {
         competitionId={competitionId}
         seasonId={seasonId}
         seasonTeams={seasonTeams}
-        canManage={canManage}
+        canManage={canManageActive}
       />
     </div>
   );

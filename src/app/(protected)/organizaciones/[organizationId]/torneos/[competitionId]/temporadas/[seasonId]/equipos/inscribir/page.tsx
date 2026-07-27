@@ -1,8 +1,12 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth/require-user";
 import { requireOrganizationAdmin } from "@/lib/auth/require-organization-admin";
 import { getSeasonDetails } from "@/lib/competitions/queries";
+import {
+  isSeasonArchived,
+  seasonDetailPath,
+} from "@/lib/competitions/season-visibility";
 import { getAvailableTeamsForSeason } from "@/lib/teams/queries";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SeasonEnrollmentForm } from "@/components/teams/SeasonEnrollmentForm";
@@ -26,6 +30,9 @@ export default async function EnrollTeamPage({ params }: PageProps) {
     seasonId
   );
   if (!season) notFound();
+  if (isSeasonArchived(season.visibility)) {
+    redirect(seasonDetailPath(organizationId, competitionId, seasonId));
+  }
 
   const availableTeams = await getAvailableTeamsForSeason(
     organizationId,

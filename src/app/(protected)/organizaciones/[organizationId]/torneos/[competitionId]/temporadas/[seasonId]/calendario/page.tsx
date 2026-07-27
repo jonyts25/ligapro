@@ -3,6 +3,8 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth/require-user";
 import { requireOrganizationMembership } from "@/lib/auth/require-organization-membership";
+import { getSeasonDetails } from "@/lib/competitions/queries";
+import { canManageActiveSeason } from "@/lib/competitions/season-visibility";
 import { getSeasonMatchesGroupedByRound } from "@/lib/fixtures/queries";
 import { FixtureRoundCard } from "@/components/fixtures/FixtureRoundCard";
 import { MatchdayTabs } from "@/components/fixtures/MatchdayTabs";
@@ -35,16 +37,14 @@ export default async function SeasonCalendarPage({
     membership.role === "organization_owner" ||
     membership.role === "organization_admin";
 
-  // Capturar en calendario: owner/admin. Otros actores autorizados lo ven en el detalle
-  // (can_capture_match se calcula por partido allí).
-  const canCapture = canManage;
+  const [season, data] = await Promise.all([
+    getSeasonDetails(organizationId, competitionId, seasonId),
+    getSeasonMatchesGroupedByRound(organizationId, competitionId, seasonId),
+  ]);
+  if (!season || !data) notFound();
 
-  const data = await getSeasonMatchesGroupedByRound(
-    organizationId,
-    competitionId,
-    seasonId
-  );
-  if (!data) notFound();
+  const canManageActive = canManageActiveSeason(season, canManage);
+  const canCapture = canManageActive;
 
   const selectedRound =
     jornada && /^\d+$/.test(jornada) ? Number(jornada) : ("all" as const);
@@ -73,7 +73,7 @@ export default async function SeasonCalendarPage({
         title="Calendario"
         description={`${data.seasonName} · ${data.competitionName}`}
         actions={
-          canManage && !data.stats.fixtureGenerated ? (
+          canManageActive && !data.stats.fixtureGenerated ? (
             <Link
               href={`${base}/fixture/generar`}
               className="inline-flex min-h-11 items-center rounded-xl bg-brand px-4 text-sm font-semibold text-brand-foreground"
@@ -90,6 +90,7 @@ export default async function SeasonCalendarPage({
         seasonId={seasonId}
         active="calendario"
         canManage={canManage}
+        canManageActive={canManageActive}
         formatType={data.formatType}
       />
 
@@ -147,7 +148,7 @@ export default async function SeasonCalendarPage({
                 organizationId={organizationId}
                 competitionId={competitionId}
                 seasonId={seasonId}
-                canManage={canManage}
+                canManage={canManageActive}
                 canCapture={canCapture}
               />
             ))}

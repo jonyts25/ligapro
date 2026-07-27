@@ -1,9 +1,13 @@
 export const dynamic = "force-dynamic";
 
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth/require-user";
 import { requireOrganizationAdmin } from "@/lib/auth/require-organization-admin";
 import { getSeasonDetails } from "@/lib/competitions/queries";
+import {
+  isSeasonArchived,
+  seasonDetailPath,
+} from "@/lib/competitions/season-visibility";
 import {
   getActiveOrganizationFields,
   getSeasonFieldBlocks,
@@ -31,6 +35,9 @@ export default async function SeasonFieldBlocksPage({ params }: PageProps) {
     seasonId
   );
   if (!season) notFound();
+  if (isSeasonArchived(season.visibility)) {
+    redirect(seasonDetailPath(organizationId, competitionId, seasonId));
+  }
 
   const [fields, blocks] = await Promise.all([
     getActiveOrganizationFields(organizationId),

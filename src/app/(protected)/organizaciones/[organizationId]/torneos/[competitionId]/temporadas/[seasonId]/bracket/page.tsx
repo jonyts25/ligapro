@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth/require-user";
 import { requireOrganizationMembership } from "@/lib/auth/require-organization-membership";
 import { getSeasonDetails } from "@/lib/competitions/queries";
+import { canManageActiveSeason } from "@/lib/competitions/season-visibility";
 import {
   getEligibleTeamCount,
   getKnockoutBracketData,
@@ -39,6 +40,8 @@ export default async function SeasonBracketPage({ params }: PageProps) {
   );
   if (!season) notFound();
 
+  const canManageActive = canManageActiveSeason(season, canManage);
+
   const formatType = season.format_type;
   if (formatType !== "knockout" && formatType !== "groups_knockout") {
     notFound();
@@ -68,10 +71,11 @@ export default async function SeasonBracketPage({ params }: PageProps) {
         seasonId={seasonId}
         active="bracket"
         canManage={canManage}
+        canManageActive={canManageActive}
         formatType={formatType}
       />
 
-      {canManage ? (
+      {canManageActive ? (
         <KnockoutBracketAdminPanel
           organizationId={organizationId}
           competitionId={competitionId}

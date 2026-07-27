@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth/require-user";
 import { requireOrganizationMembership } from "@/lib/auth/require-organization-membership";
 import { getSeasonDetails } from "@/lib/competitions/queries";
+import { canManageActiveSeason } from "@/lib/competitions/season-visibility";
 import { getSeasonTopScorers } from "@/lib/standings/queries";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { TopScorersTable } from "@/components/standings/TopScorersTable";
@@ -37,6 +38,8 @@ export default async function SeasonTopScorersPage({ params }: PageProps) {
   );
   if (!season) notFound();
 
+  const canManageActive = canManageActiveSeason(season, canManage);
+
   const scorers = await getSeasonTopScorers(seasonId);
 
   return (
@@ -51,6 +54,7 @@ export default async function SeasonTopScorersPage({ params }: PageProps) {
         seasonId={seasonId}
         active="goleadores"
         canManage={canManage}
+        canManageActive={canManageActive}
         formatType={season.format_type}
       />
 

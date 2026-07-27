@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth/require-user";
 import { requireOrganizationMembership } from "@/lib/auth/require-organization-membership";
 import { getSeasonDetails } from "@/lib/competitions/queries";
+import { canManageActiveSeason } from "@/lib/competitions/season-visibility";
 import {
   getSeasonDisciplineSummary,
   getSeasonStandings,
@@ -42,6 +43,8 @@ export default async function SeasonDashboardPage({ params }: PageProps) {
   );
   if (!season) notFound();
 
+  const canManageActive = canManageActiveSeason(season, canManage);
+
   const [standings, scorers, discipline] = await Promise.all([
     getSeasonStandings(seasonId),
     getSeasonTopScorers(seasonId),
@@ -60,6 +63,7 @@ export default async function SeasonDashboardPage({ params }: PageProps) {
         seasonId={seasonId}
         active="dashboard"
         canManage={canManage}
+        canManageActive={canManageActive}
         formatType={season.format_type}
       />
 

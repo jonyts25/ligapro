@@ -14,6 +14,7 @@ import type {
   SeasonFormatType,
   SeasonVisibility,
 } from "@/lib/competitions/types";
+import { pickLatestActiveSeason } from "@/lib/competitions/season-visibility";
 
 function preparationLabel(input: {
   teamCount: number;
@@ -111,7 +112,7 @@ export async function getOrganizationCompetitions(
     return {
       ...(c as CompetitionRecord),
       seasonCount: competitionSeasons.length,
-      latestSeason: competitionSeasons[0] ?? null,
+      latestSeason: pickLatestActiveSeason(competitionSeasons),
     };
   });
 

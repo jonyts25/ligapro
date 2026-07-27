@@ -1,9 +1,13 @@
 export const dynamic = "force-dynamic";
 
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth/require-user";
 import { requireOrganizationAdmin } from "@/lib/auth/require-organization-admin";
 import { getSeasonDetails } from "@/lib/competitions/queries";
+import {
+  isSeasonArchived,
+  seasonDetailPath,
+} from "@/lib/competitions/season-visibility";
 import { getGroupsPhaseData } from "@/lib/groups/queries";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SeasonStandingsNav } from "@/components/standings/SeasonStandingsNav";
@@ -28,6 +32,9 @@ export default async function SeasonGroupsPage({ params }: PageProps) {
     seasonId
   );
   if (!season) notFound();
+  if (isSeasonArchived(season.visibility)) {
+    redirect(seasonDetailPath(organizationId, competitionId, seasonId));
+  }
   if (season.format_type !== "groups_knockout") notFound();
 
   const groupsData = await getGroupsPhaseData(organizationId, seasonId);

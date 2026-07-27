@@ -28,6 +28,7 @@ type SeasonFinancePanelProps = {
   competitionId: string;
   seasonId: string;
   teams: SeasonFinanceTeamRow[];
+  readOnly?: boolean;
 };
 
 function financeStatusVariant(
@@ -343,6 +344,7 @@ export function SeasonFinanceTable({
   competitionId,
   seasonId,
   teams,
+  readOnly = false,
 }: SeasonFinancePanelProps) {
   if (teams.length === 0) {
     return (
@@ -398,12 +400,14 @@ export function SeasonFinanceTable({
               team.balanceDue > 0 ? formatMoney(team.balanceDue) : "—"
             }`}
           />
-          <MarkTeamPaidForm
-            organizationId={organizationId}
-            competitionId={competitionId}
-            seasonId={seasonId}
-            team={team}
-          />
+          {!readOnly && (
+            <MarkTeamPaidForm
+              organizationId={organizationId}
+              competitionId={competitionId}
+              seasonId={seasonId}
+              team={team}
+            />
+          )}
 
           {(team.charges.length > 0 || team.payments.length > 0) && (
             <div className="grid gap-4 md:grid-cols-2">
@@ -429,14 +433,16 @@ export function SeasonFinanceTable({
                             {formatMoney(charge.amount)}
                           </span>
                         </div>
-                        <VoidEntryForm
-                          organizationId={organizationId}
-                          competitionId={competitionId}
-                          seasonId={seasonId}
-                          entryId={charge.id}
-                          entryType="charge"
-                          label="Anular este cargo"
-                        />
+                        {!readOnly && (
+                          <VoidEntryForm
+                            organizationId={organizationId}
+                            competitionId={competitionId}
+                            seasonId={seasonId}
+                            entryId={charge.id}
+                            entryType="charge"
+                            label="Anular este cargo"
+                          />
+                        )}
                       </li>
                     ))}
                   </ul>
@@ -464,14 +470,16 @@ export function SeasonFinanceTable({
                             {formatMoney(payment.amount)}
                           </span>
                         </div>
-                        <VoidEntryForm
-                          organizationId={organizationId}
-                          competitionId={competitionId}
-                          seasonId={seasonId}
-                          entryId={payment.id}
-                          entryType="payment"
-                          label="Anular este pago"
-                        />
+                        {!readOnly && (
+                          <VoidEntryForm
+                            organizationId={organizationId}
+                            competitionId={competitionId}
+                            seasonId={seasonId}
+                            entryId={payment.id}
+                            entryType="payment"
+                            label="Anular este pago"
+                          />
+                        )}
                       </li>
                     ))}
                   </ul>
@@ -485,11 +493,14 @@ export function SeasonFinanceTable({
   );
 }
 
-export function SeasonFinancePanel(props: SeasonFinancePanelProps) {
+export function SeasonFinancePanel({
+  readOnly = false,
+  ...props
+}: SeasonFinancePanelProps) {
   return (
     <div className="space-y-6">
-      <AddTeamChargeForm {...props} />
-      <SeasonFinanceTable {...props} />
+      {!readOnly && <AddTeamChargeForm {...props} />}
+      <SeasonFinanceTable {...props} readOnly={readOnly} />
     </div>
   );
 }

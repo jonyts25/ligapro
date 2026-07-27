@@ -17,6 +17,8 @@ type SeasonStandingsNavProps = {
     | "finanzas"
     | "canchas";
   canManage?: boolean;
+  /** When set, hides operational write sections (grupos, canchas) but not finanzas. */
+  canManageActive?: boolean;
   formatType?: string;
 };
 
@@ -32,9 +34,11 @@ export function SeasonStandingsNav({
   seasonId,
   active,
   canManage = false,
+  canManageActive,
   formatType = "round_robin",
 }: SeasonStandingsNavProps) {
   const base = `/organizaciones/${organizationId}/torneos/${competitionId}/temporadas/${seasonId}`;
+  const activeOps = canManageActive ?? canManage;
 
   const formatLinks: Array<{
     key: SeasonStandingsNavProps["active"];
@@ -43,7 +47,7 @@ export function SeasonStandingsNav({
   }> = [];
 
   if (formatType === "groups_knockout") {
-    if (canManage) {
+    if (activeOps) {
       formatLinks.push({ key: "grupos", label: "Grupos", path: "/grupos" });
     }
     formatLinks.push({ key: "posiciones", label: "Posiciones", path: "/posiciones" });
@@ -61,7 +65,9 @@ export function SeasonStandingsNav({
 
   const adminLinks = canManage
     ? [
-        { key: "canchas" as const, label: "Canchas", path: "/canchas" },
+        ...(activeOps
+          ? [{ key: "canchas" as const, label: "Canchas", path: "/canchas" }]
+          : []),
         { key: "finanzas" as const, label: "Finanzas", path: "/finanzas" },
       ]
     : [];

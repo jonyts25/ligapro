@@ -1,7 +1,12 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth/require-user";
 import { requireOrganizationMembership } from "@/lib/auth/require-organization-membership";
+import { getSeasonDetails } from "@/lib/competitions/queries";
+import {
+  isSeasonArchived,
+  seasonDetailPath,
+} from "@/lib/competitions/season-visibility";
 import { getSeasonFixtureContext } from "@/lib/fixtures/queries";
 import { FixtureGeneratorForm } from "@/components/fixtures/FixtureGeneratorForm";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -26,6 +31,16 @@ export default async function GenerateFixturePage({ params }: PageProps) {
     membership.role === "organization_admin";
 
   if (!canManage) notFound();
+
+  const season = await getSeasonDetails(
+    organizationId,
+    competitionId,
+    seasonId
+  );
+  if (!season) notFound();
+  if (isSeasonArchived(season.visibility)) {
+    redirect(seasonDetailPath(organizationId, competitionId, seasonId));
+  }
 
   const context = await getSeasonFixtureContext(
     organizationId,

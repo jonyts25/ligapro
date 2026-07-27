@@ -13,7 +13,12 @@ import { StatusBadge } from "@/components/ui/StatusBadge";
 import { Card } from "@/components/ui/Card";
 import { SeasonRulesSummary } from "@/components/competitions/SeasonRulesSummary";
 import { SeasonReadinessCard } from "@/components/competitions/SeasonReadinessCard";
+import { SeasonArchivePanel } from "@/components/competitions/SeasonArchivePanel";
 import { SeasonStandingsNav } from "@/components/standings/SeasonStandingsNav";
+import {
+  canManageActiveSeason,
+  isSeasonArchived,
+} from "@/lib/competitions/season-visibility";
 
 type PageProps = {
   params: Promise<{
@@ -41,6 +46,8 @@ export default async function SeasonDetailPage({ params }: PageProps) {
   );
   if (!season) notFound();
 
+  const canManageActive = canManageActiveSeason(season, canManage);
+  const archived = isSeasonArchived(season.visibility);
   const publicHref = `/publico/${organizationId}/${season.slug}`;
   const isPublic = season.visibility === "public";
 
@@ -57,7 +64,7 @@ export default async function SeasonDetailPage({ params }: PageProps) {
             >
               Volver al torneo
             </Link>
-            {canManage && (
+            {canManageActive && (
               <Link
                 href={`/organizaciones/${organizationId}/torneos/${competitionId}/temporadas/${seasonId}/oficiales`}
                 className="inline-flex min-h-11 items-center rounded-xl border border-border px-4 text-sm font-medium text-text-secondary"
@@ -65,7 +72,7 @@ export default async function SeasonDetailPage({ params }: PageProps) {
                 Oficiales
               </Link>
             )}
-            {canManage && (
+            {canManageActive && (
               <Link
                 href={`/organizaciones/${organizationId}/torneos/${competitionId}/temporadas/${seasonId}/editar`}
                 className="inline-flex min-h-11 items-center rounded-xl bg-brand px-4 text-sm font-semibold text-brand-foreground"
@@ -83,6 +90,7 @@ export default async function SeasonDetailPage({ params }: PageProps) {
         seasonId={seasonId}
         active="temporada"
         canManage={canManage}
+        canManageActive={canManageActive}
         formatType={season.format_type}
       />
 
@@ -104,7 +112,7 @@ export default async function SeasonDetailPage({ params }: PageProps) {
         )}
       </Card>
 
-      {canManage && (
+      {canManageActive && !archived && (
         <Card className="space-y-3">
           <h2 className="text-sm font-semibold text-text-primary">
             Página pública
@@ -142,13 +150,22 @@ export default async function SeasonDetailPage({ params }: PageProps) {
         </Card>
       )}
 
+      {canManage && (
+        <SeasonArchivePanel
+          organizationId={organizationId}
+          competitionId={competitionId}
+          seasonId={seasonId}
+          isArchived={archived}
+        />
+      )}
+
       <SeasonRulesSummary rules={season.rules} />
       <SeasonReadinessCard
         organizationId={organizationId}
         competitionId={competitionId}
         seasonId={seasonId}
         season={season}
-        canManage={canManage}
+        canManage={canManageActive}
       />
     </div>
   );

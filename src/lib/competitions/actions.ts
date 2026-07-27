@@ -13,6 +13,11 @@ import {
   type SeasonFormatType,
   type SeasonVisibility,
 } from "@/lib/competitions/types";
+import { getSeasonDetails } from "@/lib/competitions/queries";
+import {
+  isEditableVisibility,
+  isSeasonArchived,
+} from "@/lib/competitions/season-visibility";
 
 function validateName(name: string, label: string): string | null {
   const trimmed = name.trim();
@@ -218,7 +223,7 @@ function parseSeasonForm(formData: FormData) {
   if (!isFormatType(formatType)) {
     fieldErrors.formatType = "Selecciona un formato válido.";
   }
-  if (!isVisibility(visibility)) {
+  if (!isVisibility(visibility) || !isEditableVisibility(visibility)) {
     fieldErrors.visibility = "Selecciona un estado válido.";
   }
   if (startsOn && endsOn && endsOn < startsOn) {
@@ -461,5 +466,125 @@ export async function updateSeasonAction(
     ok: true,
     message: "Temporada y reglas actualizadas.",
     values,
+  };
+}
+
+async function updateSeasonVisibilityFromDetail(
+  season: NonNullable<Awaited<ReturnType<typeof getSeasonDetails>>>,
+  visibility: SeasonVisibility
+): Promise<{ ok: boolean; message: string }> {
+  const supabase = await createClient();
+  const rules = season.rules;
+  const { error } = await supabase.rpc("update_season_with_rules", {
+    p_season_id: season.id,
+    p_name: season.name,
+    p_format_type: season.format_type,
+    p_visibility: visibility,
+    p_starts_on: (season.starts_on ?? null) as string,
+    p_ends_on: (season.ends_on ?? null) as string,
+    p_points_win: rules.points_win,
+    p_points_draw: rules.points_draw,
+    p_points_loss: rules.points_loss,
+    p_allow_draws: rules.allow_draws,
+    p_match_duration_minutes: rules.match_duration_minutes,
+    p_minimum_rest_minutes: rules.minimum_rest_minutes,
+    p_yellow_card_limit: rules.yellow_card_limit,
+    p_suspension_matches: rules.suspension_matches,
+  });
+
+  if (error) {
+    return { ok: false, message: error.message };
+  }
+  return { ok: true, message: "Estado actualizado." };
+}
+
+export async function archiveSeasonAction(
+  _prev: CompetitionActionState,
+  formData: FormData
+): Promise<CompetitionActionState> {
+  const user = await requireUser();
+  const organizationId = String(formData.get("organizationId") ?? "");
+  const competitionId = String(formData.get("competitionId") ?? "");
+  const seasonId = String(formData.get("seasonId") ?? "");
+  await requireOrganizationAdmin(user.id, organizationId);
+
+  if (String(formData.get("confirmed") ?? "") !== "1") {
+    return {
+      ok: false,
+      message: "Confirma que deseas archivar la temporada.",
+    };
+  }
+
+  const season = await getSeasonDetails(
+    organizationId,
+    competitionId,
+    seasonId
+  );
+  if (!season) {
+    return { ok: false, message: "No encontramos la temporada." };
+  }
+  if (isSeasonArchived(season.visibility)) {
+    return { ok: false, message: "Esta temporada ya está archivada." };
+  }
+
+  const result = await updateSeasonVisibilityFromDetail(season, "archived");
+  if (!result.ok) {
+    return { ok: false, message: result.message };
+  }
+
+  await revalidateCompetitionPaths(organizationId, competitionId, seasonId);
+  return {
+    ok: true,
+    message:
+      "Temporada archivada. Los datos se conservan; la gestión operativa queda deshabilitada en la app.",
+  };
+}
+
+export async function reactivateSeasonAction(
+  _prev: CompetitionActionState,
+  formData: FormData
+): Promise<CompetitionActionState> {
+  const user = await requireUser();
+  const organizationId = String(formData.get("organizationId") ?? "");
+  const competitionId = String(formData.get("competitionId") ?? "");
+  const seasonId = String(formData.get("seasonId") ?? "");
+  const targetVisibility = String(formData.get("visibility") ?? "private");
+  await requireOrganizationAdmin(user.id, organizationId);
+
+  if (String(formData.get("confirmed") ?? "") !== "1") {
+    return {
+      ok: false,
+      message: "Confirma que deseas reactivar la temporada.",
+    };
+  }
+
+  if (!isEditableVisibility(targetVisibility)) {
+    return { ok: false, message: "Selecciona un estado válido para reactivar." };
+  }
+
+  const season = await getSeasonDetails(
+    organizationId,
+    competitionId,
+    seasonId
+  );
+  if (!season) {
+    return { ok: false, message: "No encontramos la temporada." };
+  }
+  if (!isSeasonArchived(season.visibility)) {
+    return { ok: false, message: "Esta temporada no está archivada." };
+  }
+
+  const result = await updateSeasonVisibilityFromDetail(
+    season,
+    targetVisibility
+  );
+  if (!result.ok) {
+    return { ok: false, message: result.message };
+  }
+
+  await revalidateCompetitionPaths(organizationId, competitionId, seasonId);
+  return {
+    ok: true,
+    message: `Temporada reactivada como «${targetVisibility}».`,
   };
 }

@@ -4,6 +4,7 @@ import { redirect, notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth/require-user";
 import { requireOrganizationMembership } from "@/lib/auth/require-organization-membership";
 import { getSeasonDetails } from "@/lib/competitions/queries";
+import { canManageActiveSeason } from "@/lib/competitions/season-visibility";
 import {
   getSeasonScoreMismatches,
   getSeasonStandings,
@@ -48,6 +49,8 @@ export default async function SeasonStandingsPage({
   );
   if (!season) notFound();
 
+  const canManageActive = canManageActiveSeason(season, canManage);
+
   if (season.format_type === "knockout") {
     redirect(
       `/organizaciones/${organizationId}/torneos/${competitionId}/temporadas/${seasonId}/bracket`
@@ -67,7 +70,7 @@ export default async function SeasonStandingsPage({
       seasonId,
       season.format_type === "groups_knockout" ? selectedGroupId : null
     ),
-    canManage
+    canManageActive
       ? getSeasonScoreMismatches(organizationId, seasonId)
       : Promise.resolve([]),
   ]);
@@ -87,6 +90,7 @@ export default async function SeasonStandingsPage({
         seasonId={seasonId}
         active="posiciones"
         canManage={canManage}
+        canManageActive={canManageActive}
         formatType={season.format_type}
       />
 
@@ -98,7 +102,7 @@ export default async function SeasonStandingsPage({
         />
       )}
 
-      {canManage && mismatches.length > 0 && (
+      {canManageActive && mismatches.length > 0 && (
         <ScoreEventsMismatchAlert
           mismatches={mismatches}
           organizationId={organizationId}

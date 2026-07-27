@@ -8,10 +8,10 @@ import {
 } from "@/lib/competitions/actions";
 import {
   SEASON_FORMAT_OPTIONS,
-  SEASON_VISIBILITY_OPTIONS,
   initialCompetitionActionState,
   type SeasonDetail,
 } from "@/lib/competitions/types";
+import { SEASON_VISIBILITY_EDITABLE_OPTIONS } from "@/lib/competitions/season-visibility";
 import { SubmitButton } from "@/components/auth/SubmitButton";
 import { Card } from "@/components/ui/Card";
 import { SectionHeader } from "@/components/ui/SectionHeader";
@@ -158,13 +158,16 @@ export function SeasonForm({
               )}
               className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
             >
-              {SEASON_VISIBILITY_OPTIONS.map((opt) => (
+              {SEASON_VISIBILITY_EDITABLE_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
                   {opt.label}
                 </option>
               ))}
             </select>
             <FieldError message={state.fieldErrors?.visibility} />
+            <p className="text-xs text-text-secondary">
+              Para archivar usa la acción dedicada en la página de la temporada.
+            </p>
           </div>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">

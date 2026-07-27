@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { redirect, notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth/require-user";
 import { requireOrganizationAdmin } from "@/lib/auth/require-organization-admin";
 import { getSeasonDetails } from "@/lib/competitions/queries";
+import { isSeasonArchived } from "@/lib/competitions/season-visibility";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SeasonForm } from "@/components/competitions/SeasonForm";
 
@@ -25,6 +26,11 @@ export default async function EditSeasonPage({ params }: PageProps) {
     seasonId
   );
   if (!season) notFound();
+  if (isSeasonArchived(season.visibility)) {
+    redirect(
+      `/organizaciones/${organizationId}/torneos/${competitionId}/temporadas/${seasonId}`
+    );
+  }
 
   return (
     <div className="mx-auto max-w-3xl">
