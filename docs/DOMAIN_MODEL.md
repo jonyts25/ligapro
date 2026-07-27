@@ -147,7 +147,7 @@ EXCLUDE: misma season + field + día no solapan; trigger adicional impide solape
 
 ## Bloque 003 — competitions, seasons, season_rules
 
-`visibility` en `seasons` **todavía no** controla acceso público real: los miembros de la organización leen todas las seasons de su org vía RLS. El acceso anon/público llegará con vistas explícitas (ADR 0005). `format_type` admite `groups_knockout` / `knockout`; Migration 025 implementa bracket puro (`knockout`). Fase de grupos (`groups_knockout`) es Migration 026. Permisos de captura por `season_roles` implementados en Migration 008.
+`visibility` en `seasons` **todavía no** controla acceso público real: los miembros de la organización leen todas las seasons de su org vía RLS. El acceso anon/público llegará con vistas explícitas (ADR 0005). `format_type` admite `groups_knockout` / `knockout`; Migration 025 implementa bracket puro (`knockout`); Migration 026 implementa fase de grupos (`groups_knockout`) + avance a bracket. Permisos de captura por `season_roles` implementados en Migration 008.
 
 **UI (Frontend F4):** módulo Torneos — CRUD competitions/seasons y edición de `season_rules` para owner/admin; members solo lectura. Categorías = competitions independientes (sin tabla `categories`). “Pendiente de equipos” es badge de presentación cuando no hay `season_teams`. Ver `docs/COMPETITIONS_AND_SEASONS.md`.
 
@@ -206,10 +206,23 @@ Al insertar una season, un trigger AFTER INSERT crea automáticamente la fila `s
 | `max_roster_size` | integer nullable | Migration 021; tope para altas del capitán |
 | `require_player_verification` | boolean NOT NULL | default false (023) |
 | `transfer_lock_days` | integer NOT NULL | default 0 (023); candado entre planteles |
+| `groups_advance_per_group` | integer nullable | Migration 026; clasificados por grupo en `groups_knockout`; CHECK > 0 si no null |
 | `created_at` | timestamptz | |
 | `updated_at` | timestamptz | trigger `set_updated_at` |
 
 Columnas tipadas (no JSON). Sin `season_rule_templates`.
+
+### `season_groups` (026)
+
+| Columna | Tipo | Notas |
+|--------|------|--------|
+| `id` | uuid PK | |
+| `organization_id` | uuid NOT NULL | denormalizado |
+| `season_id` | uuid NOT NULL | FK → `seasons` |
+| `name` | text NOT NULL | UNIQUE `(season_id, name)` |
+| `created_at` / `updated_at` | timestamptz | |
+
+RLS: SELECT miembros; mutaciones solo vía RPC `set_season_groups`.
 
 ## Bloque 004 — teams, players, season_teams, season_team_players
 
@@ -250,7 +263,8 @@ El **capitán** vive en `season_team_players.is_captain` (máximo uno por `seaso
 | `team_id` | uuid NOT NULL | FK → `teams(id)` ON DELETE CASCADE |
 | `organization_id` | uuid NOT NULL | denormalizado; trigger exige igualdad con season Y team |
 | `display_name` | text nullable | si NULL, la app usa `teams.name` |
-| `group_name` | text nullable | manual para `groups_knockout` |
+| `group_name` | text nullable | informativo/manual; **no** administrado por Migration 026 |
+| `season_group_id` | uuid nullable | FK → `season_groups` (026); asignación real vía `assign_teams_to_groups` |
 | `registration_status` | text NOT NULL | default `registered`; CHECK `registered` \| `confirmed` \| `withdrawn` |
 | `roster_locked_by_captain` | boolean NOT NULL | default false (021); owner/admin vía `set_roster_lock` |
 | `created_at` | timestamptz | |
@@ -324,13 +338,14 @@ Captura de resultado por oficiales / `match_events` **no** está en este bloque 
 | `calendar_status` | text NOT NULL | Migration 019; `programado` \| `confirmado` |
 | `knockout_round_id` | uuid nullable | Migration 025; FK → `season_knockout_rounds` |
 | `bracket_slot` | integer nullable | Migration 025; posición en ronda (1-based) |
+| `season_group_id` | uuid nullable | Migration 026; fase de grupos; excluyente con `knockout_round_id` |
 | `created_at` / `updated_at` | timestamptz | |
 
-RPCs F6 (016): `create_season_round_robin_fixture`, `schedule_match`, `unschedule_match`. Migration 019: `confirm_match_calendar`, reagendado, `apply_recurring_slot_to_season`. Migration 025: `create_season_knockout_bracket`, `configure_knockout_round`, `set_knockout_tie_penalty_winner`, `advance_knockout_round`, `get_season_knockout_champion`. Ver `docs/FIXTURE_AND_SCHEDULING.md`.
+RPCs F6 (016): `create_season_round_robin_fixture` (+ `p_group_id` opcional, 026), `schedule_match`, `unschedule_match`. Migration 019: `confirm_match_calendar`, reagendado, `apply_recurring_slot_to_season`. Migration 025: `create_season_knockout_bracket`, `configure_knockout_round`, `set_knockout_tie_penalty_winner`, `advance_knockout_round`, `get_season_knockout_champion`. Migration 026: `set_season_groups`, `assign_teams_to_groups`, `generate_knockout_from_groups`. Ver `docs/FIXTURE_AND_SCHEDULING.md`.
 
 ### `season_knockout_rounds` / `season_knockout_ties` (025)
 
-Motor de eliminatoria para `format_type = 'knockout'`. Una **llave** (`season_knockout_ties`) agrupa 1–2 partidos y el ganador por penales (`penalty_winner_season_team_id`). Byes: `away_season_team_id IS NULL`, sin filas en `matches`. Rondas futuras solo vía `advance_knockout_round`. Fase de grupos: Migration 026.
+Motor de eliminatoria para `format_type = 'knockout'` y fase final de `groups_knockout`. Una **llave** (`season_knockout_ties`) agrupa 1–2 partidos y el ganador por penales (`penalty_winner_season_team_id`). Byes: `away_season_team_id IS NULL`, sin filas en `matches`. Rondas futuras solo vía `advance_knockout_round`. Siembra desde grupos: `generate_knockout_from_groups` (026) → `__create_knockout_bracket_from_slots`.
 
 ### `captain_invitations` / `match_reschedule_requests` (019)
 

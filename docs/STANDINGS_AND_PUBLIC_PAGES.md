@@ -11,7 +11,9 @@
 | Tarjetas informativas | Conteos de `yellow_card` / `red_card` (`voided_at IS NULL`) |
 
 Partidos que cuentan para standings: `finished` o `walkover` **con ambos scores**.  
-No cuentan: `scheduled`, `in_progress`, `cancelled`, finished/walkover sin score completo.
+No cuentan: `scheduled`, `in_progress`, `cancelled`, finished/walkover sin score completo, ni partidos de knockout (`knockout_round_id IS NOT NULL`).
+
+Migration 026: standings opcionalmente acotados por grupo (`p_group_id` / `p_group_name`); partidos de fase de grupos filtrados por `matches.season_group_id`.
 
 ## Fórmula MVP
 
@@ -34,6 +36,11 @@ URL: `/publico/[organizationId]/[seasonSlug]`
 
 Anon **no** tiene SELECT en tablas base. Solo RPCs públicas SECURITY DEFINER.
 
+| RPC | Notas |
+| --- | --- |
+| `get_public_season_standings(org, slug, p_group_name default NULL)` | Tabla general o por grupo (026) |
+| `get_public_season_groups(org, slug)` | Lista `{group_id, group_name}` para tabs en `groups_knockout` (026) |
+
 ## Disciplina pública
 
 Mínima: jugador, equipo, suspendido, partidos pendientes. Sin notas ni IDs.
@@ -52,5 +59,6 @@ Server Actions F6/F7/competiciones revalidan rutas privadas de posiciones/golead
 - Sin reconciliación disciplinaria automática al anular
 - Sin desempates avanzados / playoffs de liga / brackets en standings
 - Temporadas `knockout`: standings de liga no aplican; bracket y campeón vía motor 025 (`get_season_knockout_champion`). F8: `get_public_season_matches` expone ronda/llave de knockout (025)
+- Temporadas `groups_knockout`: standings por grupo (026); eliminatoria comparte motor 025; F8 puede listar grupos y filtrar standings por nombre de grupo
 - Sin asistencias ni stats avanzadas
 - Divergencia marcador vs eventos: alerta admin, no auto-corrección

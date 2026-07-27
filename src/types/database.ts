@@ -93,6 +93,24 @@ export type Database = {
         }
         Relationships: []
       }
+      __mig026_test_results: {
+        Row: {
+          details: string | null
+          passed: boolean
+          test_name: string
+        }
+        Insert: {
+          details?: string | null
+          passed: boolean
+          test_name: string
+        }
+        Update: {
+          details?: string | null
+          passed?: boolean
+          test_name?: string
+        }
+        Relationships: []
+      }
       audit_log: {
         Row: {
           action: string
@@ -716,6 +734,7 @@ export type Database = {
           organization_id: string
           round_label: string | null
           round_number: number | null
+          season_group_id: string | null
           season_id: string
           sequence_in_round: number | null
           status: string
@@ -736,6 +755,7 @@ export type Database = {
           organization_id: string
           round_label?: string | null
           round_number?: number | null
+          season_group_id?: string | null
           season_id: string
           sequence_in_round?: number | null
           status?: string
@@ -756,6 +776,7 @@ export type Database = {
           organization_id?: string
           round_label?: string | null
           round_number?: number | null
+          season_group_id?: string | null
           season_id?: string
           sequence_in_round?: number | null
           status?: string
@@ -795,6 +816,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matches_season_group_id_fkey"
+            columns: ["season_group_id"]
+            isOneToOne: false
+            referencedRelation: "season_groups"
             referencedColumns: ["id"]
           },
           {
@@ -1130,6 +1158,48 @@ export type Database = {
           },
         ]
       }
+      season_groups: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          organization_id: string
+          season_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          organization_id: string
+          season_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          organization_id?: string
+          season_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "season_groups_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "season_groups_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       season_knockout_rounds: {
         Row: {
           bracket_size: number
@@ -1326,6 +1396,7 @@ export type Database = {
         Row: {
           allow_draws: boolean
           created_at: string
+          groups_advance_per_group: number | null
           id: string
           match_duration_minutes: number
           max_roster_size: number | null
@@ -1349,6 +1420,7 @@ export type Database = {
         Insert: {
           allow_draws?: boolean
           created_at?: string
+          groups_advance_per_group?: number | null
           id?: string
           match_duration_minutes?: number
           max_roster_size?: number | null
@@ -1372,6 +1444,7 @@ export type Database = {
         Update: {
           allow_draws?: boolean
           created_at?: string
+          groups_advance_per_group?: number | null
           id?: string
           match_duration_minutes?: number
           max_roster_size?: number | null
@@ -1551,6 +1624,7 @@ export type Database = {
           organization_id: string
           registration_status: string
           roster_locked_by_captain: boolean
+          season_group_id: string | null
           season_id: string
           team_id: string
           updated_at: string
@@ -1563,6 +1637,7 @@ export type Database = {
           organization_id: string
           registration_status?: string
           roster_locked_by_captain?: boolean
+          season_group_id?: string | null
           season_id: string
           team_id: string
           updated_at?: string
@@ -1575,6 +1650,7 @@ export type Database = {
           organization_id?: string
           registration_status?: string
           roster_locked_by_captain?: boolean
+          season_group_id?: string | null
           season_id?: string
           team_id?: string
           updated_at?: string
@@ -1585,6 +1661,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "season_teams_season_group_id_fkey"
+            columns: ["season_group_id"]
+            isOneToOne: false
+            referencedRelation: "season_groups"
             referencedColumns: ["id"]
           },
           {
@@ -1959,6 +2042,14 @@ export type Database = {
         Args: { p_match_id: string; p_profile_id: string }
         Returns: string
       }
+      __create_knockout_bracket_from_slots: {
+        Args: {
+          p_require_no_prior_matches?: boolean
+          p_season_id: string
+          p_slots: Json
+        }
+        Returns: Json
+      }
       __knockout_create_tie_matches: {
         Args: {
           p_away: string
@@ -2017,7 +2108,7 @@ export type Database = {
         Returns: undefined
       }
       __season_standings_core: {
-        Args: { p_season_id: string }
+        Args: { p_group_id?: string; p_season_id: string }
         Returns: {
           drawn: number
           goal_difference: number
@@ -2065,6 +2156,28 @@ export type Database = {
         }
         Returns: Json
       }
+      assign_teams_to_groups: {
+        Args: { p_assignments: Json; p_season_id: string }
+        Returns: {
+          created_at: string
+          display_name: string | null
+          group_name: string | null
+          id: string
+          organization_id: string
+          registration_status: string
+          roster_locked_by_captain: boolean
+          season_group_id: string | null
+          season_id: string
+          team_id: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "season_teams"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       can_capture_match: { Args: { p_match_id: string }; Returns: boolean }
       can_view_player_photo: { Args: { p_player_id: string }; Returns: boolean }
       configure_knockout_round: {
@@ -2111,7 +2224,12 @@ export type Database = {
         Returns: Json
       }
       create_season_round_robin_fixture: {
-        Args: { p_matches: Json; p_mode: string; p_season_id: string }
+        Args: {
+          p_group_id?: string
+          p_matches: Json
+          p_mode: string
+          p_season_id: string
+        }
         Returns: {
           away_score: number | null
           away_season_team_id: string
@@ -2127,6 +2245,7 @@ export type Database = {
           organization_id: string
           round_label: string | null
           round_number: number | null
+          season_group_id: string | null
           season_id: string
           sequence_in_round: number | null
           status: string
@@ -2174,6 +2293,10 @@ export type Database = {
         Returns: string
       }
       expire_stale_match_reschedule_requests: { Args: never; Returns: number }
+      generate_knockout_from_groups: {
+        Args: { p_season_id: string }
+        Returns: Json
+      }
       get_public_season_discipline: {
         Args: { p_organization_id: string; p_season_slug: string }
         Returns: {
@@ -2181,6 +2304,13 @@ export type Database = {
           matches_remaining: number
           player_name: string
           team_name: string
+        }[]
+      }
+      get_public_season_groups: {
+        Args: { p_organization_id: string; p_season_slug: string }
+        Returns: {
+          group_id: string
+          group_name: string
         }[]
       }
       get_public_season_matches: {
@@ -2228,7 +2358,11 @@ export type Database = {
         }[]
       }
       get_public_season_standings: {
-        Args: { p_organization_id: string; p_season_slug: string }
+        Args: {
+          p_group_name?: string
+          p_organization_id: string
+          p_season_slug: string
+        }
         Returns: {
           drawn: number
           goal_difference: number
@@ -2263,7 +2397,7 @@ export type Database = {
         Returns: string
       }
       get_season_standings: {
-        Args: { p_season_id: string }
+        Args: { p_group_id?: string; p_season_id: string }
         Returns: {
           drawn: number
           goal_difference: number
@@ -2488,6 +2622,23 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      set_season_groups: {
+        Args: { p_group_names: Json; p_season_id: string }
+        Returns: {
+          created_at: string
+          id: string
+          name: string
+          organization_id: string
+          season_id: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "season_groups"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       set_season_team_captain: {
         Args: { p_player_id: string; p_season_team_id: string }
         Returns: {
@@ -2560,6 +2711,7 @@ export type Database = {
           organization_id: string
           round_label: string | null
           round_number: number | null
+          season_group_id: string | null
           season_id: string
           sequence_in_round: number | null
           status: string

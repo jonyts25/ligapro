@@ -4,7 +4,7 @@
 
 Generación atómica de fixture **round-robin de liga** (una vuelta / ida y vuelta), calendario por jornadas y programación manual de partidos con reserva de cancha.
 
-Migration 025 añade motor de **eliminación directa** (`format_type = 'knockout'`) — ver ADR 0011. Migration 026 (posterior) agregará fase de grupos (`groups_knockout`).
+Migration 025 añade motor de **eliminación directa** (`format_type = 'knockout'`) — ver ADR 0011. Migration 026 añade fase de **grupos** (`groups_knockout`) reutilizando round-robin por grupo y bracket 025 para la eliminatoria.
 
 Migration 019 añade: estado dual de calendario, reagendado por consenso entre capitanes, slot recurrente bulk y confirmación admin. Ver ADR 0006.
 
@@ -30,18 +30,22 @@ Columnas en `matches` (nullable para partidos manuales futuros):
 - `sequence_in_round` (> 0)
 - `calendar_status` (`programado` | `confirmado`, default `programado`) — Migration 019
 
-Índice único parcial `(season_id, round_number, sequence_in_round)`.
+Índice único parcial `(season_id, round_number, sequence_in_round)` cuando `season_group_id IS NULL` y no es knockout.  
+Migration 026: índice adicional `(season_id, season_group_id, round_number, sequence_in_round)` para fixtures por grupo.
 Índice único parcial: una reserva `confirmed`+`match` por `match_id`.
 
 ## Persistencia
 
-RPC `create_season_round_robin_fixture(p_season_id, p_mode, p_matches)`:
+RPC `create_season_round_robin_fixture(p_season_id, p_mode, p_matches, p_group_id default NULL)`:
 
 - Solo owner/admin.
 - Valida JSON estricto, equipos elegibles (`registered`/`confirmed`), fixture matemático completo.
-- Rechaza si la season ya tiene matches (sin regenerar en F6).
+- Sin `p_group_id`: rechaza si la season ya tiene matches (liga simple; sin regenerar en F6).
+- Con `p_group_id`: solo equipos asignados a ese grupo (`season_teams.season_group_id`); rechaza si **ese grupo** ya tiene matches; persiste `matches.season_group_id`.
 - Requiere `seasons.platform_billing_status = 'pagado'` antes de generar fixture (Migration 021; candado pierde efecto práctico una vez existen matches).
 - Inserta atómicamente; no crea reservas ni fechas.
+
+**Fixture multi-grupo:** no hay wrapper SQL (`create_all_group_fixtures`); el frontend genera round-robin en TS (`src/lib/fixtures/round-robin.ts`) y llama la RPC **una vez por grupo**.
 
 ## Motor knockout (Migration 025)
 
@@ -66,7 +70,7 @@ Solo `format_type = 'knockout'`. **No** modifica `create_season_round_robin_fixt
 
 | RPC | Efecto |
 | --- | --- |
-| `create_season_knockout_bracket(p_season_id, p_seed_mode default 'random')` | Ronda 1 únicamente: potencia de 2, byes, sorteo aleatorio. Gate `__assert_season_platform_billing_active`. Equipos `registered`/`confirmed`. |
+| `create_season_knockout_bracket(p_season_id, p_seed_mode default 'random')` | Ronda 1 únicamente: potencia de 2, byes, sorteo aleatorio. Gate `__assert_season_platform_billing_active`. Equipos `registered`/`confirmed`. Internamente usa `__create_knockout_bracket_from_slots`. |
 | `configure_knockout_round(p_round_id, p_is_two_legs)` | Antes de que partidos salgan de `scheduled`; agrega/elimina pierna 2 con localía invertida. |
 | `set_knockout_tie_penalty_winner(p_round_id, p_bracket_slot, p_winner_season_team_id)` | Solo si marcador (single) o agregado (two legs) está empatado. |
 | `advance_knockout_round(p_season_id, p_round_number)` | Requiere todas las llaves resueltas; empareja ganadores por posición de bracket (slot 1 vs 2, 3 vs 4…). No pre-genera rondas futuras. Final resuelta → devuelve campeón. |
@@ -78,11 +82,39 @@ Rondas 2+ se crean **solo** vía `advance_knockout_round`. Programación sigue s
 
 `get_public_season_matches` expone de forma aditiva `knockout_round_number`, `bracket_slot`, `leg_number` y usa `round_label` de la ronda knockout cuando aplica.
 
+## Fase de grupos (Migration 026)
+
+Archivo: `supabase/migrations/20260721000000_groups_knockout_phase.sql`  
+ADR: `docs/ADR/0011-motor-eliminacion-directa-y-grupos.md`
+
+Solo `format_type = 'groups_knockout'`. Reutiliza round-robin (por grupo) y motor knockout 025 (eliminatoria).
+
+### Schema
+
+| Objeto | Rol |
+| --- | --- |
+| `season_groups` | Grupos nombrados por season (`name` único por season) |
+| `season_teams.season_group_id` | Asignación real equipo→grupo (**no** toca `group_name`, que sigue siendo informativo) |
+| `matches.season_group_id` | Partidos de fase de grupos; excluyente con `knockout_round_id` |
+| `season_rules.groups_advance_per_group` | Cuántos clasifican por grupo a la eliminatoria |
+
+### RPCs (owner/admin)
+
+| RPC | Efecto |
+| --- | --- |
+| `set_season_groups(p_season_id, p_group_names jsonb)` | Reemplazo atómico de definiciones de grupo (array de strings). No elimina grupos con matches. |
+| `assign_teams_to_groups(p_season_id, p_assignments jsonb)` | Asigna `{season_team_id, group_id}`; valida misma season/org. |
+| `generate_knockout_from_groups(p_season_id)` | Standings finales por grupo → siembra R1 del bracket vía `__create_knockout_bracket_from_slots`. Requiere `groups_advance_per_group` y fixture de grupo completo (sin partidos sin resultado). Billing gate. |
+
+**Cruce R1 (simple):** si `G=2` grupos → `T[i,r] vs T[j, K+1-r]` (ej. 1A vs 2B). Si `K=1` y `G` par → primeros de grupos opuestos (`i` vs `i+G/2`). Si no encaja → emparejamiento aleatorio evitando mismo grupo cuando hay candidato. Ver reporte 026 para límites.
+
+Rondas 2+ siguen con `advance_knockout_round` (025).
+
 ## Facturación de plataforma (Migration 021)
 
 Columna `seasons.platform_billing_status`: `'pendiente'` (default) \| `'pagado'` \| `'vencido'`.
 
-- Candado en `create_season_round_robin_fixture`, `create_season_knockout_bracket` y `apply_recurring_slot_to_season` si `≠ 'pagado'`.
+- Candado en `create_season_round_robin_fixture`, `create_season_knockout_bracket`, `generate_knockout_from_groups` y `apply_recurring_slot_to_season` si `≠ 'pagado'`.
 - **Sin RPC** de cambio para `authenticated`; se gestiona en Supabase (service role / dashboard).
 - `REVOKE UPDATE (platform_billing_status)` + trigger que rechaza cambios con `auth.uid()` presente.
 
