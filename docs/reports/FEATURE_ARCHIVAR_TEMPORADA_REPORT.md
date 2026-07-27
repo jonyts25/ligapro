@@ -21,10 +21,71 @@
 | Página pública | `__resolve_public_season` exige `visibility = 'public'` → archivadas **no** aparecen en `get_public_season_*` (igual que draft/private/unlisted). |
 | RPCs de escritura | `__assert_season_readable` valida membresía, **no** bloquea archivadas → captura, fixture, disciplina, finanzas, etc. siguen operativos en backend si se invocan directamente. |
 
-### 1.3 Decisión de alcance
+### 1.3 Decisión de alcance (prompt UI)
 
-- **Implementado en este prompt:** UI dedicada, separación de listados, bloqueo operativo en frontend, finanzas solo lectura.
-- **Reportado, fuera de alcance inmediato:** chequeo centralizado `__assert_season_not_archived` en todas las RPCs de escritura (cambio transversal; requiere conversación aparte).
+- **Implementado en el prompt UI:** acciones dedicadas, separación de listados, bloqueo operativo en frontend, finanzas solo lectura.
+- **Reportado como gap backend** (ver §7, ya cerrado).
+
+---
+
+## 7. Seguimiento — candado RPC (Migration 028)
+
+**Fecha:** 2026-07-26  
+**Objetivo:** `__assert_season_not_archived` en todas las escrituras relevantes; lectura sin cambios.
+
+### 7.1 Helper central
+
+| Función | Rol |
+|---------|-----|
+| `__assert_season_not_archived(p_season_id)` | Rechaza si `visibility = 'archived'` con mensaje claro |
+| `__assert_season_not_archived_for_match` | Resuelve `season_id` desde `matches` |
+| `__assert_season_not_archived_for_season_team` | Resuelve desde `season_teams` |
+| `__assert_season_not_archived_for_season_team_player` | Resuelve vía STP |
+| `__assert_season_not_archived_for_suspension` | Resuelve vía disciplina |
+| `__assert_season_not_archived_for_match_event` | Resuelve vía evento → partido |
+| `__assert_season_not_archived_for_team_charge` / `_payment` | Resuelve vía finanzas |
+| `__assert_season_not_archived_for_knockout_round` | Resuelve vía ronda KO |
+| `__assert_season_not_archived_for_captain_invitation` | Resuelve vía invitación capitán |
+
+### 7.2 RPCs parcheadas (38 + excepción especial)
+
+**Fixture / calendario:** `create_season_round_robin_fixture`, `create_season_knockout_bracket`, `generate_knockout_from_groups`, `schedule_match`, `unschedule_match`, `confirm_match_calendar`, `apply_recurring_slot_to_season`, `set_season_field_blocks`, `set_season_groups`, `assign_teams_to_groups`, `__schedule_match_core`
+
+**Reagendado:** `propose_match_reschedule`, `respond_match_reschedule`, `resolve_match_reschedule`
+
+**Captura:** `record_match_event`, `update_match_result`, `void_match_event`
+
+**Disciplina:** `waive_discipline_suspension`, `adjust_discipline_suspension_length`, `create_administrative_suspension`
+
+**Finanzas:** `void_team_charge`, `void_team_payment` + triggers INSERT en `team_charges` / `team_payments`
+
+**Roster:** `enroll_team_in_season`, `create_player_and_add_to_roster`, `add_player_to_season_team`, `set_season_team_player_status`, `deactivate_season_team_player`, `set_season_team_captain`, `set_season_team_vice_captain`, `set_roster_lock`
+
+**Knockout:** `configure_knockout_round`, `set_knockout_tie_penalty_winner`, `advance_knockout_round`
+
+**Capitán / pagos:** `invite_captain_to_roster`, `create_captain_player_with_invitation`, `accept_captain_invitation`, `set_player_payment_mark`
+
+**Transferencia:** `release_player_transfer_lock`
+
+**Excepción — `update_season_with_rules`:** bloquea edición mientras permanece archivada; **permite** archivar (`→ archived`) y reactivar (`archived → draft/private/unlisted/public`).
+
+**Sin candado (fuera de alcance / no escritura de temporada):** `request_player_verification`, `review_player_verification` (acciones a nivel `players`, no mutan datos de temporada).
+
+**Escrituras directas a tablas (sin RPC):** triggers en `season_roles`, `match_officials` + finanzas INSERT.
+
+### 7.3 Tests SQL
+
+`supabase/tests/028_season_archived_write_guard.sql` — rechazo en fixture archivado, no-regresión en activa, lectura OK, reactivación OK, bloqueo de edición archivada.
+
+### 7.4 Commits
+
+*(Completar tras commit)*
+
+---
+
+## 4. Estado backend
+
+Candado RPC implementado en Migration 028 — ver §7.
 
 ---
 
