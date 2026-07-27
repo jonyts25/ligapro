@@ -115,7 +115,7 @@ Ejecutado contra remoto vinculado: **8/8 passed**.
 
 ### 8.3 Commits
 
-*(hash tras push — ver abajo)*
+`43b813a` — feat(db): guard direct INSERT on archived seasons (Migration 030)
 
 ### 8.4 Estado
 
