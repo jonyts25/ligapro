@@ -66,3 +66,8 @@ Cubre: reemplazo atómico de grupos, rechazo al eliminar grupo con matches, aisl
 ## Fuera de alcance (confirmado)
 
 Frontend grupos/bracket, algoritmo de cruce sofisticado, cambios a `group_name`, reescritura de motores round-robin/bracket.
+
+## Commit
+
+`6a51782` — `feat(db): add groups phase for groups_knockout format (migration 026)`  
+Push: `origin/main`
