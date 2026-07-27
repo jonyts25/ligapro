@@ -71,6 +71,58 @@ export function durationBandLabel(band: DurationBand): string {
   return "7–12 meses";
 }
 
+/** ASCII-safe labels for PDF export (Helvetica built-in font). */
+export function durationBandLabelPdf(band: DurationBand): string {
+  if (band === "hasta_3") return "hasta 3 meses";
+  if (band === "4_6") return "4-6 meses";
+  return "7-12 meses";
+}
+
+export function volumeBandLabelPdf(tournamentCount: number): string {
+  if (tournamentCount >= 6) return "6+ torneos";
+  if (tournamentCount >= 3) return "3-5 torneos";
+  return "1-2 torneos";
+}
+
+const PDF_UNSAFE =
+  /[\u2264\u2265\u00D7\u2212\u2013\u2014\u00B7\u201C\u201D\u2018\u2019\u00AB\u00BB\u2026]/g;
+
+const PDF_REPLACEMENTS: Record<string, string> = {
+  "\u2264": "hasta ",
+  "\u2265": "desde ",
+  "\u00D7": "x",
+  "\u2212": "-",
+  "\u2013": "-",
+  "\u2014": "-",
+  "\u00B7": ".",
+  "\u201C": '"',
+  "\u201D": '"',
+  "\u2018": "'",
+  "\u2019": "'",
+  "\u00AB": '"',
+  "\u00BB": '"',
+  "\u2026": "...",
+};
+
+/** Strip/replace characters that built-in PDF fonts may not render. */
+export function sanitizePdfText(value: string): string {
+  return value
+    .normalize("NFKD")
+    .replace(PDF_UNSAFE, (char) => PDF_REPLACEMENTS[char] ?? "")
+    .replace(/[^\x20-\x7E\n\r\t]/g, "");
+}
+
+export function formatCotizadorMoneyPdf(amount: number): string {
+  return sanitizePdfText(formatCotizadorMoney(amount));
+}
+
+export function formatQuoteDatePdf(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 export type CotizadorLineResult = {
   lineId: string;
   teamCount: number;
