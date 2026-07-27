@@ -1,6 +1,10 @@
 -- Migration 028: platform pricing defaults tests
 --
--- Run:
+-- PREREQUISITE: apply the MIGRATION first (not this file):
+--   supabase/migrations/20260724000000_platform_pricing_defaults.sql
+-- If RPCs are missing, run: supabase/repair/028_platform_pricing_defaults_repair.sql
+--
+-- Run tests:
 --   npx supabase db query --linked -f supabase/tests/028_platform_pricing_defaults.sql
 
 DROP TABLE IF EXISTS public.__mig028_test_results;

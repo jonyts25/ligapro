@@ -1,12 +1,26 @@
--- Migration 028: platform pricing defaults (cotizador staff params)
--- Persists editable price parameters — not quote lines.
+-- Repair — Migration 028 (RPCs missing)
 --
--- Apply with: npx supabase db push --linked
--- Or paste this ENTIRE file in Supabase SQL Editor (not the test file under supabase/tests/).
+-- Symptom: function public.get_platform_pricing_defaults() does not exist
+--
+-- Common causes:
+--   1. Pasted supabase/tests/028_platform_pricing_defaults.sql (tests) instead of the migration
+--   2. Migration stopped after CREATE TABLE (functions block not executed)
+--   3. Migration 027 not applied (is_platform_staff missing) — functions fail to create
+--
+-- Paste this ENTIRE file in Supabase SQL Editor → Run.
+-- Safe to re-run.
 
--- ---------------------------------------------------------------------------
--- 1. platform_pricing_defaults (single row, no direct client access)
--- ---------------------------------------------------------------------------
+DO $$
+BEGIN
+  IF to_regprocedure('public.is_platform_staff(uuid)') IS NULL THEN
+    RAISE EXCEPTION
+      'Apply Migration 027 first (is_platform_staff is missing).';
+  END IF;
+END;
+$$;
+
+-- === Migration 028 body (idempotent) ===
+
 CREATE TABLE IF NOT EXISTS public.platform_pricing_defaults (
   id smallint PRIMARY KEY DEFAULT 1 CHECK (id = 1),
   base_price_per_team numeric NOT NULL CHECK (base_price_per_team >= 0),
@@ -20,17 +34,9 @@ CREATE TABLE IF NOT EXISTS public.platform_pricing_defaults (
   updated_by_profile_id uuid REFERENCES public.profiles(id)
 );
 
-COMMENT ON TABLE public.platform_pricing_defaults IS
-  'Singleton row of LigaPro platform pricing defaults for internal cotizador. Staff RPCs only.';
-
 ALTER TABLE public.platform_pricing_defaults ENABLE ROW LEVEL SECURITY;
-
 REVOKE ALL ON TABLE public.platform_pricing_defaults FROM PUBLIC, anon, authenticated;
 
--- ---------------------------------------------------------------------------
--- 2. get_platform_pricing_defaults — platform staff only
--- Requires Migration 027 (is_platform_staff).
--- ---------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.get_platform_pricing_defaults()
 RETURNS TABLE (
   base_price_per_team numeric,
@@ -50,15 +56,11 @@ SET search_path = public
 AS $$
 BEGIN
   IF auth.uid() IS NULL THEN
-    RAISE EXCEPTION 'Authentication required'
-      USING ERRCODE = 'P0001';
+    RAISE EXCEPTION 'Authentication required' USING ERRCODE = 'P0001';
   END IF;
-
   IF NOT public.is_platform_staff(auth.uid()) THEN
-    RAISE EXCEPTION 'Not authorized: platform staff only'
-      USING ERRCODE = 'P0001';
+    RAISE EXCEPTION 'Not authorized: platform staff only' USING ERRCODE = 'P0001';
   END IF;
-
   RETURN QUERY
   SELECT
     COALESCE(d.base_price_per_team, 200::numeric),
@@ -78,12 +80,6 @@ $$;
 REVOKE ALL ON FUNCTION public.get_platform_pricing_defaults() FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.get_platform_pricing_defaults() TO authenticated;
 
-COMMENT ON FUNCTION public.get_platform_pricing_defaults() IS
-  'Returns persisted cotizador pricing defaults or code fallbacks when empty. Platform staff only.';
-
--- ---------------------------------------------------------------------------
--- 3. set_platform_pricing_defaults — platform staff only
--- ---------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.set_platform_pricing_defaults(
   p_base_price_per_team numeric,
   p_duration_multiplier_hasta_3 numeric,
@@ -100,48 +96,25 @@ SET search_path = public
 AS $$
 BEGIN
   IF auth.uid() IS NULL THEN
-    RAISE EXCEPTION 'Authentication required'
-      USING ERRCODE = 'P0001';
+    RAISE EXCEPTION 'Authentication required' USING ERRCODE = 'P0001';
   END IF;
-
   IF NOT public.is_platform_staff(auth.uid()) THEN
-    RAISE EXCEPTION 'Not authorized: platform staff only'
-      USING ERRCODE = 'P0001';
+    RAISE EXCEPTION 'Not authorized: platform staff only' USING ERRCODE = 'P0001';
   END IF;
-
-  IF p_base_price_per_team < 0
-     OR p_duration_multiplier_hasta_3 < 0
-     OR p_duration_multiplier_4_to_6 < 0
-     OR p_duration_multiplier_7_to_12 < 0
-     OR p_volume_multiplier_1_to_2 < 0
-     OR p_volume_multiplier_3_to_5 < 0
+  IF p_base_price_per_team < 0 OR p_duration_multiplier_hasta_3 < 0
+     OR p_duration_multiplier_4_to_6 < 0 OR p_duration_multiplier_7_to_12 < 0
+     OR p_volume_multiplier_1_to_2 < 0 OR p_volume_multiplier_3_to_5 < 0
      OR p_volume_multiplier_6_plus < 0 THEN
-    RAISE EXCEPTION 'Pricing values must be non-negative'
-      USING ERRCODE = 'P0001';
+    RAISE EXCEPTION 'Pricing values must be non-negative' USING ERRCODE = 'P0001';
   END IF;
-
   INSERT INTO public.platform_pricing_defaults (
-    id,
-    base_price_per_team,
-    duration_multiplier_hasta_3,
-    duration_multiplier_4_to_6,
-    duration_multiplier_7_to_12,
-    volume_multiplier_1_to_2,
-    volume_multiplier_3_to_5,
-    volume_multiplier_6_plus,
-    updated_at,
-    updated_by_profile_id
+    id, base_price_per_team, duration_multiplier_hasta_3, duration_multiplier_4_to_6,
+    duration_multiplier_7_to_12, volume_multiplier_1_to_2, volume_multiplier_3_to_5,
+    volume_multiplier_6_plus, updated_at, updated_by_profile_id
   ) VALUES (
-    1,
-    p_base_price_per_team,
-    p_duration_multiplier_hasta_3,
-    p_duration_multiplier_4_to_6,
-    p_duration_multiplier_7_to_12,
-    p_volume_multiplier_1_to_2,
-    p_volume_multiplier_3_to_5,
-    p_volume_multiplier_6_plus,
-    now(),
-    auth.uid()
+    1, p_base_price_per_team, p_duration_multiplier_hasta_3, p_duration_multiplier_4_to_6,
+    p_duration_multiplier_7_to_12, p_volume_multiplier_1_to_2, p_volume_multiplier_3_to_5,
+    p_volume_multiplier_6_plus, now(), auth.uid()
   )
   ON CONFLICT (id) DO UPDATE SET
     base_price_per_team = EXCLUDED.base_price_per_team,
@@ -163,7 +136,10 @@ GRANT EXECUTE ON FUNCTION public.set_platform_pricing_defaults(
   numeric, numeric, numeric, numeric, numeric, numeric, numeric
 ) TO authenticated;
 
-COMMENT ON FUNCTION public.set_platform_pricing_defaults(
-  numeric, numeric, numeric, numeric, numeric, numeric, numeric
-) IS
-  'Upserts singleton cotizador pricing defaults. Platform staff only.';
+-- Verify (should return 2 rows: get + set)
+SELECT p.proname, pg_get_function_identity_arguments(p.oid) AS args
+FROM pg_proc p
+JOIN pg_namespace n ON n.oid = p.pronamespace
+WHERE n.nspname = 'public'
+  AND p.proname IN ('get_platform_pricing_defaults', 'set_platform_pricing_defaults')
+ORDER BY p.proname;
