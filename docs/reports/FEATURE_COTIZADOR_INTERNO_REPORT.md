@@ -54,4 +54,4 @@ Schema/RPC, persistencia, datos reales de clientes, acceso no-staff.
 
 ## Commit
 
-`fa860ce` — feat(plataforma): cotizador interno de precio para platform staff
+`ebb3724` — feat(plataforma): cotizador interno de precio para platform staff
