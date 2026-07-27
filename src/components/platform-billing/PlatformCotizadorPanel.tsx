@@ -1,9 +1,8 @@
 "use client";
 
 import {
-  useEffect,
+  useCallback,
   useMemo,
-  useRef,
   useState,
   type FocusEvent,
   type InputHTMLAttributes,
@@ -88,41 +87,50 @@ type PlatformCotizadorPanelProps = {
 
 type SaveState = "idle" | "saving" | "saved" | "error";
 
+function paramsEqual(a: CotizadorParams, b: CotizadorParams): boolean {
+  return (
+    a.basePricePerTeam === b.basePricePerTeam &&
+    a.durationMultiplierHasta3 === b.durationMultiplierHasta3 &&
+    a.durationMultiplier4To6 === b.durationMultiplier4To6 &&
+    a.durationMultiplier7To12 === b.durationMultiplier7To12 &&
+    a.volumeMultiplier1To2 === b.volumeMultiplier1To2 &&
+    a.volumeMultiplier3To5 === b.volumeMultiplier3To5 &&
+    a.volumeMultiplier6Plus === b.volumeMultiplier6Plus
+  );
+}
+
 export function PlatformCotizadorPanel({
   initialParams,
 }: PlatformCotizadorPanelProps) {
   const [lines, setLines] = useState<CotizadorLine[]>(() => [createCotizadorLine()]);
   const [params, setParams] = useState<CotizadorParams>(initialParams);
-  const [paramsOpen, setParamsOpen] = useState(false);
+  const [paramsOpen, setParamsOpen] = useState(true);
   const [clientName, setClientName] = useState("");
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [saveError, setSaveError] = useState<string | null>(null);
-  const skipInitialSaveRef = useRef(true);
+  const [lastSavedParams, setLastSavedParams] = useState(initialParams);
 
   const quote = useMemo(() => calculateCotizacion(lines, params), [lines, params]);
 
-  useEffect(() => {
-    if (skipInitialSaveRef.current) {
-      skipInitialSaveRef.current = false;
-      return;
-    }
+  const paramsDirty = useMemo(
+    () => !paramsEqual(params, lastSavedParams),
+    [params, lastSavedParams]
+  );
 
+  const saveParams = useCallback(async () => {
     setSaveState("saving");
     setSaveError(null);
 
-    const timer = window.setTimeout(() => {
-      void setPlatformPricingDefaultsAction(params).then((result) => {
-        if (result.ok) {
-          setSaveState("saved");
-          setSaveError(null);
-        } else {
-          setSaveState("error");
-          setSaveError(result.message ?? "No se pudieron guardar los parametros.");
-        }
-      });
-    }, 800);
+    const result = await setPlatformPricingDefaultsAction(params);
+    if (result.ok) {
+      setLastSavedParams(params);
+      setSaveState("saved");
+      setSaveError(null);
+      return;
+    }
 
-    return () => window.clearTimeout(timer);
+    setSaveState("error");
+    setSaveError(result.message ?? "No se pudieron guardar los parametros.");
   }, [params]);
 
   function updateLine(id: string, patch: Partial<Omit<CotizadorLine, "id">>) {
@@ -152,7 +160,10 @@ export function PlatformCotizadorPanel({
             </h2>
             <p className="mt-1 text-sm text-text-secondary">
               Cada línea es un torneo con equipos y duración propios. El descuento
-              por volumen se aplica al total combinado.
+              por volumen se aplica al total combinado.{" "}
+              <span className="font-medium text-text-primary">
+                Las líneas no se guardan al recargar.
+              </span>
             </p>
           </div>
           <button
@@ -252,13 +263,13 @@ export function PlatformCotizadorPanel({
               Parámetros de precio
             </h2>
             <p className="mt-1 text-sm text-text-secondary">
-              Ajustables para todo el staff — se guardan automaticamente al editar.
+              Valores compartidos para todo el staff de plataforma. Usa el botón
+              Guardar después de editar.
             </p>
-            {saveState === "saving" && (
-              <p className="mt-1 text-xs text-text-secondary">Guardando...</p>
-            )}
-            {saveState === "saved" && (
-              <p className="mt-1 text-xs text-brand">Parametros guardados</p>
+            {saveState === "saved" && !paramsDirty && (
+              <p className="mt-1 text-xs font-medium text-brand">
+                Parámetros guardados en Supabase
+              </p>
             )}
             {saveState === "error" && saveError && (
               <p className="mt-1 text-xs text-red-600">{saveError}</p>
@@ -408,6 +419,30 @@ export function PlatformCotizadorPanel({
                 }
               />
             </Field>
+          </div>
+        )}
+
+        {paramsOpen && (
+          <div className="flex flex-wrap items-center gap-3 border-t border-border pt-4">
+            <button
+              type="button"
+              onClick={() => void saveParams()}
+              disabled={saveState === "saving" || !paramsDirty}
+              className={cn(
+                "inline-flex min-h-11 items-center rounded-xl px-4 text-sm font-semibold",
+                paramsDirty
+                  ? "bg-brand text-brand-foreground"
+                  : "border border-border bg-surface-elevated text-text-secondary",
+                saveState === "saving" && "opacity-70"
+              )}
+            >
+              {saveState === "saving" ? "Guardando…" : "Guardar parámetros"}
+            </button>
+            {paramsDirty && saveState !== "saving" && (
+              <p className="text-sm text-text-secondary">
+                Hay cambios sin guardar
+              </p>
+            )}
           </div>
         )}
       </Card>
