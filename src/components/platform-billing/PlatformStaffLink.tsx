@@ -26,6 +26,13 @@ export async function PlatformStaffLink() {
       >
         Cotizador
       </Link>
+      {" · "}
+      <Link
+        href="/plataforma/finanzas"
+        className="font-medium text-brand hover:underline"
+      >
+        Finanzas
+      </Link>
     </p>
   );
 }
@@ -56,6 +63,12 @@ export async function PlatformStaffNavLink({
         className="inline-flex min-h-11 w-full items-center rounded-xl px-3 text-sm font-medium text-text-secondary hover:bg-surface-elevated hover:text-text-primary"
       >
         Cotizador interno
+      </Link>
+      <Link
+        href="/plataforma/finanzas"
+        className="inline-flex min-h-11 w-full items-center rounded-xl px-3 text-sm font-medium text-text-secondary hover:bg-surface-elevated hover:text-text-primary"
+      >
+        Finanzas internas
       </Link>
     </div>
   );

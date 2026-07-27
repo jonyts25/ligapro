@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils/cn";
 const LINKS = [
   { href: "/plataforma/facturacion", label: "Facturación" },
   { href: "/plataforma/cotizador", label: "Cotizador" },
+  { href: "/plataforma/finanzas", label: "Finanzas" },
 ] as const;
 
 export function PlatformPlataformaNav() {

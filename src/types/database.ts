@@ -1015,6 +1015,81 @@ export type Database = {
           },
         ]
       }
+      platform_income_entries: {
+        Row: {
+          amount: number
+          id: string
+          notes: string | null
+          organization_id: string | null
+          recorded_at: string
+          recorded_by_profile_id: string
+          season_id: string | null
+          void_reason: string | null
+          voided_at: string | null
+          voided_by_profile_id: string | null
+        }
+        Insert: {
+          amount: number
+          id?: string
+          notes?: string | null
+          organization_id?: string | null
+          recorded_at?: string
+          recorded_by_profile_id: string
+          season_id?: string | null
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by_profile_id?: string | null
+        }
+        Update: {
+          amount?: number
+          id?: string
+          notes?: string | null
+          organization_id?: string | null
+          recorded_at?: string
+          recorded_by_profile_id?: string
+          season_id?: string | null
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by_profile_id?: string | null
+        }
+        Relationships: []
+      }
+      platform_expense_entries: {
+        Row: {
+          amount: number
+          category: string
+          id: string
+          notes: string | null
+          recorded_at: string
+          recorded_by_profile_id: string
+          void_reason: string | null
+          voided_at: string | null
+          voided_by_profile_id: string | null
+        }
+        Insert: {
+          amount: number
+          category: string
+          id?: string
+          notes?: string | null
+          recorded_at?: string
+          recorded_by_profile_id: string
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by_profile_id?: string | null
+        }
+        Update: {
+          amount?: number
+          category?: string
+          id?: string
+          notes?: string | null
+          recorded_at?: string
+          recorded_by_profile_id?: string
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by_profile_id?: string | null
+        }
+        Relationships: []
+      }
       player_transfer_lock_releases: {
         Row: {
           id: string
@@ -2409,6 +2484,10 @@ export type Database = {
           season_name: string
         }[]
       }
+      get_platform_finance_summary: {
+        Args: { p_month: number; p_year: number }
+        Returns: Json
+      }
       get_platform_pricing_defaults: {
         Args: never
         Returns: {
@@ -2715,6 +2794,30 @@ export type Database = {
       }
       set_platform_billing_status: {
         Args: { p_reason?: string; p_season_id: string; p_status: string }
+        Returns: undefined
+      }
+      record_platform_income: {
+        Args: {
+          p_amount: number
+          p_notes?: string
+          p_season_id?: string | null
+        }
+        Returns: string
+      }
+      record_platform_expense: {
+        Args: {
+          p_amount: number
+          p_category: string
+          p_notes?: string
+        }
+        Returns: string
+      }
+      void_platform_income_entry: {
+        Args: { p_entry_id: string; p_reason: string }
+        Returns: undefined
+      }
+      void_platform_expense_entry: {
+        Args: { p_entry_id: string; p_reason: string }
         Returns: undefined
       }
       set_platform_pricing_defaults: {
