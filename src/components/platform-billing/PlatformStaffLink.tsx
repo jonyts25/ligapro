@@ -17,7 +17,14 @@ export async function PlatformStaffLink() {
         href="/plataforma/facturacion"
         className="font-medium text-brand hover:underline"
       >
-        Facturación de plataforma
+        Facturación
+      </Link>
+      {" · "}
+      <Link
+        href="/plataforma/cotizador"
+        className="font-medium text-brand hover:underline"
+      >
+        Cotizador
       </Link>
     </p>
   );
@@ -37,14 +44,19 @@ export async function PlatformStaffNavLink({
   }
 
   return (
-    <Link
-      href="/plataforma/facturacion"
-      className={cn(
-        "inline-flex min-h-11 w-full items-center rounded-xl px-3 text-sm font-medium text-text-secondary hover:bg-surface-elevated hover:text-text-primary",
-        className
-      )}
-    >
-      Facturación de plataforma
-    </Link>
+    <div className={cn("space-y-1", className)}>
+      <Link
+        href="/plataforma/facturacion"
+        className="inline-flex min-h-11 w-full items-center rounded-xl px-3 text-sm font-medium text-text-secondary hover:bg-surface-elevated hover:text-text-primary"
+      >
+        Facturación de plataforma
+      </Link>
+      <Link
+        href="/plataforma/cotizador"
+        className="inline-flex min-h-11 w-full items-center rounded-xl px-3 text-sm font-medium text-text-secondary hover:bg-surface-elevated hover:text-text-primary"
+      >
+        Cotizador interno
+      </Link>
+    </div>
   );
 }
