@@ -16,6 +16,7 @@ type TopBarProps = {
   roleLabel?: string | null;
   title?: string;
   canManageSettings?: boolean;
+  platformStaffNav?: React.ReactNode;
   className?: string;
 };
 
@@ -26,6 +27,7 @@ export function TopBar({
   roleLabel,
   title,
   canManageSettings = false,
+  platformStaffNav,
   className,
 }: TopBarProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -71,6 +73,7 @@ export function TopBar({
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
         canManageSettings={canManageSettings}
+        platformStaffNav={platformStaffNav}
       />
     </>
   );

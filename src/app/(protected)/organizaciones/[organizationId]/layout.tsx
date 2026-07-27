@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/auth/require-user";
 import { requireOrganizationMembership } from "@/lib/auth/require-organization-membership";
 import { roleLabel } from "@/lib/auth/validation";
 import { AppShell } from "@/components/layout/AppShell";
+import { PlatformStaffNavLink } from "@/components/platform-billing/PlatformStaffLink";
 import { getOrganizationById } from "@/lib/organizations/get-organization";
 import { mapOrganizationBranding } from "@/lib/branding/map-organization-branding";
 import { sanitizeAccentForCss } from "@/lib/branding/sanitize-accent";
@@ -37,6 +38,7 @@ export default async function OrganizationLayout({
       role={membership.role}
       roleLabel={roleLabel(membership.role)}
       pageTitle="Inicio"
+      platformStaffNav={<PlatformStaffNavLink />}
     >
       {children}
     </AppShell>

@@ -15,6 +15,7 @@ type AppShellProps = {
   children: ReactNode;
   pageTitle?: string;
   className?: string;
+  platformStaffNav?: ReactNode;
 };
 
 function canManageSettings(role: OrganizationRole): boolean {
@@ -30,6 +31,7 @@ export function AppShell({
   children,
   pageTitle,
   className,
+  platformStaffNav,
 }: AppShellProps) {
   const settingsAllowed = canManageSettings(role);
   const accentStyle = branding.accentColor
@@ -48,6 +50,7 @@ export function AppShell({
           user={user}
           roleLabel={roleLabel}
           canManageSettings={settingsAllowed}
+          platformStaffNav={platformStaffNav}
         />
         <div className="flex min-w-0 flex-1 flex-col">
           <TopBar
@@ -57,6 +60,7 @@ export function AppShell({
             user={user}
             roleLabel={roleLabel}
             canManageSettings={settingsAllowed}
+            platformStaffNav={platformStaffNav}
           />
           <main
             id="main-content"

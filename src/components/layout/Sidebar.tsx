@@ -15,6 +15,7 @@ type SidebarProps = {
   user: CurrentUser;
   roleLabel?: string | null;
   canManageSettings?: boolean;
+  platformStaffNav?: React.ReactNode;
   className?: string;
 };
 
@@ -24,6 +25,7 @@ export function Sidebar({
   user,
   roleLabel,
   canManageSettings = false,
+  platformStaffNav,
   className,
 }: SidebarProps) {
   const pathname = usePathname();
@@ -50,6 +52,14 @@ export function Sidebar({
         </ul>
       </nav>
       <div className="space-y-3 border-t border-border px-4 py-4">
+        {platformStaffNav && (
+          <div className="pb-1">
+            <p className="mb-1 px-3 text-[10px] font-medium uppercase tracking-wide text-muted">
+              LigaPro interno
+            </p>
+            {platformStaffNav}
+          </div>
+        )}
         <div className="min-w-0">
           <p className="truncate text-sm font-medium text-text-primary">
             {user.displayName ?? user.email ?? "Usuario"}

@@ -13,6 +13,7 @@ type MobileMoreDrawerProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   canManageSettings?: boolean;
+  platformStaffNav?: React.ReactNode;
 };
 
 export function MobileMoreDrawer({
@@ -21,6 +22,7 @@ export function MobileMoreDrawer({
   open,
   onOpenChange,
   canManageSettings = false,
+  platformStaffNav,
 }: MobileMoreDrawerProps) {
   const pathname = usePathname();
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -112,6 +114,14 @@ export function MobileMoreDrawer({
             ))}
           </ul>
         </nav>
+        {platformStaffNav && (
+          <div className="border-t border-border px-3 py-3">
+            <p className="mb-1 px-3 text-[10px] font-medium uppercase tracking-wide text-muted">
+              LigaPro interno
+            </p>
+            {platformStaffNav}
+          </div>
+        )}
         <p className="border-t border-border px-4 py-3 text-xs text-muted">
           Estos módulos estarán disponibles en fases posteriores del frontend.
         </p>
