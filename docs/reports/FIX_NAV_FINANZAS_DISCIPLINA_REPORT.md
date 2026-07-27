@@ -47,4 +47,5 @@ No se inventó "temporada activa": el usuario elige la temporada en el hub.
 
 ## Commit
 
-_(pendiente al push)_
+`c595a89` — `fix(nav): link Finanzas and Disciplina from org sidebar`  
+Push: `origin/main`
