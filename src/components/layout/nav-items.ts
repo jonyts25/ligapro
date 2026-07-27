@@ -36,8 +36,8 @@ const MODULES: Array<{
     icon: CalendarDays,
     available: true,
   },
-  { slug: "disciplina", label: "Disciplina", icon: Shield, available: false },
-  { slug: "finanzas", label: "Finanzas", icon: Wallet, available: false },
+  { slug: "disciplina", label: "Disciplina", icon: Shield, available: true },
+  { slug: "finanzas", label: "Finanzas", icon: Wallet, available: true },
   {
     slug: "configuracion",
     label: "Configuración",
@@ -69,6 +69,10 @@ export function getOrganizationNavItems(
       ];
     }
 
+    if (module.slug === "finanzas") {
+      if (!canManageSettings) return [];
+    }
+
     return [
       {
         href: `/organizaciones/${organizationId}/${module.slug}`,
@@ -98,5 +102,19 @@ export function isActiveRoute(pathname: string, href: string): boolean {
   if (href.endsWith("/inicio")) {
     return pathname === href;
   }
-  return pathname === href || pathname.startsWith(`${href}/`);
+  if (pathname === href || pathname.startsWith(`${href}/`)) {
+    return true;
+  }
+
+  // Org hub links to season-scoped pages (disciplina / finanzas).
+  for (const segment of ["disciplina", "finanzas"] as const) {
+    if (!href.endsWith(`/${segment}`)) continue;
+    const orgBase = href.slice(0, -(segment.length + 1));
+    if (!pathname.startsWith(`${orgBase}/`)) continue;
+    if (pathname.includes("/temporadas/") && pathname.endsWith(`/${segment}`)) {
+      return true;
+    }
+  }
+
+  return false;
 }
