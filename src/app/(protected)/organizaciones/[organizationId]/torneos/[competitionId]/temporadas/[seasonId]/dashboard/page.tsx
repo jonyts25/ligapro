@@ -60,6 +60,7 @@ export default async function SeasonDashboardPage({ params }: PageProps) {
         seasonId={seasonId}
         active="dashboard"
         canManage={canManage}
+        formatType={season.format_type}
       />
 
       <section className="space-y-3">

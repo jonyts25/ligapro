@@ -6,29 +6,47 @@ type PublicSeasonNavigationProps = {
   organizationId: string;
   seasonSlug: string;
   active: PublicSeasonTab;
+  formatType?: string;
 };
-
-const TABS: Array<{ key: PublicSeasonTab; label: string; path: string }> = [
-  { key: "inicio", label: "Inicio", path: "" },
-  { key: "calendario", label: "Calendario", path: "/calendario" },
-  { key: "posiciones", label: "Posiciones", path: "/posiciones" },
-  { key: "goleadores", label: "Goleadores", path: "/goleadores" },
-  { key: "disciplina", label: "Disciplina", path: "/disciplina" },
-];
 
 export function PublicSeasonNavigation({
   organizationId,
   seasonSlug,
   active,
+  formatType = "round_robin",
 }: PublicSeasonNavigationProps) {
   const base = `/publico/${organizationId}/${seasonSlug}`;
+
+  const tabs: Array<{ key: PublicSeasonTab; label: string; path: string }> = [
+    { key: "inicio", label: "Inicio", path: "" },
+    { key: "calendario", label: "Calendario", path: "/calendario" },
+  ];
+
+  if (formatType === "knockout") {
+    tabs.push({
+      key: "posiciones",
+      label: "Eliminatoria",
+      path: "/posiciones",
+    });
+  } else {
+    tabs.push({
+      key: "posiciones",
+      label: "Posiciones",
+      path: "/posiciones",
+    });
+  }
+
+  tabs.push(
+    { key: "goleadores", label: "Goleadores", path: "/goleadores" },
+    { key: "disciplina", label: "Disciplina", path: "/disciplina" }
+  );
 
   return (
     <nav
       aria-label="Secciones públicas"
       className="-mx-1 flex gap-1 overflow-x-auto pb-1"
     >
-      {TABS.map((tab) => {
+      {tabs.map((tab) => {
         const href = `${base}${tab.path}`;
         const isActive = tab.key === active;
         return (

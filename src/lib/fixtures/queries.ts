@@ -296,6 +296,7 @@ export async function getSeasonMatchesGroupedByRound(
 ): Promise<{
   seasonName: string;
   competitionName: string;
+  formatType: string;
   eligibleTeams: EligibleSeasonTeam[];
   rounds: FixtureRoundGroup[];
   stats: SeasonFixtureStats;
@@ -370,6 +371,7 @@ export async function getSeasonMatchesGroupedByRound(
   return {
     seasonName: ctx.seasonName,
     competitionName: ctx.competitionName,
+    formatType: ctx.formatType,
     eligibleTeams: ctx.eligibleTeams,
     rounds,
     stats,

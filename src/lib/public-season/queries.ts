@@ -68,6 +68,9 @@ type MatchRpcRow = {
   starts_at: string | null;
   venue_name: string | null;
   field_name: string | null;
+  knockout_round_number: number | null;
+  bracket_slot: number | null;
+  leg_number: number | null;
 };
 
 type ScorerRpcRow = {
@@ -110,12 +113,15 @@ export async function getPublicSeasonOverview(
 
 export async function getPublicSeasonStandings(
   organizationId: string,
-  seasonSlug: string
+  seasonSlug: string,
+  groupName?: string | null
 ): Promise<PublicStandingRow[]> {
-  const rows = await callRpc<StandingRpcRow>("get_public_season_standings", {
+  const args: Record<string, unknown> = {
     p_organization_id: organizationId,
     p_season_slug: seasonSlug,
-  });
+  };
+  if (groupName) args.p_group_name = groupName;
+  const rows = await callRpc<StandingRpcRow>("get_public_season_standings", args);
   return rows.map((row) => ({
     position: row.position,
     teamName: row.team_name,
@@ -153,6 +159,9 @@ export async function getPublicSeasonMatches(
     startsAt: row.starts_at,
     venueName: row.venue_name,
     fieldName: row.field_name,
+    knockoutRoundNumber: row.knockout_round_number,
+    bracketSlot: row.bracket_slot,
+    legNumber: row.leg_number,
   }));
 }
 
@@ -189,4 +198,18 @@ export async function getPublicSeasonDiscipline(
     isSuspended: row.is_suspended,
     matchesRemaining: row.matches_remaining,
   }));
+}
+
+export async function getPublicSeasonGroupsList(
+  organizationId: string,
+  seasonSlug: string
+): Promise<Array<{ id: string; name: string }>> {
+  const rows = await callRpc<{ group_id: string; group_name: string }>(
+    "get_public_season_groups",
+    {
+      p_organization_id: organizationId,
+      p_season_slug: seasonSlug,
+    }
+  );
+  return rows.map((r) => ({ id: r.group_id, name: r.group_name }));
 }

@@ -10,25 +10,20 @@ type SeasonStandingsNavProps = {
     | "dashboard"
     | "calendario"
     | "posiciones"
+    | "bracket"
+    | "grupos"
     | "goleadores"
     | "disciplina"
     | "finanzas"
     | "canchas";
   canManage?: boolean;
+  formatType?: string;
 };
 
 const BASE_LINKS = [
   { key: "temporada", label: "Temporada", path: "" },
   { key: "dashboard", label: "Dashboard", path: "/dashboard" },
   { key: "calendario", label: "Calendario", path: "/calendario" },
-  { key: "posiciones", label: "Posiciones", path: "/posiciones" },
-  { key: "goleadores", label: "Goleadores", path: "/goleadores" },
-  { key: "disciplina", label: "Disciplina", path: "/disciplina" },
-] as const;
-
-const ADMIN_LINKS = [
-  { key: "canchas", label: "Canchas", path: "/canchas" },
-  { key: "finanzas", label: "Finanzas", path: "/finanzas" },
 ] as const;
 
 export function SeasonStandingsNav({
@@ -37,9 +32,41 @@ export function SeasonStandingsNav({
   seasonId,
   active,
   canManage = false,
+  formatType = "round_robin",
 }: SeasonStandingsNavProps) {
   const base = `/organizaciones/${organizationId}/torneos/${competitionId}/temporadas/${seasonId}`;
-  const links = canManage ? [...BASE_LINKS, ...ADMIN_LINKS] : BASE_LINKS;
+
+  const formatLinks: Array<{
+    key: SeasonStandingsNavProps["active"];
+    label: string;
+    path: string;
+  }> = [];
+
+  if (formatType === "groups_knockout") {
+    if (canManage) {
+      formatLinks.push({ key: "grupos", label: "Grupos", path: "/grupos" });
+    }
+    formatLinks.push({ key: "posiciones", label: "Posiciones", path: "/posiciones" });
+    formatLinks.push({ key: "bracket", label: "Eliminatoria", path: "/bracket" });
+  } else if (formatType === "knockout") {
+    formatLinks.push({ key: "bracket", label: "Eliminatoria", path: "/bracket" });
+  } else {
+    formatLinks.push({ key: "posiciones", label: "Posiciones", path: "/posiciones" });
+  }
+
+  const tailLinks = [
+    { key: "goleadores" as const, label: "Goleadores", path: "/goleadores" },
+    { key: "disciplina" as const, label: "Disciplina", path: "/disciplina" },
+  ];
+
+  const adminLinks = canManage
+    ? [
+        { key: "canchas" as const, label: "Canchas", path: "/canchas" },
+        { key: "finanzas" as const, label: "Finanzas", path: "/finanzas" },
+      ]
+    : [];
+
+  const links = [...BASE_LINKS, ...formatLinks, ...tailLinks, ...adminLinks];
 
   return (
     <nav

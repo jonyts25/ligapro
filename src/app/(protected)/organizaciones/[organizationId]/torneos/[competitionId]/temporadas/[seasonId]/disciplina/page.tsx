@@ -68,6 +68,7 @@ export default async function SeasonDisciplinePage({ params }: PageProps) {
         seasonId={seasonId}
         active="disciplina"
         canManage={canManage}
+        formatType={season.format_type}
       />
 
       {canManage && (

@@ -90,6 +90,7 @@ export default async function SeasonCalendarPage({
         seasonId={seasonId}
         active="calendario"
         canManage={canManage}
+        formatType={data.formatType}
       />
 
       <SeasonFixtureSummary stats={data.stats} />

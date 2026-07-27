@@ -49,6 +49,7 @@ export default async function SeasonFieldBlocksPage({ params }: PageProps) {
         seasonId={seasonId}
         active="canchas"
         canManage
+        formatType={season.format_type}
       />
       <SeasonFieldBlocksEditor
         organizationId={organizationId}

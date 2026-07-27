@@ -39,6 +39,9 @@ export type PublicMatchRow = {
   startsAt: string | null;
   venueName: string | null;
   fieldName: string | null;
+  knockoutRoundNumber: number | null;
+  bracketSlot: number | null;
+  legNumber: number | null;
 };
 
 export type PublicScorerRow = {

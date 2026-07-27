@@ -31,6 +31,11 @@ export function SeasonReadinessCard({
 }: SeasonReadinessCardProps) {
   const { readiness } = season;
   const base = `/organizaciones/${organizationId}/torneos/${competitionId}/temporadas/${seasonId}`;
+  const formatType = season.format_type;
+  const isKnockout = formatType === "knockout";
+  const isGroupsKnockout = formatType === "groups_knockout";
+  const isLeague =
+    formatType === "round_robin" || formatType === "round_robin_double";
 
   const items = [
     {
@@ -58,26 +63,30 @@ export function SeasonReadinessCard({
       value: String(readiness.teamsWithCaptain),
       ok: readiness.teamsWithCaptain > 0,
     },
-    {
-      label: "Fixture generado",
-      value: readiness.fixtureGenerated
-        ? `Sí (${readiness.totalMatches})`
-        : "No",
-      ok: readiness.fixtureGenerated,
-    },
-    {
-      label: "Partidos programados",
-      value: `${readiness.scheduledMatches}/${readiness.totalMatches || 0}`,
-      ok:
-        readiness.fixtureGenerated &&
-        readiness.pendingMatches === 0 &&
-        readiness.totalMatches > 0,
-    },
-    {
-      label: "Partidos pendientes",
-      value: String(readiness.pendingMatches),
-      ok: readiness.fixtureGenerated && readiness.pendingMatches === 0,
-    },
+    ...(isLeague
+      ? [
+          {
+            label: "Fixture generado",
+            value: readiness.fixtureGenerated
+              ? `Sí (${readiness.totalMatches})`
+              : "No",
+            ok: readiness.fixtureGenerated,
+          },
+          {
+            label: "Partidos programados",
+            value: `${readiness.scheduledMatches}/${readiness.totalMatches || 0}`,
+            ok:
+              readiness.fixtureGenerated &&
+              readiness.pendingMatches === 0 &&
+              readiness.totalMatches > 0,
+          },
+          {
+            label: "Partidos pendientes",
+            value: String(readiness.pendingMatches),
+            ok: readiness.fixtureGenerated && readiness.pendingMatches === 0,
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -114,16 +123,30 @@ export function SeasonReadinessCard({
         >
           {canManage ? "Registrar equipos" : "Ver equipos"}
         </Link>
-        {canManage &&
-          !readiness.fixtureGenerated &&
-          readiness.teamCount >= 2 && (
-            <Link
-              href={`${base}/fixture/generar`}
-              className="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl bg-brand px-4 text-sm font-semibold text-brand-foreground"
-            >
-              Generar fixture
-            </Link>
-          )}
+        {canManage && isLeague && !readiness.fixtureGenerated && readiness.teamCount >= 2 && (
+          <Link
+            href={`${base}/fixture/generar`}
+            className="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl bg-brand px-4 text-sm font-semibold text-brand-foreground"
+          >
+            Generar fixture
+          </Link>
+        )}
+        {canManage && isKnockout && (
+          <Link
+            href={`${base}/bracket`}
+            className="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl bg-brand px-4 text-sm font-semibold text-brand-foreground"
+          >
+            Configurar eliminatoria
+          </Link>
+        )}
+        {canManage && isGroupsKnockout && (
+          <Link
+            href={`${base}/grupos`}
+            className="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl bg-brand px-4 text-sm font-semibold text-brand-foreground"
+          >
+            Configurar grupos
+          </Link>
+        )}
         {readiness.fixtureGenerated && (
           <Link
             href={`${base}/calendario`}
@@ -132,12 +155,28 @@ export function SeasonReadinessCard({
             Ver calendario
           </Link>
         )}
-        {readiness.fixtureGenerated && (
+        {isLeague && readiness.fixtureGenerated && (
           <Link
             href={`${base}/posiciones`}
             className="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl border border-border px-4 text-sm font-medium"
           >
             Ver posiciones
+          </Link>
+        )}
+        {(isKnockout || isGroupsKnockout) && (
+          <Link
+            href={`${base}/bracket`}
+            className="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl border border-border px-4 text-sm font-medium"
+          >
+            Ver eliminatoria
+          </Link>
+        )}
+        {isGroupsKnockout && (
+          <Link
+            href={`${base}/posiciones`}
+            className="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl border border-border px-4 text-sm font-medium"
+          >
+            Ver posiciones por grupo
           </Link>
         )}
       </div>

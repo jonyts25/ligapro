@@ -11,6 +11,7 @@ type PublicSeasonShellProps = {
   organizationId: string;
   seasonSlug: string;
   active: PublicSeasonTab;
+  formatType?: string;
   children: ReactNode;
 };
 
@@ -18,10 +19,13 @@ export async function PublicSeasonShell({
   organizationId,
   seasonSlug,
   active,
+  formatType,
   children,
 }: PublicSeasonShellProps) {
   const overview = await getPublicSeasonOverview(organizationId, seasonSlug);
   if (!overview) notFound();
+
+  const resolvedFormat = formatType ?? overview.formatType;
 
   const accent = sanitizeAccentForCss(overview.organizationBrandColor);
   const accentStyle = accent
@@ -40,6 +44,7 @@ export async function PublicSeasonShell({
             organizationId={organizationId}
             seasonSlug={seasonSlug}
             active={active}
+            formatType={resolvedFormat}
           />
         </div>
         <main id="main-content" className="mt-6 flex-1 space-y-8">

@@ -84,11 +84,12 @@ function mapStanding(row: StandingRpcRow): StandingRow {
 }
 
 export async function getSeasonStandings(
-  seasonId: string
+  seasonId: string,
+  groupId?: string | null
 ): Promise<StandingRow[]> {
-  const rows = await callRpc<StandingRpcRow>("get_season_standings", {
-    p_season_id: seasonId,
-  });
+  const args: Record<string, unknown> = { p_season_id: seasonId };
+  if (groupId) args.p_group_id = groupId;
+  const rows = await callRpc<StandingRpcRow>("get_season_standings", args);
   return rows.map(mapStanding);
 }
 

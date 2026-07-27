@@ -69,6 +69,8 @@ async function revalidateCompetitionPaths(
     revalidatePath(`${base}/posiciones`);
     revalidatePath(`${base}/goleadores`);
     revalidatePath(`${base}/disciplina`);
+    revalidatePath(`${base}/bracket`);
+    revalidatePath(`${base}/grupos`);
 
     const supabase = await createClient();
     const { data: season } = await supabase
@@ -206,6 +208,7 @@ function parseSeasonForm(formData: FormData) {
     minimumRestMinutes: String(formData.get("minimumRestMinutes") ?? "0"),
     yellowCardLimit: String(formData.get("yellowCardLimit") ?? "5"),
     suspensionMatches: String(formData.get("suspensionMatches") ?? "1"),
+    groupsAdvancePerGroup: String(formData.get("groupsAdvancePerGroup") ?? ""),
   };
 
   const fieldErrors: Record<string, string> = {};
@@ -250,6 +253,22 @@ function parseSeasonForm(formData: FormData) {
   if (yellowLimit.error) fieldErrors.yellowCardLimit = yellowLimit.error;
   if (suspension.error) fieldErrors.suspensionMatches = suspension.error;
 
+  let groupsAdvancePerGroup: number | null = null;
+  if (formatType === "groups_knockout") {
+    const raw = values.groupsAdvancePerGroup.trim();
+    if (!raw) {
+      fieldErrors.groupsAdvancePerGroup =
+        "Indica cuántos equipos clasifican por grupo.";
+    } else {
+      const n = Number(raw);
+      if (!Number.isInteger(n) || n <= 0) {
+        fieldErrors.groupsAdvancePerGroup = "Debe ser un entero mayor que 0.";
+      } else {
+        groupsAdvancePerGroup = n;
+      }
+    }
+  }
+
   if (
     pointsWin.value != null &&
     pointsDraw.value != null &&
@@ -277,8 +296,26 @@ function parseSeasonForm(formData: FormData) {
       minimumRestMinutes: restMinutes.value ?? 0,
       yellowCardLimit: yellowLimit.value ?? 5,
       suspensionMatches: suspension.value ?? 1,
+      groupsAdvancePerGroup,
     },
   };
+}
+
+async function syncGroupsAdvancePerGroup(
+  seasonId: string,
+  organizationId: string,
+  formatType: SeasonFormatType,
+  groupsAdvancePerGroup: number | null
+) {
+  const supabase = await createClient();
+  await supabase
+    .from("season_rules")
+    .update({
+      groups_advance_per_group:
+        formatType === "groups_knockout" ? groupsAdvancePerGroup : null,
+    })
+    .eq("season_id", seasonId)
+    .eq("organization_id", organizationId);
 }
 
 export async function createSeasonAction(
@@ -340,6 +377,13 @@ export async function createSeasonAction(
       values,
     };
   }
+
+  await syncGroupsAdvancePerGroup(
+    seasonId,
+    organizationId,
+    parsed.formatType,
+    parsed.groupsAdvancePerGroup
+  );
 
   await revalidateCompetitionPaths(organizationId, competitionId, seasonId);
   redirect(
@@ -404,6 +448,13 @@ export async function updateSeasonAction(
       values,
     };
   }
+
+  await syncGroupsAdvancePerGroup(
+    seasonId,
+    organizationId,
+    parsed.formatType,
+    parsed.groupsAdvancePerGroup
+  );
 
   await revalidateCompetitionPaths(organizationId, competitionId, seasonId);
   return {

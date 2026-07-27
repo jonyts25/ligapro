@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
 import {
   createSeasonAction,
@@ -47,6 +47,9 @@ export function SeasonForm({
 
   const v = state.values;
   const rules = season?.rules;
+  const [formatType, setFormatType] = useState<string>(
+    String(v?.formatType ?? season?.format_type ?? "round_robin")
+  );
 
   return (
     <form action={formAction} className="space-y-6">
@@ -103,9 +106,8 @@ export function SeasonForm({
               id="formatType"
               name="formatType"
               disabled={pending}
-              defaultValue={String(
-                v?.formatType ?? season?.format_type ?? "round_robin"
-              )}
+              value={formatType}
+              onChange={(e) => setFormatType(e.target.value)}
               className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
             >
               {SEASON_FORMAT_OPTIONS.map((opt) => (
@@ -116,6 +118,33 @@ export function SeasonForm({
             </select>
             <FieldError message={state.fieldErrors?.formatType} />
           </div>
+          {formatType === "groups_knockout" && (
+            <div className="space-y-1.5 sm:col-span-2">
+              <label
+                htmlFor="groupsAdvancePerGroup"
+                className="block text-sm font-medium"
+              >
+                Clasificados por grupo
+              </label>
+              <input
+                id="groupsAdvancePerGroup"
+                name="groupsAdvancePerGroup"
+                type="number"
+                min={1}
+                disabled={pending}
+                defaultValue={String(
+                  v?.groupsAdvancePerGroup ??
+                    rules?.groups_advance_per_group ??
+                    2
+                )}
+                className="min-h-11 w-full max-w-xs rounded-xl border border-border bg-background px-3 text-sm"
+              />
+              <p className="text-xs text-text-secondary">
+                Cuántos equipos de cada grupo avanzan a la eliminatoria.
+              </p>
+              <FieldError message={state.fieldErrors?.groupsAdvancePerGroup} />
+            </div>
+          )}
           <div className="space-y-1.5">
             <label htmlFor="visibility" className="block text-sm font-medium">
               Estado

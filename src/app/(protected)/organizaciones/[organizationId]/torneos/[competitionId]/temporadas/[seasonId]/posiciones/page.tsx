@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 
-import { notFound } from "next/navigation";
+import { redirect, notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth/require-user";
 import { requireOrganizationMembership } from "@/lib/auth/require-organization-membership";
 import { getSeasonDetails } from "@/lib/competitions/queries";
@@ -8,9 +8,11 @@ import {
   getSeasonScoreMismatches,
   getSeasonStandings,
 } from "@/lib/standings/queries";
+import { getSeasonGroupsForStandings } from "@/lib/groups/queries";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StandingsTable } from "@/components/standings/StandingsTable";
 import { SeasonStandingsNav } from "@/components/standings/SeasonStandingsNav";
+import { GroupStandingsTabs } from "@/components/standings/GroupStandingsTabs";
 import { ScoreEventsMismatchAlert } from "@/components/standings/ScoreEventsMismatchAlert";
 import { DataCompletenessWarning } from "@/components/standings/DataCompletenessWarning";
 import { SeasonExportButtons } from "@/components/export/ExportButtons";
@@ -21,10 +23,15 @@ type PageProps = {
     competitionId: string;
     seasonId: string;
   }>;
+  searchParams: Promise<{ grupo?: string }>;
 };
 
-export default async function SeasonStandingsPage({ params }: PageProps) {
+export default async function SeasonStandingsPage({
+  params,
+  searchParams,
+}: PageProps) {
   const { organizationId, competitionId, seasonId } = await params;
+  const { grupo: grupoParam } = await searchParams;
   const user = await requireUser();
   const membership = await requireOrganizationMembership(
     user.id,
@@ -41,14 +48,32 @@ export default async function SeasonStandingsPage({ params }: PageProps) {
   );
   if (!season) notFound();
 
+  if (season.format_type === "knockout") {
+    redirect(
+      `/organizaciones/${organizationId}/torneos/${competitionId}/temporadas/${seasonId}/bracket`
+    );
+  }
+
+  const groups =
+    season.format_type === "groups_knockout"
+      ? await getSeasonGroupsForStandings(organizationId, seasonId)
+      : [];
+
+  const selectedGroupId =
+    groups.find((g) => g.id === grupoParam)?.id ?? groups[0]?.id ?? null;
+
   const [standings, mismatches] = await Promise.all([
-    getSeasonStandings(seasonId),
+    getSeasonStandings(
+      seasonId,
+      season.format_type === "groups_knockout" ? selectedGroupId : null
+    ),
     canManage
       ? getSeasonScoreMismatches(organizationId, seasonId)
       : Promise.resolve([]),
   ]);
 
   const finishedWithScore = standings.some((r) => r.played > 0);
+  const basePath = `/organizaciones/${organizationId}/torneos/${competitionId}/temporadas/${seasonId}/posiciones`;
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -62,7 +87,16 @@ export default async function SeasonStandingsPage({ params }: PageProps) {
         seasonId={seasonId}
         active="posiciones"
         canManage={canManage}
+        formatType={season.format_type}
       />
+
+      {groups.length > 0 && selectedGroupId && (
+        <GroupStandingsTabs
+          groups={groups}
+          selectedGroupId={selectedGroupId}
+          basePath={basePath}
+        />
+      )}
 
       {canManage && mismatches.length > 0 && (
         <ScoreEventsMismatchAlert

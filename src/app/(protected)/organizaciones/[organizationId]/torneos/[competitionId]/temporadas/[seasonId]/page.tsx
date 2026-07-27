@@ -83,6 +83,7 @@ export default async function SeasonDetailPage({ params }: PageProps) {
         seasonId={seasonId}
         active="temporada"
         canManage={canManage}
+        formatType={season.format_type}
       />
 
       <Card className="flex flex-wrap items-center gap-3">

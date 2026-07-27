@@ -48,6 +48,7 @@ export type SeasonRulesRecord = {
   minimum_rest_minutes: number;
   yellow_card_limit: number;
   suspension_matches: number;
+  groups_advance_per_group: number | null;
 };
 
 export type SeasonListItem = SeasonRecord & {

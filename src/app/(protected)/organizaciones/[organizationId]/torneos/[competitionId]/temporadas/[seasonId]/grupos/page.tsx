@@ -4,10 +4,10 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth/require-user";
 import { requireOrganizationAdmin } from "@/lib/auth/require-organization-admin";
 import { getSeasonDetails } from "@/lib/competitions/queries";
-import { getSeasonFinanceOverview } from "@/lib/finance/queries";
+import { getGroupsPhaseData } from "@/lib/groups/queries";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SeasonStandingsNav } from "@/components/standings/SeasonStandingsNav";
-import { SeasonFinancePanel } from "@/components/finance/SeasonFinancePanel";
+import { SeasonGroupsPanel } from "@/components/groups/SeasonGroupsPanel";
 
 type PageProps = {
   params: Promise<{
@@ -17,7 +17,7 @@ type PageProps = {
   }>;
 };
 
-export default async function SeasonFinancePage({ params }: PageProps) {
+export default async function SeasonGroupsPage({ params }: PageProps) {
   const { organizationId, competitionId, seasonId } = await params;
   const user = await requireUser();
   await requireOrganizationAdmin(user.id, organizationId);
@@ -28,28 +28,29 @@ export default async function SeasonFinancePage({ params }: PageProps) {
     seasonId
   );
   if (!season) notFound();
+  if (season.format_type !== "groups_knockout") notFound();
 
-  const teams = await getSeasonFinanceOverview(organizationId, seasonId);
+  const groupsData = await getGroupsPhaseData(organizationId, seasonId);
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <PageHeader
-        title="Finanzas"
-        description={`${season.name} · ${season.competitionName} · Ledger oficial del admin`}
+        title="Fase de grupos"
+        description={`${season.name} · ${season.competitionName}`}
       />
       <SeasonStandingsNav
         organizationId={organizationId}
         competitionId={competitionId}
         seasonId={seasonId}
-        active="finanzas"
+        active="grupos"
         canManage
         formatType={season.format_type}
       />
-      <SeasonFinancePanel
+      <SeasonGroupsPanel
         organizationId={organizationId}
         competitionId={competitionId}
         seasonId={seasonId}
-        teams={teams}
+        data={groupsData}
       />
     </div>
   );
