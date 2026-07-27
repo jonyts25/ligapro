@@ -1,5 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import type { PlatformBillingRow } from "@/lib/platform-billing/types";
+import {
+  DEFAULT_COTIZADOR_PARAMS,
+  type CotizadorParams,
+} from "@/lib/platform-billing/cotizador";
 
 type UntypedRpc = {
   rpc: (
@@ -15,6 +19,18 @@ type OverviewRpcRow = {
   platform_billing_status: string;
   enrolled_team_count: number;
   has_fixture: boolean;
+};
+
+type PricingDefaultsRpcRow = {
+  base_price_per_team: number;
+  duration_multiplier_hasta_3: number;
+  duration_multiplier_4_to_6: number;
+  duration_multiplier_7_to_12: number;
+  volume_multiplier_1_to_2: number;
+  volume_multiplier_3_to_5: number;
+  volume_multiplier_6_plus: number;
+  updated_at: string | null;
+  updated_by_profile_id: string | null;
 };
 
 export async function isPlatformStaff(profileId: string): Promise<boolean> {
@@ -46,6 +62,32 @@ export async function getPlatformBillingOverview(): Promise<
     enrolledTeamCount: Number(row.enrolled_team_count),
     hasFixture: row.has_fixture,
   }));
+}
+
+export async function getPlatformPricingDefaults(): Promise<CotizadorParams> {
+  const supabase = await createClient();
+  const { data, error } = await (supabase as unknown as UntypedRpc).rpc(
+    "get_platform_pricing_defaults"
+  );
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  const rows = (data ?? []) as PricingDefaultsRpcRow[];
+  const row = rows[0];
+  if (!row) {
+    return DEFAULT_COTIZADOR_PARAMS;
+  }
+
+  return {
+    basePricePerTeam: Number(row.base_price_per_team),
+    durationMultiplierHasta3: Number(row.duration_multiplier_hasta_3),
+    durationMultiplier4To6: Number(row.duration_multiplier_4_to_6),
+    durationMultiplier7To12: Number(row.duration_multiplier_7_to_12),
+    volumeMultiplier1To2: Number(row.volume_multiplier_1_to_2),
+    volumeMultiplier3To5: Number(row.volume_multiplier_3_to_5),
+    volumeMultiplier6Plus: Number(row.volume_multiplier_6_plus),
+  };
 }
 
 export type { PlatformBillingRow } from "@/lib/platform-billing/types";

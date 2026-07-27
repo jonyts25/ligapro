@@ -968,6 +968,53 @@ export type Database = {
           },
         ]
       }
+      platform_pricing_defaults: {
+        Row: {
+          base_price_per_team: number
+          duration_multiplier_4_to_6: number
+          duration_multiplier_7_to_12: number
+          duration_multiplier_hasta_3: number
+          id: number
+          updated_at: string
+          updated_by_profile_id: string | null
+          volume_multiplier_1_to_2: number
+          volume_multiplier_3_to_5: number
+          volume_multiplier_6_plus: number
+        }
+        Insert: {
+          base_price_per_team: number
+          duration_multiplier_4_to_6: number
+          duration_multiplier_7_to_12: number
+          duration_multiplier_hasta_3: number
+          id?: number
+          updated_at?: string
+          updated_by_profile_id?: string | null
+          volume_multiplier_1_to_2: number
+          volume_multiplier_3_to_5: number
+          volume_multiplier_6_plus: number
+        }
+        Update: {
+          base_price_per_team?: number
+          duration_multiplier_4_to_6?: number
+          duration_multiplier_7_to_12?: number
+          duration_multiplier_hasta_3?: number
+          id?: number
+          updated_at?: string
+          updated_by_profile_id?: string | null
+          volume_multiplier_1_to_2?: number
+          volume_multiplier_3_to_5?: number
+          volume_multiplier_6_plus?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_pricing_defaults_updated_by_profile_id_fkey"
+            columns: ["updated_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       player_transfer_lock_releases: {
         Row: {
           id: string
@@ -2362,6 +2409,20 @@ export type Database = {
           season_name: string
         }[]
       }
+      get_platform_pricing_defaults: {
+        Args: never
+        Returns: {
+          base_price_per_team: number
+          duration_multiplier_4_to_6: number
+          duration_multiplier_7_to_12: number
+          duration_multiplier_hasta_3: number
+          updated_at: string | null
+          updated_by_profile_id: string | null
+          volume_multiplier_1_to_2: number
+          volume_multiplier_3_to_5: number
+          volume_multiplier_6_plus: number
+        }[]
+      }
       get_public_season_discipline: {
         Args: { p_organization_id: string; p_season_slug: string }
         Returns: {
@@ -2654,6 +2715,18 @@ export type Database = {
       }
       set_platform_billing_status: {
         Args: { p_reason?: string; p_season_id: string; p_status: string }
+        Returns: undefined
+      }
+      set_platform_pricing_defaults: {
+        Args: {
+          p_base_price_per_team: number
+          p_duration_multiplier_4_to_6: number
+          p_duration_multiplier_7_to_12: number
+          p_duration_multiplier_hasta_3: number
+          p_volume_multiplier_1_to_2: number
+          p_volume_multiplier_3_to_5: number
+          p_volume_multiplier_6_plus: number
+        }
         Returns: undefined
       }
       set_player_payment_mark: {

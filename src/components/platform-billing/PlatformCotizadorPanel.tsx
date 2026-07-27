@@ -1,9 +1,17 @@
 "use client";
 
-import { useMemo, useState, type FocusEvent, type InputHTMLAttributes, type MouseEvent, type ReactNode } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FocusEvent,
+  type InputHTMLAttributes,
+  type MouseEvent,
+  type ReactNode,
+} from "react";
 import { Card } from "@/components/ui/Card";
 import {
-  DEFAULT_COTIZADOR_PARAMS,
   calculateCotizacion,
   createCotizadorLine,
   formatCotizadorMoney,
@@ -11,6 +19,7 @@ import {
   type CotizadorParams,
   type DurationBand,
 } from "@/lib/platform-billing/cotizador";
+import { setPlatformPricingDefaultsAction } from "@/lib/platform-billing/actions";
 import { downloadCotizadorPdf } from "@/lib/platform-billing/cotizador-pdf";
 import { cn } from "@/lib/utils/cn";
 
@@ -73,13 +82,48 @@ function Field({ id, label, hint, children }: FieldProps) {
   );
 }
 
-export function PlatformCotizadorPanel() {
+type PlatformCotizadorPanelProps = {
+  initialParams: CotizadorParams;
+};
+
+type SaveState = "idle" | "saving" | "saved" | "error";
+
+export function PlatformCotizadorPanel({
+  initialParams,
+}: PlatformCotizadorPanelProps) {
   const [lines, setLines] = useState<CotizadorLine[]>(() => [createCotizadorLine()]);
-  const [params, setParams] = useState<CotizadorParams>(DEFAULT_COTIZADOR_PARAMS);
+  const [params, setParams] = useState<CotizadorParams>(initialParams);
   const [paramsOpen, setParamsOpen] = useState(false);
   const [clientName, setClientName] = useState("");
+  const [saveState, setSaveState] = useState<SaveState>("idle");
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const skipInitialSaveRef = useRef(true);
 
   const quote = useMemo(() => calculateCotizacion(lines, params), [lines, params]);
+
+  useEffect(() => {
+    if (skipInitialSaveRef.current) {
+      skipInitialSaveRef.current = false;
+      return;
+    }
+
+    setSaveState("saving");
+    setSaveError(null);
+
+    const timer = window.setTimeout(() => {
+      void setPlatformPricingDefaultsAction(params).then((result) => {
+        if (result.ok) {
+          setSaveState("saved");
+          setSaveError(null);
+        } else {
+          setSaveState("error");
+          setSaveError(result.message ?? "No se pudieron guardar los parametros.");
+        }
+      });
+    }, 800);
+
+    return () => window.clearTimeout(timer);
+  }, [params]);
 
   function updateLine(id: string, patch: Partial<Omit<CotizadorLine, "id">>) {
     setLines((prev) =>
@@ -208,8 +252,17 @@ export function PlatformCotizadorPanel() {
               Parámetros de precio
             </h2>
             <p className="mt-1 text-sm text-text-secondary">
-              Ajustables para explorar escenarios — no se guardan al recargar.
+              Ajustables para todo el staff — se guardan automaticamente al editar.
             </p>
+            {saveState === "saving" && (
+              <p className="mt-1 text-xs text-text-secondary">Guardando...</p>
+            )}
+            {saveState === "saved" && (
+              <p className="mt-1 text-xs text-brand">Parametros guardados</p>
+            )}
+            {saveState === "error" && saveError && (
+              <p className="mt-1 text-xs text-red-600">{saveError}</p>
+            )}
           </div>
           <span className="shrink-0 text-sm font-medium text-brand">
             {paramsOpen ? "Ocultar" : "Mostrar"}
