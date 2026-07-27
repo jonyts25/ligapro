@@ -1,21 +1,29 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState, type FocusEvent, type InputHTMLAttributes, type MouseEvent, type ReactNode } from "react";
 import { Card } from "@/components/ui/Card";
 import {
-  DEFAULT_COTIZADOR_INPUTS,
   DEFAULT_COTIZADOR_PARAMS,
   calculateCotizacion,
-  durationBandLabel,
+  createCotizadorLine,
   formatCotizadorMoney,
-  type CotizadorInputs,
+  type CotizadorLine,
   type CotizadorParams,
   type DurationBand,
 } from "@/lib/platform-billing/cotizador";
+import { downloadCotizadorPdf } from "@/lib/platform-billing/cotizador-pdf";
 import { cn } from "@/lib/utils/cn";
 
 const inputClassName =
   "min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm text-text-primary outline-none focus:border-brand";
+
+function selectInputValue(event: FocusEvent<HTMLInputElement>) {
+  event.currentTarget.select();
+}
+
+function selectInputOnClick(event: MouseEvent<HTMLInputElement>) {
+  event.currentTarget.select();
+}
 
 function parsePositiveInt(value: string, fallback: number): number {
   const parsed = Number.parseInt(value, 10);
@@ -27,6 +35,23 @@ function parsePositiveFloat(value: string, fallback: number): number {
   const parsed = Number.parseFloat(value);
   if (!Number.isFinite(parsed) || parsed < 0) return fallback;
   return parsed;
+}
+
+type NumericInputProps = Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  "type" | "onFocus" | "onClick"
+>;
+
+function NumericInput({ className, ...props }: NumericInputProps) {
+  return (
+    <input
+      type="number"
+      onFocus={selectInputValue}
+      onClick={selectInputOnClick}
+      className={cn(inputClassName, className)}
+      {...props}
+    />
+  );
 }
 
 type FieldProps = {
@@ -49,84 +74,125 @@ function Field({ id, label, hint, children }: FieldProps) {
 }
 
 export function PlatformCotizadorPanel() {
-  const [inputs, setInputs] = useState<CotizadorInputs>(DEFAULT_COTIZADOR_INPUTS);
+  const [lines, setLines] = useState<CotizadorLine[]>(() => [createCotizadorLine()]);
   const [params, setParams] = useState<CotizadorParams>(DEFAULT_COTIZADOR_PARAMS);
   const [paramsOpen, setParamsOpen] = useState(false);
+  const [clientName, setClientName] = useState("");
 
-  const result = useMemo(
-    () => calculateCotizacion(inputs, params),
-    [inputs, params]
-  );
+  const quote = useMemo(() => calculateCotizacion(lines, params), [lines, params]);
+
+  function updateLine(id: string, patch: Partial<Omit<CotizadorLine, "id">>) {
+    setLines((prev) =>
+      prev.map((line) => (line.id === id ? { ...line, ...patch } : line))
+    );
+  }
+
+  function addLine() {
+    setLines((prev) => [...prev, createCotizadorLine()]);
+  }
+
+  function removeLine(id: string) {
+    setLines((prev) => {
+      if (prev.length <= 1) return prev;
+      return prev.filter((line) => line.id !== id);
+    });
+  }
 
   return (
     <div className="space-y-6">
       <Card className="space-y-5">
-        <h2 className="text-lg font-semibold text-text-primary">
-          Escenario de cotización
-        </h2>
-
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <Field id="team-count" label="Número de equipos">
-            <input
-              id="team-count"
-              type="number"
-              min={1}
-              step={1}
-              value={inputs.teamCount}
-              onChange={(event) =>
-                setInputs((prev) => ({
-                  ...prev,
-                  teamCount: parsePositiveInt(event.target.value, prev.teamCount),
-                }))
-              }
-              className={inputClassName}
-            />
-          </Field>
-
-          <Field
-            id="duration-band"
-            label="Duración del torneo"
-            hint="Corta: ≤ 3 meses · Larga: > 3 y ≤ 6 meses"
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-text-primary">
+              Líneas de torneo
+            </h2>
+            <p className="mt-1 text-sm text-text-secondary">
+              Cada línea es un torneo con equipos y duración propios. El descuento
+              por volumen se aplica al total combinado.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={addLine}
+            className="inline-flex min-h-11 items-center rounded-xl border border-border px-4 text-sm font-medium text-text-secondary hover:bg-surface-elevated hover:text-text-primary"
           >
-            <select
-              id="duration-band"
-              value={inputs.durationBand}
-              onChange={(event) =>
-                setInputs((prev) => ({
-                  ...prev,
-                  durationBand: event.target.value as DurationBand,
-                }))
-              }
-              className={inputClassName}
+            Agregar torneo
+          </button>
+        </div>
+
+        <Field
+          id="client-name"
+          label="Nombre del cliente (opcional)"
+          hint="Solo aparece en el PDF — no se vincula a ninguna organización."
+        >
+          <input
+            id="client-name"
+            type="text"
+            value={clientName}
+            onChange={(event) => setClientName(event.target.value)}
+            placeholder="Ej. Liga Municipal XYZ"
+            className={inputClassName}
+          />
+        </Field>
+
+        <div className="space-y-4">
+          {lines.map((line, index) => (
+            <div
+              key={line.id}
+              className="rounded-xl border border-border bg-surface-elevated/40 p-4"
             >
-              <option value="corta">Corta (≤ 3 meses)</option>
-              <option value="larga">Larga (&gt; 3 y ≤ 6 meses)</option>
-            </select>
-          </Field>
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <h3 className="text-sm font-semibold text-text-primary">
+                  Torneo {index + 1}
+                </h3>
+                {lines.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeLine(line.id)}
+                    className="text-sm font-medium text-text-secondary hover:text-text-primary"
+                  >
+                    Quitar
+                  </button>
+                )}
+              </div>
 
-          <Field
-            id="tournament-count"
-            label="Torneos del cliente"
-            hint="Define la banda de volumen (1–2, 3–5 o 6+)"
-          >
-            <input
-              id="tournament-count"
-              type="number"
-              min={1}
-              step={1}
-              value={inputs.tournamentCount}
-              onChange={(event) =>
-                setInputs((prev) => ({
-                  ...prev,
-                  tournamentCount: parsePositiveInt(
-                    event.target.value,
-                    prev.tournamentCount
-                  ),
-                }))
-              }
-              className={inputClassName}
-            />
-          </Field>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field id={`teams-${line.id}`} label="Número de equipos">
+                  <NumericInput
+                    id={`teams-${line.id}`}
+                    min={1}
+                    step={1}
+                    value={line.teamCount}
+                    onChange={(event) =>
+                      updateLine(line.id, {
+                        teamCount: parsePositiveInt(
+                          event.target.value,
+                          line.teamCount
+                        ),
+                      })
+                    }
+                  />
+                </Field>
+
+                <Field id={`duration-${line.id}`} label="Duración">
+                  <select
+                    id={`duration-${line.id}`}
+                    value={line.durationBand}
+                    onChange={(event) =>
+                      updateLine(line.id, {
+                        durationBand: event.target.value as DurationBand,
+                      })
+                    }
+                    className={inputClassName}
+                  >
+                    <option value="hasta_3">≤ 3 meses</option>
+                    <option value="4_6">4–6 meses</option>
+                    <option value="7_12">7–12 meses</option>
+                  </select>
+                </Field>
+              </div>
+            </div>
+          ))}
         </div>
       </Card>
 
@@ -152,13 +218,9 @@ export function PlatformCotizadorPanel() {
 
         {paramsOpen && (
           <div className="grid gap-4 border-t border-border pt-4 sm:grid-cols-2 lg:grid-cols-3">
-            <Field
-              id="base-price"
-              label="Precio base por equipo (MXN)"
-            >
-              <input
+            <Field id="base-price" label="Precio base por equipo (MXN)">
+              <NumericInput
                 id="base-price"
-                type="number"
                 min={0}
                 step={1}
                 value={params.basePricePerTeam}
@@ -171,62 +233,78 @@ export function PlatformCotizadorPanel() {
                     ),
                   }))
                 }
-                className={inputClassName}
               />
             </Field>
 
             <Field
-              id="dur-short"
-              label="Multiplicador duración corta"
-              hint="≤ 3 meses"
+              id="dur-hasta-3"
+              label="Multiplicador ≤ 3 meses"
+              hint="Duración corta"
             >
-              <input
-                id="dur-short"
-                type="number"
+              <NumericInput
+                id="dur-hasta-3"
                 min={0}
                 step={0.01}
-                value={params.durationMultiplierShort}
+                value={params.durationMultiplierHasta3}
                 onChange={(event) =>
                   setParams((prev) => ({
                     ...prev,
-                    durationMultiplierShort: parsePositiveFloat(
+                    durationMultiplierHasta3: parsePositiveFloat(
                       event.target.value,
-                      prev.durationMultiplierShort
+                      prev.durationMultiplierHasta3
                     ),
                   }))
                 }
-                className={inputClassName}
               />
             </Field>
 
             <Field
-              id="dur-long"
-              label="Multiplicador duración larga"
-              hint="> 3 y ≤ 6 meses"
+              id="dur-4-6"
+              label="Multiplicador 4–6 meses"
+              hint="Duración media"
             >
-              <input
-                id="dur-long"
-                type="number"
+              <NumericInput
+                id="dur-4-6"
                 min={0}
                 step={0.01}
-                value={params.durationMultiplierLong}
+                value={params.durationMultiplier4To6}
                 onChange={(event) =>
                   setParams((prev) => ({
                     ...prev,
-                    durationMultiplierLong: parsePositiveFloat(
+                    durationMultiplier4To6: parsePositiveFloat(
                       event.target.value,
-                      prev.durationMultiplierLong
+                      prev.durationMultiplier4To6
                     ),
                   }))
                 }
-                className={inputClassName}
+              />
+            </Field>
+
+            <Field
+              id="dur-7-12"
+              label="Multiplicador 7–12 meses"
+              hint="Duración larga"
+            >
+              <NumericInput
+                id="dur-7-12"
+                min={0}
+                step={0.01}
+                value={params.durationMultiplier7To12}
+                onChange={(event) =>
+                  setParams((prev) => ({
+                    ...prev,
+                    durationMultiplier7To12: parsePositiveFloat(
+                      event.target.value,
+                      prev.durationMultiplier7To12
+                    ),
+                  }))
+                }
               />
             </Field>
 
             <Field id="vol-1-2" label="Multiplicador volumen 1–2 torneos">
-              <input
+              <NumericInput
                 id="vol-1-2"
-                type="number"
                 min={0}
                 step={0.01}
                 value={params.volumeMultiplier1To2}
@@ -239,14 +317,12 @@ export function PlatformCotizadorPanel() {
                     ),
                   }))
                 }
-                className={inputClassName}
               />
             </Field>
 
             <Field id="vol-3-5" label="Multiplicador volumen 3–5 torneos">
-              <input
+              <NumericInput
                 id="vol-3-5"
-                type="number"
                 min={0}
                 step={0.01}
                 value={params.volumeMultiplier3To5}
@@ -259,14 +335,12 @@ export function PlatformCotizadorPanel() {
                     ),
                   }))
                 }
-                className={inputClassName}
               />
             </Field>
 
             <Field id="vol-6-plus" label="Multiplicador volumen 6+ torneos">
-              <input
+              <NumericInput
                 id="vol-6-plus"
-                type="number"
                 min={0}
                 step={0.01}
                 value={params.volumeMultiplier6Plus}
@@ -279,7 +353,6 @@ export function PlatformCotizadorPanel() {
                     ),
                   }))
                 }
-                className={inputClassName}
               />
             </Field>
           </div>
@@ -287,56 +360,106 @@ export function PlatformCotizadorPanel() {
       </Card>
 
       <Card className="space-y-4">
-        <h2 className="text-lg font-semibold text-text-primary">Resultado</h2>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <h2 className="text-lg font-semibold text-text-primary">Resultado</h2>
+          {quote && (
+            <button
+              type="button"
+              onClick={() =>
+                downloadCotizadorPdf({
+                  quote,
+                  params,
+                  clientName: clientName.trim() || undefined,
+                })
+              }
+              className="inline-flex min-h-11 items-center rounded-xl bg-brand px-4 text-sm font-semibold text-brand-foreground"
+            >
+              Descargar PDF
+            </button>
+          )}
+        </div>
 
-        {result ? (
+        {quote ? (
           <div className="space-y-4">
             <dl className="grid gap-3 text-sm sm:grid-cols-2">
               <div>
-                <dt className="text-text-secondary">Duración aplicada</dt>
+                <dt className="text-text-secondary">Torneos en la cotización</dt>
                 <dd className="font-medium text-text-primary">
-                  {durationBandLabel(inputs.durationBand)} (×
-                  {result.durationMultiplier.toFixed(2)})
+                  {quote.tournamentCount}
                 </dd>
               </div>
               <div>
                 <dt className="text-text-secondary">Banda de volumen</dt>
                 <dd className="font-medium text-text-primary">
-                  {result.volumeBand} (×{result.volumeMultiplier.toFixed(2)})
+                  {quote.volumeBand} (×{quote.volumeMultiplier.toFixed(2)})
                 </dd>
               </div>
             </dl>
 
-            <div className="rounded-xl border border-border bg-surface-elevated p-4">
-              <p className="text-sm text-text-secondary">Precio por torneo</p>
-              <p className="mt-1 text-2xl font-semibold text-text-primary">
-                {formatCotizadorMoney(result.pricePerTournament)}
-              </p>
-              <p className="mt-2 text-xs text-text-secondary">
-                {formatCotizadorMoney(params.basePricePerTeam)} × {inputs.teamCount}{" "}
-                equipos × {result.durationMultiplier.toFixed(2)} ×{" "}
-                {result.volumeMultiplier.toFixed(2)}
-              </p>
+            <div className="overflow-x-auto rounded-xl border border-border">
+              <table className="min-w-full text-sm">
+                <thead className="bg-surface-elevated text-left text-text-secondary">
+                  <tr>
+                    <th className="px-3 py-2 font-medium">Torneo</th>
+                    <th className="px-3 py-2 font-medium">Equipos</th>
+                    <th className="px-3 py-2 font-medium">Duración</th>
+                    <th className="px-3 py-2 text-right font-medium">Subtotal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {quote.lines.map((line, index) => (
+                    <tr key={line.lineId} className="border-t border-border">
+                      <td className="px-3 py-2">#{index + 1}</td>
+                      <td className="px-3 py-2">{line.teamCount}</td>
+                      <td className="px-3 py-2">
+                        {line.durationLabel} (×{line.durationMultiplier.toFixed(2)})
+                      </td>
+                      <td className="px-3 py-2 text-right font-medium">
+                        {formatCotizadorMoney(line.subtotal)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
 
-            {inputs.tournamentCount > 1 && (
-              <div
-                className={cn(
-                  "rounded-xl border border-brand/30 bg-brand/5 p-4"
-                )}
-              >
-                <p className="text-sm text-text-secondary">
-                  Total acumulado ({inputs.tournamentCount} torneos)
-                </p>
-                <p className="mt-1 text-2xl font-semibold text-text-primary">
-                  {formatCotizadorMoney(result.totalPrice)}
-                </p>
+            <div className="space-y-2 rounded-xl border border-border bg-surface-elevated p-4 text-sm">
+              <div className="flex justify-between gap-4">
+                <span className="text-text-secondary">
+                  Total antes de descuento por volumen
+                </span>
+                <span className="font-medium text-text-primary">
+                  {formatCotizadorMoney(quote.subtotalBeforeVolume)}
+                </span>
               </div>
-            )}
+              <div className="flex justify-between gap-4">
+                <span className="text-text-secondary">
+                  Descuento por volumen ({quote.volumeBand})
+                </span>
+                <span className="font-medium text-text-primary">
+                  {quote.volumeDiscountAmount > 0
+                    ? `−${formatCotizadorMoney(quote.volumeDiscountAmount)}`
+                    : formatCotizadorMoney(0)}
+                </span>
+              </div>
+            </div>
+
+            <div
+              className={cn("rounded-xl border border-brand/30 bg-brand/5 p-4")}
+            >
+              <p className="text-sm text-text-secondary">Total final</p>
+              <p className="mt-1 text-2xl font-semibold text-text-primary">
+                {formatCotizadorMoney(quote.finalTotal)}
+              </p>
+              <p className="mt-2 text-xs text-text-secondary">
+                {formatCotizadorMoney(quote.subtotalBeforeVolume)} ×{" "}
+                {quote.volumeMultiplier.toFixed(2)}
+              </p>
+            </div>
           </div>
         ) : (
           <p className="text-sm text-text-secondary">
-            Ingresa al menos un equipo y un torneo para ver el resultado.
+            Agrega al menos un torneo con equipos válidos para ver el resultado.
           </p>
         )}
       </Card>
