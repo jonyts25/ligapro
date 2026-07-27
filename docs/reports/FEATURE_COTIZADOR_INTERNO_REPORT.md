@@ -76,4 +76,4 @@ Schema/RPC, persistencia, datos reales de clientes, logo en PDF, acceso no-staff
 ## Commits
 
 - `ebb3724` — feat(plataforma): cotizador interno de precio para platform staff (release inicial)
-- *(actualizar tras push de mejoras)*
+- `ddd9d94` — feat(cotizador): multi-line quotes, duration bands, PDF export
