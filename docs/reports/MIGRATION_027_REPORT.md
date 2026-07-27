@@ -63,7 +63,7 @@ Nota: test no re-ejecutable sin limpieza manual (UUIDs fijos + `audit_log` appen
 
 ## Commit
 
-_Pendiente de registrar hash tras push._
+`7efd53d` — feat(027): platform staff billing panel and RPCs
 
 ## Fuera de alcance (confirmado)
 
