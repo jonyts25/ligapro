@@ -71,4 +71,4 @@ Pasarelas de pago, CFDI/fiscal, edición directa, acceso no-staff, presupuestos.
 
 ## Commit
 
-*(actualizar tras push)*
+`a0f1d67` — feat(029): platform internal finance ledger for staff
