@@ -65,7 +65,7 @@ Se implementó el frontend completo para `knockout`, `groups_knockout` y las mej
 
 ## Commit
 
-_Pendiente de registrar hash tras push._
+`aa5c460` — feat(frontend): knockout bracket, groups phase, and group standings tabs
 
 ## Fuera de alcance (confirmado)
 
