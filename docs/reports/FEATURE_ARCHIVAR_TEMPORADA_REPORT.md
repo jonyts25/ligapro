@@ -79,7 +79,7 @@
 
 ### 7.4 Commits
 
-*(Completar tras commit)*
+`db3f587` — feat(db): block writes on archived seasons via __assert_season_not_archived
 
 ---
 
