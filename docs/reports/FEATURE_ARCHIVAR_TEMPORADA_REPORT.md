@@ -71,7 +71,7 @@
 
 **Sin candado (fuera de alcance / no escritura de temporada):** `request_player_verification`, `review_player_verification` (acciones a nivel `players`, no mutan datos de temporada).
 
-**Escrituras directas a tablas (sin RPC):** triggers en `season_roles`, `match_officials` + finanzas INSERT.
+**Escrituras directas a tablas (sin RPC):** candado INSERT-only en las cuatro tablas — ver §8 (Migration 030).
 
 ### 7.3 Tests SQL
 
@@ -83,9 +83,51 @@
 
 ---
 
+## 8. Seguimiento — candado INSERT directo (Migration 030)
+
+**Fecha:** 2026-07-26  
+**Objetivo:** Cerrar el último camino conocido sin candado: INSERT directo del cliente (RLS) en tablas que no pasan por RPC.
+
+Migration 028 había añadido guards amplios en `season_roles` y `match_officials` (INSERT/UPDATE/DELETE) y asserts en triggers de finanzas mezclados con validación de org. Migration 030 **acota el alcance a BEFORE INSERT** (sin expandir UPDATE/DELETE en estas tablas) y reutiliza los wrappers de resolución de 028.
+
+### 8.1 Resolución de `season_id` por tabla
+
+| Tabla | Resolución | Wrapper / trigger |
+|-------|------------|-------------------|
+| `team_charges` | `NEW.season_team_id` → `season_teams.season_id` | `__assert_season_not_archived_for_season_team` en `team_charges_enforce_org_matches_season_team` (BEFORE INSERT, Migration 009) |
+| `team_payments` | idem | idem en `team_payments_enforce_org_matches_season_team` |
+| `season_roles` | `NEW.season_id` (columna directa) | `__assert_season_not_archived` en `season_roles_archived_insert_guard` (BEFORE INSERT) |
+| `match_officials` | `NEW.match_id` → `matches.season_id` | `__assert_season_not_archived_for_match` en `match_officials_archived_insert_guard` (BEFORE INSERT) |
+
+Mensaje de rechazo (igual que RPCs): *«Esta temporada está archivada y no admite cambios»*.
+
+Triggers amplios de 028 eliminados: `season_roles_archived_write_guard`, `match_officials_archived_write_guard`.
+
+### 8.2 Tests SQL
+
+`supabase/tests/029_season_archived_direct_insert_guard.sql` — 8 assertions:
+
+- INSERT rechazado en temporada archivada (×4 tablas).
+- INSERT OK en temporada activa, sin regresión (×4 tablas).
+- Resolución correcta: cargos/pagos/oficiales/roles de la season archivada bloqueados; la season activa paralela sigue aceptando INSERT.
+
+Ejecutado contra remoto vinculado: **8/8 passed**.
+
+### 8.3 Commits
+
+*(hash tras push — ver abajo)*
+
+### 8.4 Estado
+
+Con Migration 030, **no quedan caminos conocidos de escritura sobre datos de temporada sin candado de archivada**, salvo acciones fuera de alcance (`request_player_verification`, `review_player_verification` a nivel `players`).
+
+UPDATE/DELETE directo en estas cuatro tablas no fue ampliado en este prompt (confirmado fuera de alcance).
+
+---
+
 ## 4. Estado backend
 
-Candado RPC implementado en Migration 028 — ver §7.
+Candado RPC (Migration 028) + INSERT directo (Migration 030) — ver §7 y §8.
 
 ---
 
@@ -135,7 +177,7 @@ Archivar usa solo `visibility = 'archived'`. No hay DELETE ni desvinculación en
 
 ## 4. Gap pendiente (backend)
 
-Las RPCs de escritura (captura, fixture, disciplina, finanzas, reagendado, knockout, grupos, etc.) **no** validan hoy si la temporada está archivada. El frontend bloquea la gestión habitual, pero un cliente que llame RPCs directamente aún podría escribir. Recomendación futura: helper SQL `__assert_season_not_archived` + aplicación sistemática en mutaciones.
+**Cerrado** (2026-07-26): RPCs de escritura (§7) e INSERT directo en `team_charges`, `team_payments`, `season_roles`, `match_officials` (§8). Sin caminos conocidos restantes salvo verificación de jugadores a nivel `players` (fuera de alcance).
 
 ---
 
