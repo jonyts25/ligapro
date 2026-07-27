@@ -39,4 +39,4 @@ Archivos tocados:
 
 ## Commit
 
-_Pendiente de registrar hash tras push._
+`18fd52a` — fix(nav): show platform billing link in org AppShell

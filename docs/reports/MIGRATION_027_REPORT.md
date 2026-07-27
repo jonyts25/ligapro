@@ -68,3 +68,7 @@ Nota: test no re-ejecutable sin limpieza manual (UUIDs fijos + `audit_log` appen
 ## Fuera de alcance (confirmado)
 
 Gestión de membership en staff desde app, acceso operativo a orgs, roles internos de staff, nav org hacia panel.
+
+## Seguimiento
+
+- **Fix enlace una org:** `18fd52a` — `PlatformStaffNavLink` en AppShell de organización (`docs/reports/FIX_ENLACE_PLATFORM_STAFF_REPORT.md`).
