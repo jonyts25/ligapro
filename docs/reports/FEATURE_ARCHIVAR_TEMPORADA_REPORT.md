@@ -90,4 +90,4 @@ Las RPCs de escritura (captura, fixture, disciplina, finanzas, reagendado, knock
 
 ## 6. Commit
 
-*(Completar tras commit — ver hash abajo)*
+`211b582` — feat(seasons): dedicated archive flow with read-only operational UI
