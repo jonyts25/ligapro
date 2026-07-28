@@ -47,6 +47,10 @@ export async function setPlatformBillingStatusAction(
   const status = String(formData.get("status") ?? "") as PlatformBillingStatus;
   const reason = String(formData.get("reason") ?? "").trim() || null;
   const confirmed = String(formData.get("confirmed") ?? "") === "1";
+  const incomeAmountRaw = String(formData.get("incomeAmount") ?? "").trim();
+  const incomeAmount = incomeAmountRaw
+    ? Number.parseFloat(incomeAmountRaw)
+    : null;
 
   if (!seasonId) {
     return { ok: false, message: "Temporada no válida." };
@@ -70,6 +74,29 @@ export async function setPlatformBillingStatusAction(
 
   if (error) {
     return { ok: false, message: error.message };
+  }
+
+  if (
+    status === "pagado" &&
+    incomeAmount !== null &&
+    Number.isFinite(incomeAmount) &&
+    incomeAmount > 0
+  ) {
+    const { error: incomeError } = await supabase.rpc("record_platform_income", {
+      p_season_id: seasonId,
+      p_amount: incomeAmount,
+      ...(reason ? { p_notes: reason } : {}),
+    });
+
+    if (incomeError) {
+      revalidatePath("/plataforma/facturacion");
+      return {
+        ok: false,
+        message: `Estado actualizado, pero el ingreso no se registró: ${incomeError.message}`,
+      };
+    }
+
+    revalidatePath("/plataforma/finanzas");
   }
 
   revalidatePath("/plataforma/facturacion");
