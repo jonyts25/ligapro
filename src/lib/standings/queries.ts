@@ -172,7 +172,7 @@ export async function getSeasonScoreMismatches(
   const matchIds = matches.map((m) => m.id);
   const { data: events } = await supabase
     .from("match_events")
-    .select("match_id, event_type, season_team_players(season_team_id)")
+    .select("match_id, event_type, season_team_players!season_team_player_id(season_team_id)")
     .eq("organization_id", organizationId)
     .in("match_id", matchIds)
     .in("event_type", ["goal", "own_goal"]);

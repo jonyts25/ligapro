@@ -51,7 +51,7 @@ export async function recordPlatformIncomeAction(
 
   const supabase = await createClient();
   const { error } = await supabase.rpc("record_platform_income", {
-    p_season_id: seasonId,
+    p_season_id: seasonId ?? (null as unknown as string),
     p_amount: amount,
     ...(notes ? { p_notes: notes } : {}),
   });

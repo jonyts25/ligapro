@@ -143,7 +143,7 @@ export async function getMatchTimeline(
   const { data } = await supabase
     .from("match_events")
     .select(
-      "id, event_type, minute, notes, created_at, voided_at, void_reason, season_team_player_id, season_team_players(season_team_id, registration_status, players(full_name), season_teams(display_name, teams(name)))"
+      "id, event_type, minute, notes, created_at, voided_at, void_reason, season_team_player_id, season_team_players!season_team_player_id(season_team_id, registration_status, players(full_name), season_teams(display_name, teams(name)))"
     )
     .eq("organization_id", organizationId)
     .eq("match_id", matchId)
