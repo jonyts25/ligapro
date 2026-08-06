@@ -1,10 +1,15 @@
 import type { MetadataRoute } from "next";
+import {
+  PLATFORM_DESCRIPTION,
+  PLATFORM_NAME,
+  PLATFORM_SHORT_NAME,
+} from "@/lib/platform/config";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "LigaPro",
-    short_name: "LigaPro",
-    description: "Plataforma de administración de ligas amateur",
+    name: PLATFORM_NAME,
+    short_name: PLATFORM_SHORT_NAME,
+    description: PLATFORM_DESCRIPTION,
     start_url: "/",
     display: "standalone",
     background_color: "#070b14",

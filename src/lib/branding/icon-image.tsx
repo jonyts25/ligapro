@@ -1,11 +1,12 @@
 import { ImageResponse } from "next/og";
+import { PLATFORM_ICON_INITIALS } from "@/lib/platform/config";
 
 type IconOptions = {
   size: number;
   maskable?: boolean;
 };
 
-export function renderLigaProIcon({ size, maskable = false }: IconOptions) {
+export function renderPlatformIcon({ size, maskable = false }: IconOptions) {
   const padding = maskable ? Math.round(size * 0.2) : Math.round(size * 0.12);
   const innerSize = size - padding * 2;
   const fontSize = Math.round(innerSize * 0.38);
@@ -39,7 +40,7 @@ export function renderLigaProIcon({ size, maskable = false }: IconOptions) {
             letterSpacing: -1,
           }}
         >
-          LP
+          {PLATFORM_ICON_INITIALS}
         </div>
       </div>
     ),

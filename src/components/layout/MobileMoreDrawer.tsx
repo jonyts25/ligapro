@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils/cn";
 import { getMobileMoreNavItems } from "@/components/layout/nav-items";
 import { NavItemLink } from "@/components/layout/NavItemLink";
 import { usePathname } from "next/navigation";
+import { platformInternalSectionLabel } from "@/lib/platform/config";
 
 type MobileMoreDrawerProps = {
   id: string;
@@ -117,7 +118,7 @@ export function MobileMoreDrawer({
         {platformStaffNav && (
           <div className="border-t border-border px-3 py-3">
             <p className="mb-1 px-3 text-[10px] font-medium uppercase tracking-wide text-muted">
-              LigaPro interno
+              {platformInternalSectionLabel()}
             </p>
             {platformStaffNav}
           </div>

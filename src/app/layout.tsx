@@ -1,5 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import {
+  PLATFORM_DESCRIPTION,
+  PLATFORM_NAME,
+  platformPageTitle,
+} from "@/lib/platform/config";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -13,16 +18,16 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  applicationName: "LigaPro",
+  applicationName: PLATFORM_NAME,
   title: {
-    default: "LigaPro",
-    template: "%s · LigaPro",
+    default: PLATFORM_NAME,
+    template: platformPageTitle("%s"),
   },
-  description: "Plataforma de administración de ligas amateur",
+  description: PLATFORM_DESCRIPTION,
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
-    title: "LigaPro",
+    title: PLATFORM_NAME,
     statusBarStyle: "black-translucent",
   },
   icons: {

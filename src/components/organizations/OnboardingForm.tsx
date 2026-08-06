@@ -11,6 +11,7 @@ import { OrganizationBrand } from "@/components/branding/OrganizationBrand";
 import { SubmitButton } from "@/components/auth/SubmitButton";
 import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/utils/cn";
+import { PLATFORM_NAME } from "@/lib/platform/config";
 
 type OnboardingFormProps = {
   userLabel: string;
@@ -125,7 +126,7 @@ export function OnboardingForm({ userLabel }: OnboardingFormProps) {
                 onChange={(e) => setUseDefaultColor(e.target.checked)}
                 disabled={pending}
               />
-              Usar color LigaPro
+              Usar color {PLATFORM_NAME}
             </label>
 
             {!useDefaultColor && (

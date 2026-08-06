@@ -8,6 +8,7 @@ import type { CurrentUser } from "@/lib/auth/types";
 import { getOrganizationNavItems } from "@/components/layout/nav-items";
 import { NavItemLink } from "@/components/layout/NavItemLink";
 import { SignOutButton } from "@/components/layout/SignOutButton";
+import { platformInternalSectionLabel } from "@/lib/platform/config";
 
 type SidebarProps = {
   branding: OrganizationBranding;
@@ -55,7 +56,7 @@ export function Sidebar({
         {platformStaffNav && (
           <div className="pb-1">
             <p className="mb-1 px-3 text-[10px] font-medium uppercase tracking-wide text-muted">
-              LigaPro interno
+              {platformInternalSectionLabel()}
             </p>
             {platformStaffNav}
           </div>

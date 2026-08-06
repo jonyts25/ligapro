@@ -19,6 +19,7 @@ import {
 import { getPublicSiteUrl } from "@/lib/site-url";
 import { buildCaptainWhatsAppLink } from "@/lib/captain/whatsapp";
 import { humanizeCaptainInvitationAdminError } from "@/lib/captain/errors";
+import { PLATFORM_NAME } from "@/lib/platform/config";
 
 function validateName(name: string, label: string): string | null {
   const trimmed = name.trim();
@@ -740,7 +741,7 @@ function buildCaptainInviteWhatsAppHref(
 ): string | null {
   const digits = phoneRaw.replace(/\D/g, "");
   if (!digits) return null;
-  const message = `Hola, te invitamos como capitán de ${teamLabel} en LigaPro. Acepta tu invitación aquí: ${inviteUrl}`;
+  const message = `Hola, te invitamos como capitán de ${teamLabel} en ${PLATFORM_NAME}. Acepta tu invitación aquí: ${inviteUrl}`;
   return buildCaptainWhatsAppLink(digits, message);
 }
 

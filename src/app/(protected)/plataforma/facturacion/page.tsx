@@ -9,6 +9,7 @@ import {
 import { PageHeader } from "@/components/ui/PageHeader";
 import { PlatformBillingPanel } from "@/components/platform-billing/PlatformBillingPanel";
 import { PlatformPlataformaNav } from "@/components/platform-billing/PlatformPlataformaNav";
+import { PLATFORM_NAME } from "@/lib/platform/config";
 
 type PageProps = {
   searchParams: Promise<{ estado?: string }>;
@@ -30,7 +31,7 @@ export default async function PlatformBillingPage({ searchParams }: PageProps) {
     <div className="mx-auto max-w-6xl space-y-6 px-4 py-8 sm:px-6">
       <PageHeader
         title="Facturación de plataforma"
-        description="Panel interno LigaPro — estados de facturación por temporada."
+        description={`Panel interno ${PLATFORM_NAME} — estados de facturación por temporada.`}
       />
       <PlatformPlataformaNav />
       <PlatformBillingPanel rows={rows} initialFilter={filter} />

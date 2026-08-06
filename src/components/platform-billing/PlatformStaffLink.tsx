@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth/require-user";
 import { isPlatformStaff } from "@/lib/platform-billing/queries";
+import { PLATFORM_NAME } from "@/lib/platform/config";
 import { cn } from "@/lib/utils/cn";
 
 /** Banner on /seleccionar-organizacion (multi-org picker). */
@@ -12,7 +13,7 @@ export async function PlatformStaffLink() {
 
   return (
     <p className="mb-4 text-sm text-text-secondary">
-      Acceso interno LigaPro:{" "}
+      Acceso interno {PLATFORM_NAME}:{" "}
       <Link
         href="/plataforma/facturacion"
         className="font-medium text-brand hover:underline"

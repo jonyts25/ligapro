@@ -13,6 +13,7 @@ import { SubmitButton } from "@/components/auth/SubmitButton";
 import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/utils/cn";
 import type { OrganizationBranding } from "@/types/branding";
+import { PLATFORM_NAME } from "@/lib/platform/config";
 
 type OrganizationBrandingFormProps = {
   organizationId: string;
@@ -131,7 +132,7 @@ export function OrganizationBrandingForm({
                 onChange={(e) => setUseDefaultColor(e.target.checked)}
                 disabled={pending}
               />
-              Usar color LigaPro
+              Usar color {PLATFORM_NAME}
             </label>
             {!useDefaultColor && (
               <>

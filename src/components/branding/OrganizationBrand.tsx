@@ -1,7 +1,10 @@
 import Image from "next/image";
 import type { OrganizationBranding } from "@/types/branding";
-import { LIGAPRO_DEFAULT_BRANDING } from "@/lib/branding/defaults";
-import { PLATFORM_NAME } from "@/lib/platform/config";
+import { PLATFORM_DEFAULT_BRANDING } from "@/lib/branding/defaults";
+import {
+  PLATFORM_ICON_INITIALS,
+  PLATFORM_NAME,
+} from "@/lib/platform/config";
 import { cn } from "@/lib/utils/cn";
 
 type OrganizationBrandProps = {
@@ -12,13 +15,13 @@ type OrganizationBrandProps = {
 
 function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "LP";
+  if (parts.length === 0) return PLATFORM_ICON_INITIALS;
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return `${parts[0][0] ?? ""}${parts[1][0] ?? ""}`.toUpperCase();
 }
 
 export function OrganizationBrand({
-  branding = LIGAPRO_DEFAULT_BRANDING,
+  branding = PLATFORM_DEFAULT_BRANDING,
   variant = "full",
   className,
 }: OrganizationBrandProps) {
@@ -27,15 +30,15 @@ export function OrganizationBrand({
       ? branding.shortName
       : branding.name;
   const initials = getInitials(branding.shortName ?? branding.name);
-  const isLigaProFallback =
-    !branding.logoUrl && branding.name === LIGAPRO_DEFAULT_BRANDING.name;
+  const isPlatformDefaultBranding =
+    !branding.logoUrl && branding.name === PLATFORM_DEFAULT_BRANDING.name;
 
   return (
     <div className={cn("flex min-w-0 items-center gap-3", className)}>
       <div
         className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-surface-elevated text-sm font-bold text-brand-foreground"
         style={{
-          backgroundColor: isLigaProFallback
+          backgroundColor: isPlatformDefaultBranding
             ? "var(--brand)"
             : "var(--organization-accent)",
           color: "var(--brand-foreground)",
@@ -58,7 +61,7 @@ export function OrganizationBrand({
           <p className="truncate text-sm font-semibold text-text-primary">
             {displayName}
           </p>
-          {!isLigaProFallback && (
+          {!isPlatformDefaultBranding && (
             <p className="truncate text-xs text-text-secondary">
               Operado con {PLATFORM_NAME}
             </p>
