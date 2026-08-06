@@ -129,6 +129,102 @@ export type Database = {
         }
         Relationships: []
       }
+      __mig028_test_results: {
+        Row: {
+          details: string | null
+          passed: boolean
+          test_name: string
+        }
+        Insert: {
+          details?: string | null
+          passed: boolean
+          test_name: string
+        }
+        Update: {
+          details?: string | null
+          passed?: boolean
+          test_name?: string
+        }
+        Relationships: []
+      }
+      __mig029_test_results: {
+        Row: {
+          details: string | null
+          passed: boolean
+          test_name: string
+        }
+        Insert: {
+          details?: string | null
+          passed: boolean
+          test_name: string
+        }
+        Update: {
+          details?: string | null
+          passed?: boolean
+          test_name?: string
+        }
+        Relationships: []
+      }
+      ai_jobs: {
+        Row: {
+          app: string
+          attempts: number
+          created_at: string
+          created_by: string | null
+          error_message: string | null
+          id: string
+          organization_id: string
+          payload: Json
+          processed_at: string | null
+          resultado: Json | null
+          status: string
+          tipo: string
+        }
+        Insert: {
+          app?: string
+          attempts?: number
+          created_at?: string
+          created_by?: string | null
+          error_message?: string | null
+          id?: string
+          organization_id: string
+          payload: Json
+          processed_at?: string | null
+          resultado?: Json | null
+          status?: string
+          tipo: string
+        }
+        Update: {
+          app?: string
+          attempts?: number
+          created_at?: string
+          created_by?: string | null
+          error_message?: string | null
+          id?: string
+          organization_id?: string
+          payload?: Json
+          processed_at?: string | null
+          resultado?: Json | null
+          status?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_jobs_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_jobs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_log: {
         Row: {
           action: string
@@ -513,8 +609,124 @@ export type Database = {
           },
         ]
       }
+      match_chronicles: {
+        Row: {
+          ai_job_id: string | null
+          content: string
+          created_at: string
+          generated_at: string
+          id: string
+          is_published: boolean
+          match_id: string
+          model_used: string | null
+          organization_id: string
+          tier: string
+          updated_at: string
+        }
+        Insert: {
+          ai_job_id?: string | null
+          content: string
+          created_at?: string
+          generated_at?: string
+          id?: string
+          is_published?: boolean
+          match_id: string
+          model_used?: string | null
+          organization_id: string
+          tier?: string
+          updated_at?: string
+        }
+        Update: {
+          ai_job_id?: string | null
+          content?: string
+          created_at?: string
+          generated_at?: string
+          id?: string
+          is_published?: boolean
+          match_id?: string
+          model_used?: string | null
+          organization_id?: string
+          tier?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_chronicles_ai_job_id_fkey"
+            columns: ["ai_job_id"]
+            isOneToOne: false
+            referencedRelation: "ai_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_chronicles_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: true
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_chronicles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      match_context: {
+        Row: {
+          attendance: number | null
+          created_at: string
+          highlight_note: string | null
+          id: string
+          match_id: string
+          organization_id: string
+          referee_name: string | null
+          updated_at: string
+          weather: string | null
+        }
+        Insert: {
+          attendance?: number | null
+          created_at?: string
+          highlight_note?: string | null
+          id?: string
+          match_id: string
+          organization_id: string
+          referee_name?: string | null
+          updated_at?: string
+          weather?: string | null
+        }
+        Update: {
+          attendance?: number | null
+          created_at?: string
+          highlight_note?: string | null
+          id?: string
+          match_id?: string
+          organization_id?: string
+          referee_name?: string | null
+          updated_at?: string
+          weather?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_context_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: true
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_context_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       match_events: {
         Row: {
+          assist_season_team_player_id: string | null
           created_at: string
           event_type: string
           id: string
@@ -529,6 +741,7 @@ export type Database = {
           voided_by_profile_id: string | null
         }
         Insert: {
+          assist_season_team_player_id?: string | null
           created_at?: string
           event_type: string
           id?: string
@@ -543,6 +756,7 @@ export type Database = {
           voided_by_profile_id?: string | null
         }
         Update: {
+          assist_season_team_player_id?: string | null
           created_at?: string
           event_type?: string
           id?: string
@@ -557,6 +771,13 @@ export type Database = {
           voided_by_profile_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "match_events_assist_season_team_player_id_fkey"
+            columns: ["assist_season_team_player_id"]
+            isOneToOne: false
+            referencedRelation: "season_team_players"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "match_events_match_id_fkey"
             columns: ["match_id"]
@@ -638,6 +859,79 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      match_player_stats: {
+        Row: {
+          created_at: string
+          distance_km: number | null
+          id: string
+          is_man_of_match: boolean
+          match_id: string
+          minutes_played: number | null
+          organization_id: string
+          passes_attempted: number | null
+          passes_completed: number | null
+          rating: number | null
+          season_team_player_id: string
+          shots: number | null
+          shots_on_target: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          distance_km?: number | null
+          id?: string
+          is_man_of_match?: boolean
+          match_id: string
+          minutes_played?: number | null
+          organization_id: string
+          passes_attempted?: number | null
+          passes_completed?: number | null
+          rating?: number | null
+          season_team_player_id: string
+          shots?: number | null
+          shots_on_target?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          distance_km?: number | null
+          id?: string
+          is_man_of_match?: boolean
+          match_id?: string
+          minutes_played?: number | null
+          organization_id?: string
+          passes_attempted?: number | null
+          passes_completed?: number | null
+          rating?: number | null
+          season_team_player_id?: string
+          shots?: number | null
+          shots_on_target?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_player_stats_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_player_stats_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_player_stats_season_team_player_id_fkey"
+            columns: ["season_team_player_id"]
+            isOneToOne: false
+            referencedRelation: "season_team_players"
             referencedColumns: ["id"]
           },
         ]
@@ -732,6 +1026,73 @@ export type Database = {
             columns: ["responded_by_profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      match_team_stats: {
+        Row: {
+          corners: number | null
+          created_at: string
+          fouls: number | null
+          id: string
+          match_id: string
+          offsides: number | null
+          organization_id: string
+          possession_pct: number | null
+          season_team_id: string
+          shots: number | null
+          shots_on_target: number | null
+          updated_at: string
+        }
+        Insert: {
+          corners?: number | null
+          created_at?: string
+          fouls?: number | null
+          id?: string
+          match_id: string
+          offsides?: number | null
+          organization_id: string
+          possession_pct?: number | null
+          season_team_id: string
+          shots?: number | null
+          shots_on_target?: number | null
+          updated_at?: string
+        }
+        Update: {
+          corners?: number | null
+          created_at?: string
+          fouls?: number | null
+          id?: string
+          match_id?: string
+          offsides?: number | null
+          organization_id?: string
+          possession_pct?: number | null
+          season_team_id?: string
+          shots?: number | null
+          shots_on_target?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_team_stats_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_team_stats_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_team_stats_season_team_id_fkey"
+            columns: ["season_team_id"]
+            isOneToOne: false
+            referencedRelation: "season_teams"
             referencedColumns: ["id"]
           },
         ]
@@ -932,37 +1293,120 @@ export type Database = {
           },
         ]
       }
-      platform_staff: {
+      platform_expense_entries: {
         Row: {
-          granted_at: string
-          granted_by_profile_id: string | null
+          amount: number
+          category: string
           id: string
-          profile_id: string
+          notes: string | null
+          recorded_at: string
+          recorded_by_profile_id: string
+          void_reason: string | null
+          voided_at: string | null
+          voided_by_profile_id: string | null
         }
         Insert: {
-          granted_at?: string
-          granted_by_profile_id?: string | null
+          amount: number
+          category: string
           id?: string
-          profile_id: string
+          notes?: string | null
+          recorded_at?: string
+          recorded_by_profile_id: string
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by_profile_id?: string | null
         }
         Update: {
-          granted_at?: string
-          granted_by_profile_id?: string | null
+          amount?: number
+          category?: string
           id?: string
-          profile_id?: string
+          notes?: string | null
+          recorded_at?: string
+          recorded_by_profile_id?: string
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by_profile_id?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "platform_staff_granted_by_profile_id_fkey"
-            columns: ["granted_by_profile_id"]
+            foreignKeyName: "platform_expense_entries_recorded_by_profile_id_fkey"
+            columns: ["recorded_by_profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "platform_staff_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: true
+            foreignKeyName: "platform_expense_entries_voided_by_profile_id_fkey"
+            columns: ["voided_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      platform_income_entries: {
+        Row: {
+          amount: number
+          id: string
+          notes: string | null
+          organization_id: string | null
+          recorded_at: string
+          recorded_by_profile_id: string
+          season_id: string | null
+          void_reason: string | null
+          voided_at: string | null
+          voided_by_profile_id: string | null
+        }
+        Insert: {
+          amount: number
+          id?: string
+          notes?: string | null
+          organization_id?: string | null
+          recorded_at?: string
+          recorded_by_profile_id: string
+          season_id?: string | null
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by_profile_id?: string | null
+        }
+        Update: {
+          amount?: number
+          id?: string
+          notes?: string | null
+          organization_id?: string | null
+          recorded_at?: string
+          recorded_by_profile_id?: string
+          season_id?: string | null
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by_profile_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_income_entries_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "platform_income_entries_recorded_by_profile_id_fkey"
+            columns: ["recorded_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "platform_income_entries_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "platform_income_entries_voided_by_profile_id_fkey"
+            columns: ["voided_by_profile_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -1015,80 +1459,41 @@ export type Database = {
           },
         ]
       }
-      platform_income_entries: {
+      platform_staff: {
         Row: {
-          amount: number
+          granted_at: string
+          granted_by_profile_id: string | null
           id: string
-          notes: string | null
-          organization_id: string | null
-          recorded_at: string
-          recorded_by_profile_id: string
-          season_id: string | null
-          void_reason: string | null
-          voided_at: string | null
-          voided_by_profile_id: string | null
+          profile_id: string
         }
         Insert: {
-          amount: number
+          granted_at?: string
+          granted_by_profile_id?: string | null
           id?: string
-          notes?: string | null
-          organization_id?: string | null
-          recorded_at?: string
-          recorded_by_profile_id: string
-          season_id?: string | null
-          void_reason?: string | null
-          voided_at?: string | null
-          voided_by_profile_id?: string | null
+          profile_id: string
         }
         Update: {
-          amount?: number
+          granted_at?: string
+          granted_by_profile_id?: string | null
           id?: string
-          notes?: string | null
-          organization_id?: string | null
-          recorded_at?: string
-          recorded_by_profile_id?: string
-          season_id?: string | null
-          void_reason?: string | null
-          voided_at?: string | null
-          voided_by_profile_id?: string | null
+          profile_id?: string
         }
-        Relationships: []
-      }
-      platform_expense_entries: {
-        Row: {
-          amount: number
-          category: string
-          id: string
-          notes: string | null
-          recorded_at: string
-          recorded_by_profile_id: string
-          void_reason: string | null
-          voided_at: string | null
-          voided_by_profile_id: string | null
-        }
-        Insert: {
-          amount: number
-          category: string
-          id?: string
-          notes?: string | null
-          recorded_at?: string
-          recorded_by_profile_id: string
-          void_reason?: string | null
-          voided_at?: string | null
-          voided_by_profile_id?: string | null
-        }
-        Update: {
-          amount?: number
-          category?: string
-          id?: string
-          notes?: string | null
-          recorded_at?: string
-          recorded_by_profile_id?: string
-          void_reason?: string | null
-          voided_at?: string | null
-          voided_by_profile_id?: string | null
-        }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "platform_staff_granted_by_profile_id_fkey"
+            columns: ["granted_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "platform_staff_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       player_transfer_lock_releases: {
         Row: {
@@ -2198,6 +2603,46 @@ export type Database = {
         }
         Returns: undefined
       }
+      __assert_season_not_archived: {
+        Args: { p_season_id: string }
+        Returns: undefined
+      }
+      __assert_season_not_archived_for_captain_invitation: {
+        Args: { p_token: string }
+        Returns: undefined
+      }
+      __assert_season_not_archived_for_knockout_round: {
+        Args: { p_round_id: string }
+        Returns: undefined
+      }
+      __assert_season_not_archived_for_match: {
+        Args: { p_match_id: string }
+        Returns: undefined
+      }
+      __assert_season_not_archived_for_match_event: {
+        Args: { p_event_id: string }
+        Returns: undefined
+      }
+      __assert_season_not_archived_for_season_team: {
+        Args: { p_season_team_id: string }
+        Returns: undefined
+      }
+      __assert_season_not_archived_for_season_team_player: {
+        Args: { p_season_team_player_id: string }
+        Returns: undefined
+      }
+      __assert_season_not_archived_for_suspension: {
+        Args: { p_suspension_id: string }
+        Returns: undefined
+      }
+      __assert_season_not_archived_for_team_charge: {
+        Args: { p_charge_id: string }
+        Returns: undefined
+      }
+      __assert_season_not_archived_for_team_payment: {
+        Args: { p_payment_id: string }
+        Returns: undefined
+      }
       __assert_season_platform_billing_active: {
         Args: { p_season_id: string }
         Returns: undefined
@@ -2261,6 +2706,8 @@ export type Database = {
         Args: { p_st1: string; p_st2: string; p_st3: string; p_st4: string }
         Returns: Json
       }
+      __mig028_as: { Args: { p_uid: string }; Returns: undefined }
+      __mig029_as: { Args: { p_uid: string }; Returns: undefined }
       __resolve_public_season: {
         Args: { p_organization_id: string; p_season_slug: string }
         Returns: string
@@ -2495,11 +2942,23 @@ export type Database = {
           duration_multiplier_4_to_6: number
           duration_multiplier_7_to_12: number
           duration_multiplier_hasta_3: number
-          updated_at: string | null
-          updated_by_profile_id: string | null
+          updated_at: string
+          updated_by_profile_id: string
           volume_multiplier_1_to_2: number
           volume_multiplier_3_to_5: number
           volume_multiplier_6_plus: number
+        }[]
+      }
+      get_public_match_chronicle: {
+        Args: {
+          p_match_id: string
+          p_organization_id: string
+          p_season_slug: string
+        }
+        Returns: {
+          content: string
+          generated_at: string
+          tier: string
         }[]
       }
       get_public_season_discipline: {
@@ -2693,6 +3152,14 @@ export type Database = {
         }
         Returns: string
       }
+      record_platform_expense: {
+        Args: { p_amount: number; p_category: string; p_notes?: string }
+        Returns: string
+      }
+      record_platform_income: {
+        Args: { p_amount: number; p_notes?: string; p_season_id: string }
+        Returns: string
+      }
       release_player_transfer_lock: {
         Args: { p_player_id: string; p_reason: string; p_season_id: string }
         Returns: {
@@ -2794,30 +3261,6 @@ export type Database = {
       }
       set_platform_billing_status: {
         Args: { p_reason?: string; p_season_id: string; p_status: string }
-        Returns: undefined
-      }
-      record_platform_income: {
-        Args: {
-          p_amount: number
-          p_notes?: string
-          p_season_id?: string | null
-        }
-        Returns: string
-      }
-      record_platform_expense: {
-        Args: {
-          p_amount: number
-          p_category: string
-          p_notes?: string
-        }
-        Returns: string
-      }
-      void_platform_income_entry: {
-        Args: { p_entry_id: string; p_reason: string }
-        Returns: undefined
-      }
-      void_platform_expense_entry: {
-        Args: { p_entry_id: string; p_reason: string }
         Returns: undefined
       }
       set_platform_pricing_defaults: {
@@ -3000,6 +3443,7 @@ export type Database = {
       void_match_event: {
         Args: { p_event_id: string; p_reason: string }
         Returns: {
+          assist_season_team_player_id: string | null
           created_at: string
           event_type: string
           id: string
@@ -3019,6 +3463,14 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      void_platform_expense_entry: {
+        Args: { p_entry_id: string; p_reason: string }
+        Returns: undefined
+      }
+      void_platform_income_entry: {
+        Args: { p_entry_id: string; p_reason: string }
+        Returns: undefined
       }
       void_team_charge: {
         Args: { p_charge_id: string; p_reason: string }

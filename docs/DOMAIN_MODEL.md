@@ -37,6 +37,11 @@ Schema SQL: Migrations 001–023 aplicadas en `ligapro-dev`.
 27. `player_verification_reviews` — **implementada (023)**
 28. `player_transfer_lock_releases` — **implementada (023)**
 29. `platform_staff` — **implementada (027)**
+30. `ai_jobs` — cola de trabajos de IA por organización (tipo `cronica`, worker externo).
+31. `match_team_stats` — estadísticas de equipo por partido (premium, opcional).
+32. `match_player_stats` — estadísticas de jugador por partido (premium, opcional).
+33. `match_context` — contexto del partido: asistencia, clima, árbitro, nota destacada (premium, opcional).
+34. `match_chronicles` — texto de crónica generada por IA, publicable en páginas públicas.
 
 ## Bloque 001 — identidad y multi-tenancy
 

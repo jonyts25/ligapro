@@ -37,17 +37,38 @@ Registrar pagos manuales (efectivo, transferencia, etc.) **sí** pertenece al MV
 
 El **audit log interno** (trazabilidad automática vía triggers) **sí** pertenece al MVP. Analytics avanzados y vistas públicas de auditoría **no**.
 
+## Actualización de alcance (ver ADR-0013)
+
+Las siguientes líneas dejaron de estar "fuera del MVP" a partir del ADR-0013.
+Se dividen entre Básico y Premium, no son un bloque monolítico de "IA" o
+"sponsors" — el detalle de qué tabla/feature es de qué tier vive en el ADR.
+
+- **Crónicas con IA (básico + premium):** sí entran. Básico usa únicamente
+  `match_events` (goles, autogoles, tarjetas, cambios, lesiones, asistencia).
+  Premium usa además `match_team_stats`, `match_player_stats` y
+  `match_context` cuando existen datos ahí.
+- **Sponsors (premium):** sí entran, vía `sponsors` + `sponsor_placements`
+  (patrocinio por venue, season o competition). Ver ADR-0013.
+- **Storytelling avanzado** (perfiles de carrera cross-season, rivalidades,
+  reconocimientos automáticos): sigue documentado solo como intención en
+  ADR-0013; no tiene migración todavía.
+
 ## Fuera del MVP
 
-- sponsors
 - procesamiento de pagos dentro de la aplicación (pasarelas, webhooks)
 - facturación CFDI
 - perfil nacional de jugador
 - brackets automáticos complejos
-- IA
-- storytelling
 - app nativa
 - chat
 - videos
 - marketplace
 - SMS
+- publicidad de terceros / ad-tech en páginas públicas (decisión ADR-0013:
+  monetización de "negocios cercanos a la cancha" se resuelve como
+  patrocinio pagado vía `sponsor_placements`, no como inventario de anuncios)
+- roles de admin acotados por sede/torneo (`organization_member_scopes`) —
+  diseño discutido en ADR-0013, sin migración todavía
+- panel de vendedores / atribución de ventas (`platform_staff.role`,
+  `organizations.sold_by_platform_staff_id`) — diseño discutido en
+  ADR-0013, sin migración todavía
