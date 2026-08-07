@@ -96,15 +96,98 @@ Reusa `platform_staff` (ya existe para staff cross-org):
   un `vendor` solo ve organizaciones donde `sold_by_platform_staff_id` es
   su propio id; `platform_owner` (Jonathan) ve todo sin filtro.
 
-## Consecuencias
+## Aprendizajes del primer test end-to-end (worker local + Ollama)
+
+Se corrió el pipeline completo (`ai_jobs` → worker → Ollama → `match_chronicles`
+→ `get_public_match_chronicle`) contra un partido real de la season de
+prueba. Dos hallazgos concretos sobre el modelo local (`qwen3.5` vía Ollama)
+que cambian cómo debe construirse el prompt real:
+
+1. **No confiar en el nombre exacto de una clave JSON pedida al modelo.**
+   Se le pidió responder `{"cronica": "..."}` (sin acento) y en dos intentos
+   distintos devolvió `crònica` y `crónica` — nunca la clave exacta. El
+   worker se ajustó para ser tolerante: si `cronica` no aparece pero el JSON
+   trae un único valor de tipo string, lo usa de todas formas. **Quien
+   construya el prompt real (prompt-builder en la app) no debe asumir que
+   el nombre de la clave se respeta literalmente.**
+
+2. **Sin marcador acumulado explícito, el modelo alucina la narrativa.**
+   Dado solo el listado de goles con minuto y equipo, el modelo infirió mal
+   la secuencia del marcador e inventó un "empate" que nunca ocurrió a la
+   mitad del partido. Al agregar el marcador resultante después de cada gol
+   directamente en el prompt (sin que el modelo tenga que sumarlo), el
+   problema desapareció. **El prompt-builder real debe incluir el marcador
+   acumulado tras cada evento, no solo la lista de eventos — no delegarle
+   aritmética/secuencia al modelo, por chico que parezca el cálculo.**
+
+3. **Especificar quién es local y quién visitante explícitamente.** El
+   modelo asumió incorrectamente que el equipo visitante jugaba "en casa".
+   Sin este dato explícito en el prompt, lo infiere mal.
+
+4. **Después de 3 iteraciones de prompt, el modelo sigue produciendo un error
+   factual distinto cada vez** (un "empate" inventado a mitad de partido, un
+   número de marcador cambiado al parafrasear, y una relación causal
+   inventada — "empató" aplicado al equipo que ya iba ganando). Cada ajuste
+   de prompt resolvió el error anterior específico sin evitar que apareciera
+   uno nuevo de otro tipo. **Conclusión: esto es un techo de capacidad del
+   modelo local (`qwen3.5` vía Ollama) para razonamiento factual/temporal
+   encadenado, no un problema de instrucciones.** Seguir iterando el prompt
+   tiene rendimientos decrecientes a partir de este punto — la mitigación
+   real es la revisión humana obligatoria antes de publicar (`is_published`
+   manual), no un prompt perfecto. Si en algún momento se vuelve prioritario
+   eliminar la revisión manual, la palanca correcta es un modelo más grande
+   (local o de pago), no más ingeniería de prompt sobre este mismo modelo.
+
+### 5. Roles de admin acotados por sede/torneo — WAVE 1 aplicado y probado
+
+Actualización: se aplicó y probó contra `ligapro-dev` la infraestructura
+completa (`organization_member_scopes`, helper `has_role_in_org_scoped`) y
+un primer lote de tres funciones convertidas: `update_season_with_rules`,
+`schedule_match`, `void_match_event`.
+
+**Hallazgo de alcance real**: el repo tiene 186 sitios donde se llama
+`has_role_in_org(...)` repartidos en ~30 migraciones — casi toda la
+autorización vive DENTRO del cuerpo de cada RPC `SECURITY DEFINER`, no en
+policies de RLS externas. Esto significa que "agregar scopes" no es un
+cambio de una sola tabla — es convertir función por función. Se decidió
+avanzar por olas en vez de intentar las ~60-100 funciones activas de una
+sola vez.
+
+**Cubierto en Wave 1** (probado con datos reales, incluyendo
+retro-compatibilidad y rechazo correcto fuera de scope):
+- Editar season (`update_season_with_rules`)
+- Programar partido (`schedule_match`)
+- Anular evento de partido (`void_match_event`)
+
+**Pendiente para próximas olas** (sigue usando `has_role_in_org` sin scope
+— un admin scoped hoy tiene acceso de organización completa para esto):
+roster de equipos, disciplina, finanzas de equipo, reservas/disponibilidad
+de cancha, brackets/knockout, captura de partido por scorekeeper.
+
+**Sin construir todavía**: UI para asignar/quitar scopes a un miembro (hoy
+solo se puede hacer por SQL directo, como se probó). Es lo próximo antes de
+que esto sea usable sin intervención manual.
+
+### 6. Capa de ventas — aplicado y probado
+
+Actualización: `platform_staff.role` (`platform_owner`/`vendor`),
+`organizations.sold_by_platform_staff_id`, y el RPC
+`get_platform_sales_overview()` ya están aplicados y probados contra
+`ligapro-dev` — un vendedor de prueba solo vio su organización atribuida
+entre 27 existentes; `platform_owner` vio las 27. Falta el dashboard
+`/plataforma/ventas` (UI, sin construir).
+
+## Consecuencias (actualizado)
 
 - `PRODUCT_SCOPE.md` actualizado: crónicas y sponsors salen de "fuera del
-  MVP"; scopes de admin y capa de ventas quedan explícitamente como
-  diseño aceptado pero sin construir.
-- La migración borrador (`ai_jobs_and_chronicle_stats.sql`) cubre los
-  puntos 1 y 2. Los puntos 3, 5 y 6 no tienen migración todavía — quedan
-  para el siguiente ciclo de trabajo.
-- Ninguna decisión aquí rompe RLS ni patrones existentes; todo es aditivo.
+  MVP"; capa de ventas y Wave 1 de scopes de admin también salen (aplicadas
+  y probadas); sponsors y Wave 2+ de scopes siguen como diseño sin construir.
+- Las migraciones `ai_jobs_and_chronicle_stats.sql`,
+  `public_match_read_rpc.sql`, `platform_sales_layer.sql` y
+  `organization_member_scopes_wave1.sql` cubren los puntos 1, 2 y las
+  actualizaciones de 5 y 6. El punto 3 (sponsors) sigue sin migración.
+- Ninguna decisión aquí rompe RLS ni patrones existentes; todo es aditivo o
+  retro-compatible (scopes: sin filas = comportamiento idéntico al actual).
 
 ## Fuera de alcance (todavía)
 

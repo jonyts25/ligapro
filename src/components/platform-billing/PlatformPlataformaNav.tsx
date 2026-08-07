@@ -9,6 +9,7 @@ const LINKS = [
   { href: "/plataforma/facturacion", label: "Facturación" },
   { href: "/plataforma/cotizador", label: "Cotizador" },
   { href: "/plataforma/finanzas", label: "Finanzas" },
+  { href: "/plataforma/ventas", label: "Ventas" },
 ] as const;
 
 export function PlatformPlataformaNav() {

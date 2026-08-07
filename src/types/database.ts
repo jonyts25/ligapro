@@ -1213,6 +1213,58 @@ export type Database = {
           },
         ]
       }
+      organization_member_scopes: {
+        Row: {
+          created_at: string
+          created_by_profile_id: string | null
+          id: string
+          organization_id: string
+          organization_member_id: string
+          scope_id: string
+          scope_type: string
+        }
+        Insert: {
+          created_at?: string
+          created_by_profile_id?: string | null
+          id?: string
+          organization_id: string
+          organization_member_id: string
+          scope_id: string
+          scope_type: string
+        }
+        Update: {
+          created_at?: string
+          created_by_profile_id?: string | null
+          id?: string
+          organization_id?: string
+          organization_member_id?: string
+          scope_id?: string
+          scope_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_member_scopes_created_by_profile_id_fkey"
+            columns: ["created_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_member_scopes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_member_scopes_organization_member_id_fkey"
+            columns: ["organization_member_id"]
+            isOneToOne: false
+            referencedRelation: "organization_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_members: {
         Row: {
           created_at: string
@@ -1261,6 +1313,7 @@ export type Database = {
           logo_path: string | null
           name: string
           slug: string
+          sold_by_platform_staff_id: string | null
           updated_at: string
         }
         Insert: {
@@ -1271,6 +1324,7 @@ export type Database = {
           logo_path?: string | null
           name: string
           slug: string
+          sold_by_platform_staff_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -1281,6 +1335,7 @@ export type Database = {
           logo_path?: string | null
           name?: string
           slug?: string
+          sold_by_platform_staff_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1289,6 +1344,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organizations_sold_by_platform_staff_id_fkey"
+            columns: ["sold_by_platform_staff_id"]
+            isOneToOne: false
+            referencedRelation: "platform_staff"
             referencedColumns: ["id"]
           },
         ]
@@ -1465,18 +1527,21 @@ export type Database = {
           granted_by_profile_id: string | null
           id: string
           profile_id: string
+          role: string
         }
         Insert: {
           granted_at?: string
           granted_by_profile_id?: string | null
           id?: string
           profile_id: string
+          role?: string
         }
         Update: {
           granted_at?: string
           granted_by_profile_id?: string | null
           id?: string
           profile_id?: string
+          role?: string
         }
         Relationships: [
           {
@@ -2920,6 +2985,13 @@ export type Database = {
         Args: { p_season_id: string }
         Returns: Json
       }
+      get_own_platform_staff_role: {
+        Args: { p_profile_id: string }
+        Returns: {
+          role: string
+          staff_id: string
+        }[]
+      }
       get_platform_billing_overview: {
         Args: never
         Returns: {
@@ -2949,6 +3021,18 @@ export type Database = {
           volume_multiplier_6_plus: number
         }[]
       }
+      get_platform_sales_overview: {
+        Args: never
+        Returns: {
+          active_season_count: number
+          member_count: number
+          organization_created_at: string
+          organization_id: string
+          organization_name: string
+          sold_by_display_name: string
+          sold_by_staff_id: string
+        }[]
+      }
       get_public_match_chronicle: {
         Args: {
           p_match_id: string
@@ -2959,6 +3043,40 @@ export type Database = {
           content: string
           generated_at: string
           tier: string
+        }[]
+      }
+      get_public_match_detail: {
+        Args: {
+          p_match_id: string
+          p_organization_id: string
+          p_season_slug: string
+        }
+        Returns: {
+          away_score: number
+          away_team_name: string
+          field_name: string
+          home_score: number
+          home_team_name: string
+          leg_number: number
+          match_id: string
+          round_label: string
+          round_number: number
+          starts_at: string
+          status: string
+          venue_name: string
+        }[]
+      }
+      get_public_match_events: {
+        Args: {
+          p_match_id: string
+          p_organization_id: string
+          p_season_slug: string
+        }
+        Returns: {
+          event_type: string
+          minute: number
+          player_name: string
+          team_name: string
         }[]
       }
       get_public_season_discipline: {
@@ -2989,6 +3107,7 @@ export type Database = {
           home_team_name: string
           knockout_round_number: number
           leg_number: number
+          match_id: string
           round_label: string
           round_number: number
           sequence_in_round: number
@@ -3092,6 +3211,15 @@ export type Database = {
       }
       has_role_in_org: {
         Args: { p_org_id: string; p_roles: string[] }
+        Returns: boolean
+      }
+      has_role_in_org_scoped: {
+        Args: {
+          p_org_id: string
+          p_roles: string[]
+          p_scope_id: string
+          p_scope_type: string
+        }
         Returns: boolean
       }
       has_season_role: {

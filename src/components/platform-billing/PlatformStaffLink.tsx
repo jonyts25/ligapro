@@ -34,6 +34,13 @@ export async function PlatformStaffLink() {
       >
         Finanzas
       </Link>
+      {" · "}
+      <Link
+        href="/plataforma/ventas"
+        className="font-medium text-brand hover:underline"
+      >
+        Ventas
+      </Link>
     </p>
   );
 }
@@ -70,6 +77,12 @@ export async function PlatformStaffNavLink({
         className="inline-flex min-h-11 w-full items-center rounded-xl px-3 text-sm font-medium text-text-secondary hover:bg-surface-elevated hover:text-text-primary"
       >
         Finanzas internas
+      </Link>
+      <Link
+        href="/plataforma/ventas"
+        className="inline-flex min-h-11 w-full items-center rounded-xl px-3 text-sm font-medium text-text-secondary hover:bg-surface-elevated hover:text-text-primary"
+      >
+        Ventas de plataforma
       </Link>
     </div>
   );

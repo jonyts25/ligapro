@@ -32,12 +32,20 @@ export default async function OrganizationSettingsPage({
         title="Configuración"
         description="Identidad visual de tu organización."
         actions={
-          <Link
-            href={`/organizaciones/${organizationId}/inicio`}
-            className="inline-flex min-h-11 items-center rounded-xl border border-border px-4 text-sm font-medium text-text-secondary hover:text-text-primary"
-          >
-            Volver al inicio
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href={`/organizaciones/${organizationId}/miembros`}
+              className="inline-flex min-h-11 items-center rounded-xl border border-border px-4 text-sm font-medium text-text-secondary hover:text-text-primary"
+            >
+              Miembros
+            </Link>
+            <Link
+              href={`/organizaciones/${organizationId}/inicio`}
+              className="inline-flex min-h-11 items-center rounded-xl border border-border px-4 text-sm font-medium text-text-secondary hover:text-text-primary"
+            >
+              Volver al inicio
+            </Link>
+          </div>
         }
       />
       <OrganizationBrandingForm
