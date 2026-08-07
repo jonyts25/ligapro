@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { PLATFORM_NAME } from "@/lib/platform/config";
 import { cn } from "@/lib/utils/cn";
 
 const LINKS = [
@@ -15,7 +16,7 @@ export function PlatformPlataformaNav() {
 
   return (
     <nav
-      aria-label="Navegación interna LigaPro"
+      aria-label={`Navegación interna ${PLATFORM_NAME}`}
       className="flex flex-wrap gap-2"
     >
       {LINKS.map(({ href, label }) => {
