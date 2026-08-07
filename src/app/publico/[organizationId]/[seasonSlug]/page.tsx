@@ -56,7 +56,11 @@ export default async function PublicSeasonHomePage({ params }: PageProps) {
           title="Resultados recientes"
           description="Últimos partidos con marcador oficial."
         />
-        <PublicRecentResults matches={matches} />
+        <PublicRecentResults
+          organizationId={organizationId}
+          seasonSlug={seasonSlug}
+          matches={matches}
+        />
       </section>
 
       {bracketData ? (

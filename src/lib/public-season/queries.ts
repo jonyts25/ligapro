@@ -56,6 +56,7 @@ type StandingRpcRow = {
 };
 
 type MatchRpcRow = {
+  match_id: string;
   round_label: string | null;
   round_number: number | null;
   sequence_in_round: number | null;
@@ -147,6 +148,7 @@ export async function getPublicSeasonMatches(
     p_season_slug: seasonSlug,
   });
   return rows.map((row) => ({
+    matchId: row.match_id,
     roundLabel: row.round_label,
     roundNumber: row.round_number,
     sequenceInRound: row.sequence_in_round,
@@ -212,4 +214,100 @@ export async function getPublicSeasonGroupsList(
     }
   );
   return rows.map((r) => ({ id: r.group_id, name: r.group_name }));
+}
+
+type PublicMatchDetailRpcRow = {
+  match_id: string;
+  home_team_name: string;
+  away_team_name: string;
+  status: string;
+  home_score: number | null;
+  away_score: number | null;
+  starts_at: string | null;
+  venue_name: string | null;
+  field_name: string | null;
+  round_label: string | null;
+  round_number: number | null;
+  leg_number: number | null;
+};
+
+type PublicMatchEventRpcRow = {
+  minute: number;
+  event_type: string;
+  player_name: string;
+  team_name: string;
+};
+
+type PublicMatchChronicleRpcRow = {
+  content: string;
+  tier: string;
+  generated_at: string;
+};
+
+export async function getPublicMatchDetail(
+  organizationId: string,
+  seasonSlug: string,
+  matchId: string
+) {
+  const rows = await callRpc<PublicMatchDetailRpcRow>("get_public_match_detail", {
+    p_organization_id: organizationId,
+    p_season_slug: seasonSlug,
+    p_match_id: matchId,
+  });
+  const row = rows[0];
+  if (!row) return null;
+  return {
+    matchId: row.match_id,
+    homeTeamName: row.home_team_name,
+    awayTeamName: row.away_team_name,
+    status: row.status,
+    homeScore: row.home_score,
+    awayScore: row.away_score,
+    startsAt: row.starts_at,
+    venueName: row.venue_name,
+    fieldName: row.field_name,
+    roundLabel: row.round_label,
+    roundNumber: row.round_number,
+    legNumber: row.leg_number,
+  };
+}
+
+export async function getPublicMatchEvents(
+  organizationId: string,
+  seasonSlug: string,
+  matchId: string
+) {
+  const rows = await callRpc<PublicMatchEventRpcRow>("get_public_match_events", {
+    p_organization_id: organizationId,
+    p_season_slug: seasonSlug,
+    p_match_id: matchId,
+  });
+  return rows.map((row) => ({
+    minute: row.minute,
+    eventType: row.event_type,
+    playerName: row.player_name,
+    teamName: row.team_name,
+  }));
+}
+
+export async function getPublicMatchChronicle(
+  organizationId: string,
+  seasonSlug: string,
+  matchId: string
+) {
+  const rows = await callRpc<PublicMatchChronicleRpcRow>(
+    "get_public_match_chronicle",
+    {
+      p_organization_id: organizationId,
+      p_season_slug: seasonSlug,
+      p_match_id: matchId,
+    }
+  );
+  const row = rows[0];
+  if (!row) return null;
+  return {
+    content: row.content,
+    tier: row.tier,
+    generatedAt: row.generated_at,
+  };
 }

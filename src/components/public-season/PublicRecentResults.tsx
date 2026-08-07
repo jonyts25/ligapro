@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StatusBadge } from "@/components/ui/StatusBadge";
@@ -5,11 +6,15 @@ import { formatMatchDateTime } from "@/lib/fixtures/format";
 import type { PublicMatchRow } from "@/lib/public-season/types";
 
 type PublicRecentResultsProps = {
+  organizationId: string;
+  seasonSlug: string;
   matches: PublicMatchRow[];
   limit?: number;
 };
 
 export function PublicRecentResults({
+  organizationId,
+  seasonSlug,
   matches,
   limit = 5,
 }: PublicRecentResultsProps) {
@@ -45,20 +50,35 @@ export function PublicRecentResults({
             : match.awayScore! > match.homeScore!
               ? `Gana ${match.awayTeamName}`
               : "Empate";
+        const href =
+          match.matchId &&
+          `/publico/${organizationId}/${seasonSlug}/partidos/${match.matchId}`;
 
         return (
           <li
-            key={`${match.homeTeamName}-${match.awayTeamName}-result-${index}`}
+            key={match.matchId ?? `${match.homeTeamName}-${match.awayTeamName}-result-${index}`}
           >
             <Card className="space-y-2">
               <div className="flex flex-wrap items-start justify-between gap-2">
-                <p className="text-sm font-semibold text-text-primary">
-                  {match.homeTeamName}{" "}
-                  <span className="font-normal text-muted">
-                    {match.homeScore}–{match.awayScore}
-                  </span>{" "}
-                  {match.awayTeamName}
-                </p>
+                {href ? (
+                  <Link href={href} className="group">
+                    <p className="text-sm font-semibold text-text-primary group-hover:text-brand">
+                      {match.homeTeamName}{" "}
+                      <span className="font-normal text-muted">
+                        {match.homeScore}–{match.awayScore}
+                      </span>{" "}
+                      {match.awayTeamName}
+                    </p>
+                  </Link>
+                ) : (
+                  <p className="text-sm font-semibold text-text-primary">
+                    {match.homeTeamName}{" "}
+                    <span className="font-normal text-muted">
+                      {match.homeScore}–{match.awayScore}
+                    </span>{" "}
+                    {match.awayTeamName}
+                  </p>
+                )}
                 <StatusBadge label="Finalizado" variant="finished" />
               </div>
               <p className="text-xs font-medium text-success">{winner}</p>

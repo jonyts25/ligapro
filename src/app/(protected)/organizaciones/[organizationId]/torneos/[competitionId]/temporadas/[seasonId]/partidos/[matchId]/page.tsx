@@ -18,6 +18,11 @@ import { MatchRescheduleAdminPanel } from "@/components/fixtures/MatchReschedule
 import { MatchOfficialsManager } from "@/components/matches/MatchOfficialsManager";
 import { MatchTimeline } from "@/components/matches/MatchTimeline";
 import { MatchDisciplineSummary } from "@/components/matches/MatchDisciplineSummary";
+import { MatchChroniclePanel } from "@/components/matches/MatchChroniclePanel";
+import {
+  getLatestChronicleJobForMatch,
+  getMatchChronicle,
+} from "@/lib/chronicles/queries";
 import { CapturePermissionBadge } from "@/components/matches/CapturePermissionBadge";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
@@ -68,6 +73,16 @@ export default async function MatchDetailPage({ params }: PageProps) {
   const rescheduleRequest = canManageActive
     ? await getMatchRescheduleRequest(organizationId, matchId)
     : null;
+  const matchFinished =
+    match.status === "finished" || match.status === "walkover";
+  const [chronicle, chronicleJob] = matchFinished
+    ? await Promise.all([
+        getMatchChronicle(organizationId, matchId),
+        getLatestChronicleJobForMatch(organizationId, matchId),
+      ])
+    : [null, null];
+  const chronicleForView =
+    canManageActive || chronicle?.isPublished ? chronicle : null;
 
   const inactiveInfra =
     match.isProgrammed &&
@@ -191,6 +206,19 @@ export default async function MatchDetailPage({ params }: PageProps) {
         canVoidEvents={canManageActive}
       />
       <MatchDisciplineSummary items={discipline} />
+
+      {matchFinished && (
+        <MatchChroniclePanel
+          organizationId={organizationId}
+          competitionId={competitionId}
+          seasonId={seasonId}
+          matchId={matchId}
+          matchFinished={matchFinished}
+          canManage={canManageActive}
+          chronicle={chronicleForView}
+          job={chronicleJob}
+        />
+      )}
     </div>
   );
 }

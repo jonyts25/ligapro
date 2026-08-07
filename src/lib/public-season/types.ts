@@ -27,6 +27,7 @@ export type PublicStandingRow = {
 };
 
 export type PublicMatchRow = {
+  matchId: string | null;
   roundLabel: string | null;
   roundNumber: number | null;
   sequenceInRound: number | null;
@@ -64,3 +65,31 @@ export type PublicSeasonTab =
   | "posiciones"
   | "goleadores"
   | "disciplina";
+
+export type PublicMatchDetail = {
+  matchId: string;
+  homeTeamName: string;
+  awayTeamName: string;
+  status: string;
+  homeScore: number | null;
+  awayScore: number | null;
+  startsAt: string | null;
+  venueName: string | null;
+  fieldName: string | null;
+  roundLabel: string | null;
+  roundNumber: number | null;
+  legNumber: number | null;
+};
+
+export type PublicMatchEventRow = {
+  minute: number;
+  eventType: string;
+  playerName: string;
+  teamName: string;
+};
+
+export type PublicMatchChronicle = {
+  content: string;
+  tier: string;
+  generatedAt: string;
+};
