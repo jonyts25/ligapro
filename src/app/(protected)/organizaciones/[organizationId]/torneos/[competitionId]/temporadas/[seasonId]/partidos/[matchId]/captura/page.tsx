@@ -64,6 +64,12 @@ export default async function MatchCapturePage({ params }: PageProps) {
         >
           Calendario
         </Link>
+        <Link
+          href={`${base}/partidos/${matchId}/captura/estadisticas`}
+          className="inline-flex min-h-11 items-center rounded-xl border border-border px-4 text-sm font-medium"
+        >
+          Estadísticas
+        </Link>
       </div>
 
       <MatchCaptureHeader details={details} permissions={permissions} />
@@ -112,6 +118,7 @@ export default async function MatchCapturePage({ params }: PageProps) {
         roster={roster}
         canCapture={permissions.canCaptureEvents}
         matchClosed={matchClosed}
+        matchStartsAt={match.schedule.startsAt}
       />
 
       <MatchRosterCredentials

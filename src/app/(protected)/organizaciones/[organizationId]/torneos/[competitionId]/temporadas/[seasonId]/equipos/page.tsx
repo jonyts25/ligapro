@@ -4,7 +4,8 @@ import { requireUser } from "@/lib/auth/require-user";
 import { requireOrganizationMembership } from "@/lib/auth/require-organization-membership";
 import { getSeasonDetails } from "@/lib/competitions/queries";
 import { canManageActiveSeason } from "@/lib/competitions/season-visibility";
-import { getSeasonTeams } from "@/lib/teams/queries";
+import { getSeasonTeams, getPriorSeasonsForCopy, getSeasonTeamsForCopy } from "@/lib/teams/queries";
+import { CopySeasonTeamsPanel } from "@/components/teams/CopySeasonTeamsPanel";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SeasonTeamList } from "@/components/teams/SeasonTeamList";
 
@@ -37,6 +38,18 @@ export default async function SeasonTeamsPage({ params }: PageProps) {
   const canManageActive = canManageActiveSeason(season, canManage);
 
   const seasonTeams = await getSeasonTeams(organizationId, seasonId);
+  const priorSeasons = canManageActive
+    ? await getPriorSeasonsForCopy(organizationId, competitionId, seasonId)
+    : [];
+  const teamsBySeason: Record<string, Awaited<ReturnType<typeof getSeasonTeamsForCopy>>> = {};
+  if (canManageActive) {
+    for (const season of priorSeasons) {
+      teamsBySeason[season.seasonId] = await getSeasonTeamsForCopy(
+        organizationId,
+        season.seasonId
+      );
+    }
+  }
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -73,6 +86,15 @@ export default async function SeasonTeamsPage({ params }: PageProps) {
         seasonTeams={seasonTeams}
         canManage={canManageActive}
       />
+      {canManageActive && priorSeasons.length > 0 && (
+        <CopySeasonTeamsPanel
+          organizationId={organizationId}
+          competitionId={competitionId}
+          seasonId={seasonId}
+          priorSeasons={priorSeasons}
+          teamsBySeason={teamsBySeason}
+        />
+      )}
     </div>
   );
 }

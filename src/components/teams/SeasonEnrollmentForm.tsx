@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
 import { enrollTeamAction } from "@/lib/teams/actions";
 import {
@@ -39,6 +39,9 @@ export function SeasonEnrollmentForm({
     enrollTeamAction,
     initialTeamsActionState
   );
+  const [isNewTeam, setIsNewTeam] = useState(
+    Boolean(state.values?.isNewTeam) || availableTeams.length === 0
+  );
 
   const v = state.values;
 
@@ -46,7 +49,7 @@ export function SeasonEnrollmentForm({
     <Card className="space-y-5">
       <SectionHeader
         title="Inscribir equipo"
-        description="Selecciona un equipo de la organización para esta temporada."
+        description="Selecciona un equipo existente o crea uno nuevo en este paso."
       />
 
       {state.message && (
@@ -66,42 +69,73 @@ export function SeasonEnrollmentForm({
         <input type="hidden" name="organizationId" value={organizationId} />
         <input type="hidden" name="competitionId" value={competitionId} />
         <input type="hidden" name="seasonId" value={seasonId} />
+        <input
+          type="hidden"
+          name="isNewTeam"
+          value={isNewTeam ? "1" : "0"}
+        />
 
-        <div className="space-y-1.5">
-          <label htmlFor="teamId" className="block text-sm font-medium">
-            Equipo
-          </label>
-          <select
-            id="teamId"
-            name="teamId"
-            required
-            disabled={pending || availableTeams.length === 0}
-            defaultValue={String(v?.teamId ?? "")}
-            className={cn(
-              "min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm",
-              state.fieldErrors?.teamId && "border-danger"
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={isNewTeam}
+            onChange={(event) => setIsNewTeam(event.target.checked)}
+            disabled={pending}
+          />
+          Equipo nuevo
+        </label>
+
+        {isNewTeam ? (
+          <div className="space-y-1.5">
+            <label htmlFor="newTeamName" className="block text-sm font-medium">
+              Nombre del equipo
+            </label>
+            <input
+              id="newTeamName"
+              name="newTeamName"
+              required
+              disabled={pending}
+              defaultValue={String(v?.newTeamName ?? "")}
+              maxLength={100}
+              className={cn(
+                "min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm",
+                state.fieldErrors?.newTeamName && "border-danger"
+              )}
+            />
+            <FieldError message={state.fieldErrors?.newTeamName} />
+          </div>
+        ) : (
+          <div className="space-y-1.5">
+            <label htmlFor="teamId" className="block text-sm font-medium">
+              Equipo
+            </label>
+            <select
+              id="teamId"
+              name="teamId"
+              required
+              disabled={pending || availableTeams.length === 0}
+              defaultValue={String(v?.teamId ?? "")}
+              className={cn(
+                "min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm",
+                state.fieldErrors?.teamId && "border-danger"
+              )}
+            >
+              <option value="">Selecciona un equipo</option>
+              {availableTeams.map((team) => (
+                <option key={team.id} value={team.id}>
+                  {team.name}
+                </option>
+              ))}
+            </select>
+            <FieldError message={state.fieldErrors?.teamId} />
+            {availableTeams.length === 0 && (
+              <p className="text-sm text-muted">
+                No hay equipos disponibles para inscribir. Usa &quot;Equipo
+                nuevo&quot; arriba.
+              </p>
             )}
-          >
-            <option value="">Selecciona un equipo</option>
-            {availableTeams.map((team) => (
-              <option key={team.id} value={team.id}>
-                {team.name}
-              </option>
-            ))}
-          </select>
-          <FieldError message={state.fieldErrors?.teamId} />
-          {availableTeams.length === 0 && (
-            <p className="text-sm text-muted">
-              No hay equipos disponibles para inscribir.{" "}
-              <Link
-                href={`/organizaciones/${organizationId}/equipos/nuevo`}
-                className="font-medium text-organization-accent"
-              >
-                Crear equipo
-              </Link>
-            </p>
-          )}
-        </div>
+          </div>
+        )}
 
         <div className="space-y-1.5">
           <label htmlFor="displayName" className="block text-sm font-medium">
@@ -161,11 +195,7 @@ export function SeasonEnrollmentForm({
         </div>
 
         <div className="flex flex-wrap gap-3">
-          <SubmitButton
-            pending={pending}
-            className="w-auto"
-            disabled={availableTeams.length === 0}
-          >
+          <SubmitButton pending={pending} className="w-auto">
             Inscribir equipo
           </SubmitButton>
           <Link
@@ -176,16 +206,6 @@ export function SeasonEnrollmentForm({
           </Link>
         </div>
       </form>
-
-      <p className="text-sm text-muted">
-        ¿No encuentras el equipo?{" "}
-        <Link
-          href={`/organizaciones/${organizationId}/equipos/nuevo`}
-          className="font-medium text-organization-accent"
-        >
-          Crear equipo
-        </Link>
-      </p>
     </Card>
   );
 }

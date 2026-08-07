@@ -240,6 +240,8 @@ export async function enrollTeamAction(
   const competitionId = String(formData.get("competitionId") ?? "");
   const seasonId = String(formData.get("seasonId") ?? "");
   const teamId = String(formData.get("teamId") ?? "");
+  const isNewTeam = String(formData.get("isNewTeam") ?? "") === "1";
+  const newTeamName = String(formData.get("newTeamName") ?? "").trim();
   await requireOrganizationAdmin(user.id, organizationId);
 
   const displayName = String(formData.get("displayName") ?? "").trim();
@@ -250,12 +252,26 @@ export async function enrollTeamAction(
 
   const values = {
     teamId,
+    isNewTeam,
+    newTeamName,
     displayName,
     groupName,
     registrationStatus,
   };
 
-  if (!teamId) {
+  let resolvedTeamId = teamId;
+
+  if (isNewTeam) {
+    const nameError = validateName(newTeamName, "nombre del equipo");
+    if (nameError) {
+      return {
+        ok: false,
+        message: nameError,
+        fieldErrors: { newTeamName: nameError },
+        values,
+      };
+    }
+  } else if (!teamId) {
     return {
       ok: false,
       message: "Selecciona un equipo.",
@@ -285,11 +301,28 @@ export async function enrollTeamAction(
     return { ok: false, message: "No encontramos la temporada." };
   }
 
+  if (isNewTeam) {
+    const { data: createdTeam, error: createError } = await supabase
+      .from("teams")
+      .insert({ organization_id: organizationId, name: newTeamName })
+      .select("id")
+      .single();
+
+    if (createError || !createdTeam) {
+      return {
+        ok: false,
+        message: "No pudimos crear el equipo. Inténtalo nuevamente.",
+        values,
+      };
+    }
+    resolvedTeamId = createdTeam.id;
+  }
+
   const { data: seasonTeamId, error } = await supabase.rpc(
     "enroll_team_in_season",
     {
       p_season_id: seasonId,
-      p_team_id: teamId,
+      p_team_id: resolvedTeamId,
       p_display_name: displayName || undefined,
       p_group_name: groupName || undefined,
       p_registration_status: registrationStatus,
@@ -310,7 +343,7 @@ export async function enrollTeamAction(
   }
 
   await revalidateTeamPaths(organizationId, {
-    teamId,
+    teamId: resolvedTeamId,
     competitionId,
     seasonId,
     seasonTeamId,
@@ -916,5 +949,46 @@ export async function inviteCaptainToRosterAction(
     inviteUrl,
     whatsAppHref,
     values: { email: "", phone: "" },
+  };
+}
+
+export async function copySeasonTeamsAction(
+  _prev: TeamsActionState,
+  formData: FormData
+): Promise<TeamsActionState> {
+  const user = await requireUser();
+  const organizationId = String(formData.get("organizationId") ?? "");
+  const competitionId = String(formData.get("competitionId") ?? "");
+  const toSeasonId = String(formData.get("seasonId") ?? "");
+  const fromSeasonId = String(formData.get("fromSeasonId") ?? "");
+  const copyRoster = String(formData.get("copyRoster") ?? "") === "1";
+  const teamIds = formData.getAll("teamIds").map(String).filter(Boolean);
+
+  await requireOrganizationAdmin(user.id, organizationId);
+
+  if (!fromSeasonId || !toSeasonId || teamIds.length === 0) {
+    return { ok: false, message: "Selecciona temporada origen y al menos un equipo." };
+  }
+
+  const supabase = await createClient();
+  const { data: copied, error } = await supabase.rpc("copy_season_teams", {
+    p_from_season_id: fromSeasonId,
+    p_to_season_id: toSeasonId,
+    p_team_ids: teamIds,
+    p_copy_roster: copyRoster,
+  });
+
+  if (error) {
+    return { ok: false, message: error.message };
+  }
+
+  await revalidateTeamPaths(organizationId, {
+    competitionId,
+    seasonId: toSeasonId,
+  });
+
+  return {
+    ok: true,
+    message: `${copied ?? 0} equipo(s) copiado(s) a esta temporada.`,
   };
 }

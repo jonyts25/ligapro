@@ -28,6 +28,7 @@ export function PlayerPhotoUploader({
 }: PlayerPhotoUploaderProps) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -128,16 +129,38 @@ export function PlayerPhotoUploader({
         type="file"
         accept="image/png,image/jpeg,image/webp"
         className="sr-only"
-        onChange={(e) => onFileChange(e.target.files?.[0] ?? null)}
+        onChange={(e) => {
+          onFileChange(e.target.files?.[0] ?? null);
+          e.target.value = "";
+        }}
+      />
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/png,image/jpeg,image/webp"
+        capture="environment"
+        className="sr-only"
+        onChange={(e) => {
+          onFileChange(e.target.files?.[0] ?? null);
+          e.target.value = "";
+        }}
       />
       <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() => cameraInputRef.current?.click()}
+          className="inline-flex min-h-11 items-center justify-center rounded-xl border border-border bg-surface-elevated px-4 text-sm font-medium disabled:opacity-60"
+        >
+          {pending ? "Procesando…" : "Tomar foto"}
+        </button>
         <button
           type="button"
           disabled={pending}
           onClick={() => inputRef.current?.click()}
           className="inline-flex min-h-11 items-center justify-center rounded-xl border border-border bg-surface-elevated px-4 text-sm font-medium disabled:opacity-60"
         >
-          {pending ? "Procesando…" : "Subir foto"}
+          Subir de galería
         </button>
         {(currentPhotoUrl || currentPhotoPath) && (
           <button

@@ -1,5 +1,5 @@
 export const SEASON_TEAM_STATUS_OPTIONS = [
-  { value: "registered", label: "Inscrito" },
+  { value: "registered", label: "Pendiente" },
   { value: "confirmed", label: "Confirmado" },
   { value: "withdrawn", label: "Retirado" },
 ] as const;

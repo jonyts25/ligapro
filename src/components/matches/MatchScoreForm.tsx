@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { updateMatchResultAction } from "@/lib/matches/actions";
 import { captureErrorAlertClass } from "@/lib/matches/capture-errors";
 import {
@@ -42,10 +42,16 @@ export function MatchScoreForm({
     updateMatchResultAction,
     initialCaptureActionState
   );
+  const [selectedStatus, setSelectedStatus] = useState<MatchStatusValue>(
+    currentStatus
+  );
+  const [confirmReopen, setConfirmReopen] = useState(false);
 
   if (!canUpdate) return null;
 
   const statuses = allowedStatusTransitions(currentStatus);
+  const reopening =
+    currentStatus === "finished" && selectedStatus === "in_progress";
 
   return (
     <Card className="space-y-4">
@@ -112,8 +118,13 @@ export function MatchScoreForm({
           <select
             id="status"
             name="status"
-            defaultValue={String(state.values?.status ?? currentStatus)}
+            value={String(state.values?.status ?? selectedStatus)}
             disabled={pending}
+            onChange={(event) => {
+              const next = event.target.value as MatchStatusValue;
+              setSelectedStatus(next);
+              setConfirmReopen(false);
+            }}
             className="min-h-11 w-full rounded-xl border border-border bg-surface px-3 text-sm"
           >
             {statuses.map((s) => (
@@ -123,7 +134,27 @@ export function MatchScoreForm({
             ))}
           </select>
         </div>
-        <SubmitButton pending={pending}>Guardar marcador</SubmitButton>
+        {reopening && (
+          <div className="space-y-3 rounded-xl border border-warning/40 bg-warning/10 px-3 py-3 text-sm text-text-secondary">
+            <p>
+              Vas a reabrir este partido para corregir datos. El cambio de
+              estado queda registrado en el historial de auditoría.
+            </p>
+            <label className="flex items-start gap-2">
+              <input
+                type="checkbox"
+                checked={confirmReopen}
+                onChange={(event) => setConfirmReopen(event.target.checked)}
+                disabled={pending}
+                className="mt-1"
+              />
+              <span>Entiendo y quiero reabrir el partido</span>
+            </label>
+          </div>
+        )}
+        <SubmitButton pending={pending} disabled={reopening && !confirmReopen}>
+          Guardar marcador
+        </SubmitButton>
       </form>
     </Card>
   );

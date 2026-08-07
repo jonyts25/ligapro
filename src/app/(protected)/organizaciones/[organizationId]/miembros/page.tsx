@@ -43,6 +43,7 @@ export default async function OrganizationMembersPage({ params }: PageProps) {
         members={members}
         seasonOptions={seasonOptions}
         canManageScopes={canManageScopes}
+        canManageInvites
       />
     </div>
   );

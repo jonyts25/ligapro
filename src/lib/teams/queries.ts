@@ -483,3 +483,59 @@ export async function getOrganizationTeamStats(
     seasonEnrollments: seasonEnrollments ?? 0,
   };
 }
+
+export type PriorSeasonOption = {
+  seasonId: string;
+  label: string;
+};
+
+export type CopyableSeasonTeam = {
+  teamId: string;
+  teamName: string;
+  displayName: string | null;
+  registrationStatus: string;
+};
+
+export async function getPriorSeasonsForCopy(
+  organizationId: string,
+  competitionId: string,
+  currentSeasonId: string
+): Promise<PriorSeasonOption[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("seasons")
+    .select("id, name, created_at")
+    .eq("organization_id", organizationId)
+    .eq("competition_id", competitionId)
+    .neq("id", currentSeasonId)
+    .order("created_at", { ascending: false });
+
+  return (data ?? []).map((row) => ({
+    seasonId: row.id,
+    label: row.name,
+  }));
+}
+
+export async function getSeasonTeamsForCopy(
+  organizationId: string,
+  seasonId: string
+): Promise<CopyableSeasonTeam[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("season_teams")
+    .select("team_id, display_name, registration_status, teams(name)")
+    .eq("organization_id", organizationId)
+    .eq("season_id", seasonId)
+    .order("created_at");
+
+  return (data ?? []).map((row) => {
+    const teamRel = row.teams as { name: string } | { name: string }[] | null;
+    const team = Array.isArray(teamRel) ? teamRel[0] : teamRel;
+    return {
+      teamId: row.team_id,
+      teamName: row.display_name?.trim() || team?.name || "Equipo",
+      displayName: row.display_name,
+      registrationStatus: row.registration_status,
+    };
+  });
+}

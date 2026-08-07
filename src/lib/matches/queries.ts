@@ -16,6 +16,7 @@ import type {
   SeasonRoleValue,
 } from "@/lib/matches/types";
 import { seasonRoleLabel } from "@/lib/matches/types";
+import { resolvePlayerPhotoUrlMap } from "@/lib/players/photo-url";
 
 function profileLabel(row: {
   display_name: string | null;
@@ -285,7 +286,7 @@ export async function getMatchRosterPlayers(
     .in("season_team_id", [homeSeasonTeamId, awaySeasonTeamId])
     .order("jersey_number", { ascending: true });
 
-  return (data ?? []).map((row) => {
+  const rows = (data ?? []).map((row) => {
     const playerRel = row.players as
       | {
           full_name: string;
@@ -310,6 +311,15 @@ export async function getMatchRosterPlayers(
       verificationStatus: player?.verification_status ?? "not_required",
     };
   });
+
+  const photoUrls = await resolvePlayerPhotoUrlMap(
+    rows.map((row) => row.photoPath)
+  );
+
+  return rows.map((row) => ({
+    ...row,
+    photoUrl: row.photoPath ? (photoUrls.get(row.photoPath) ?? null) : null,
+  }));
 }
 
 export async function getUserMatchCapturePermissions(

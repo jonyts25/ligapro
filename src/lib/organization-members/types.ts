@@ -20,9 +20,20 @@ export type OrganizationSeasonScopeOption = {
   label: string;
 };
 
+export type OrganizationInvitationPreview = {
+  id: string;
+  email: string;
+  role: string;
+  status: string;
+  expiresAt: string;
+  organizationName: string | null;
+  isExpired: boolean;
+};
+
 export type OrganizationMembersActionState = {
   ok: boolean;
   message: string | null;
+  inviteUrl?: string | null;
 };
 
 export const initialOrganizationMembersActionState: OrganizationMembersActionState =

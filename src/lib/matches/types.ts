@@ -131,6 +131,7 @@ export type MatchRosterPlayer = {
   jerseyNumber: number | null;
   registrationStatus: string;
   photoPath: string | null;
+  photoUrl?: string | null;
   verificationStatus: string;
 };
 
@@ -164,7 +165,7 @@ export function allowedStatusTransitions(
     case "in_progress":
       return ["in_progress", "finished", "cancelled", "walkover"];
     case "finished":
-      return ["finished"];
+      return ["finished", "in_progress"];
     case "cancelled":
       return ["cancelled"];
     case "walkover":

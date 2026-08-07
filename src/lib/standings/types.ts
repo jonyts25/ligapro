@@ -49,7 +49,7 @@ export type ScoreMismatchRow = {
 export function seasonTeamStatusLabel(value: string): string {
   switch (value) {
     case "registered":
-      return "Inscrito";
+      return "Pendiente";
     case "confirmed":
       return "Confirmado";
     case "withdrawn":

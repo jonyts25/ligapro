@@ -1304,6 +1304,73 @@ export type Database = {
           },
         ]
       }
+      organization_invitations: {
+        Row: {
+          accepted_at: string | null
+          accepted_by_profile_id: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by_profile_id: string
+          organization_id: string
+          role: string
+          status: string
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_by_profile_id?: string | null
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+          invited_by_profile_id: string
+          organization_id: string
+          role: string
+          status?: string
+          token?: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_by_profile_id?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by_profile_id?: string
+          organization_id?: string
+          role?: string
+          status?: string
+          token?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_invitations_accepted_by_profile_id_fkey"
+            columns: ["accepted_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_invitations_invited_by_profile_id_fkey"
+            columns: ["invited_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_invitations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           brand_color: string | null
@@ -2815,6 +2882,10 @@ export type Database = {
         }[]
       }
       accept_captain_invitation: { Args: { p_token: string }; Returns: string }
+      accept_organization_invitation: {
+        Args: { p_token: string }
+        Returns: string
+      }
       add_player_to_season_team: {
         Args: {
           p_jersey_number?: number
@@ -2871,6 +2942,15 @@ export type Database = {
       configure_knockout_round: {
         Args: { p_is_two_legs: boolean; p_round_id: string }
         Returns: undefined
+      }
+      copy_season_teams: {
+        Args: {
+          p_copy_roster?: boolean
+          p_from_season_id: string
+          p_team_ids: string[]
+          p_to_season_id: string
+        }
+        Returns: number
       }
       confirm_match_calendar: {
         Args: { p_match_id: string }
@@ -3230,6 +3310,14 @@ export type Database = {
         Args: { p_email: string; p_season_team_player_id: string }
         Returns: string
       }
+      invite_organization_member: {
+        Args: {
+          p_email: string
+          p_organization_id: string
+          p_role: string
+        }
+        Returns: string
+      }
       is_active_captain_of_match: {
         Args: { p_match_id: string; p_profile_id?: string }
         Returns: boolean
@@ -3382,6 +3470,44 @@ export type Database = {
           p_winner_season_team_id: string
         }
         Returns: undefined
+      }
+      set_match_context: {
+        Args: {
+          p_attendance?: number | null
+          p_highlight_note?: string | null
+          p_match_id: string
+          p_referee_name?: string | null
+          p_weather?: string | null
+        }
+        Returns: string
+      }
+      set_match_player_stats: {
+        Args: {
+          p_distance_km?: number | null
+          p_is_man_of_match?: boolean
+          p_match_id: string
+          p_minutes_played?: number | null
+          p_passes_attempted?: number | null
+          p_passes_completed?: number | null
+          p_rating?: number | null
+          p_season_team_player_id: string
+          p_shots?: number | null
+          p_shots_on_target?: number | null
+        }
+        Returns: string
+      }
+      set_match_team_stats: {
+        Args: {
+          p_corners?: number | null
+          p_fouls?: number | null
+          p_match_id: string
+          p_offsides?: number | null
+          p_possession_pct?: number | null
+          p_season_team_id: string
+          p_shots?: number | null
+          p_shots_on_target?: number | null
+        }
+        Returns: string
       }
       set_organization_logo: {
         Args: { p_logo_path: string; p_organization_id: string }

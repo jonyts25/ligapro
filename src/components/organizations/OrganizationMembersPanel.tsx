@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import {
   assignOrganizationMemberSeasonScopeAction,
   initialOrganizationMembersActionState,
+  inviteOrganizationMemberAction,
   removeOrganizationMemberSeasonScopeAction,
 } from "@/lib/organization-members/actions";
 import type {
@@ -22,6 +23,7 @@ type OrganizationMembersPanelProps = {
   members: OrganizationMemberListItem[];
   seasonOptions: OrganizationSeasonScopeOption[];
   canManageScopes: boolean;
+  canManageInvites: boolean;
 };
 
 function scopeAccessLabel(member: OrganizationMemberListItem): string {
@@ -41,6 +43,7 @@ export function OrganizationMembersPanel({
   members,
   seasonOptions,
   canManageScopes,
+  canManageInvites,
 }: OrganizationMembersPanelProps) {
   const [assignState, assignAction, assignPending] = useActionState(
     assignOrganizationMemberSeasonScopeAction,
@@ -50,12 +53,74 @@ export function OrganizationMembersPanel({
     removeOrganizationMemberSeasonScopeAction,
     initialOrganizationMembersActionState
   );
+  const [inviteState, inviteAction, invitePending] = useActionState(
+    inviteOrganizationMemberAction,
+    initialOrganizationMembersActionState
+  );
 
-  const actionMessage = assignState.message || removeState.message;
-  const actionOk = assignState.ok || removeState.ok;
+  const actionMessage =
+    assignState.message || removeState.message || inviteState.message;
+  const actionOk = assignState.ok || removeState.ok || inviteState.ok;
 
   return (
     <div className="space-y-6">
+      {canManageInvites && (
+        <Card className="space-y-4 p-4">
+          <SectionHeader
+            title="Invitar miembro"
+            description="Genera un enlace por correo. La persona debe aceptar con esa cuenta."
+          />
+          <form action={inviteAction} className="space-y-4">
+            <input type="hidden" name="organizationId" value={organizationId} />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <label htmlFor="invite-email" className="text-sm font-medium">
+                  Correo
+                </label>
+                <input
+                  id="invite-email"
+                  name="email"
+                  type="email"
+                  required
+                  disabled={invitePending}
+                  className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
+                  placeholder="persona@ejemplo.com"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label htmlFor="invite-role" className="text-sm font-medium">
+                  Rol
+                </label>
+                <select
+                  id="invite-role"
+                  name="role"
+                  disabled={invitePending}
+                  defaultValue="organization_member"
+                  className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
+                >
+                  <option value="organization_member">Miembro</option>
+                  <option value="organization_admin">Administrador</option>
+                </select>
+              </div>
+            </div>
+            <SubmitButton pending={invitePending} className="w-auto px-4">
+              Crear invitación
+            </SubmitButton>
+          </form>
+          {inviteState.inviteUrl && (
+            <p className="break-all text-sm text-text-secondary">
+              Enlace:{" "}
+              <a
+                href={inviteState.inviteUrl}
+                className="font-medium text-brand underline-offset-2 hover:underline"
+              >
+                {inviteState.inviteUrl}
+              </a>
+            </p>
+          )}
+        </Card>
+      )}
+
       <Card className="space-y-3 p-4 text-sm text-text-secondary">
         <p>
           Los administradores <strong>sin scopes</strong> tienen acceso a toda

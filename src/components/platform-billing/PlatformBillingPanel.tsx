@@ -140,6 +140,7 @@ export function PlatformBillingPanel({
   initialFilter = "all",
 }: PlatformBillingPanelProps) {
   const [filter, setFilter] = useState(initialFilter);
+  const [search, setSearch] = useState("");
   const [pendingKey, setPendingKey] = useState<string | null>(null);
   const [confirmKey, setConfirmKey] = useState<string | null>(null);
   const [actionState, formAction, pending] = useActionState(
@@ -148,9 +149,18 @@ export function PlatformBillingPanel({
   );
 
   const filtered = useMemo(() => {
-    if (filter === "all") return rows;
-    return rows.filter((r) => r.platformBillingStatus === filter);
-  }, [rows, filter]);
+    const needle = search.trim().toLowerCase();
+    let list = rows;
+    if (filter !== "all") {
+      list = list.filter((r) => r.platformBillingStatus === filter);
+    }
+    if (!needle) return list;
+    return list.filter(
+      (r) =>
+        r.organizationName.toLowerCase().includes(needle) ||
+        r.seasonName.toLowerCase().includes(needle)
+    );
+  }, [rows, filter, search]);
 
   return (
     <div className="space-y-6">
@@ -177,6 +187,20 @@ export function PlatformBillingPanel({
             {label}
           </button>
         ))}
+      </div>
+
+      <div className="space-y-1.5">
+        <label htmlFor="billing-search" className="text-sm font-medium">
+          Buscar
+        </label>
+        <input
+          id="billing-search"
+          type="search"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Organización o temporada…"
+          className="min-h-11 w-full max-w-md rounded-xl border border-border bg-background px-3 text-sm"
+        />
       </div>
 
       {actionState.message && (
