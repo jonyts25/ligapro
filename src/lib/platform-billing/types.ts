@@ -7,6 +7,27 @@ export type PlatformBillingRow = {
   hasFixture: boolean;
 };
 
+export type PlatformOrganizationBillingRow = {
+  organizationId: string;
+  organizationName: string;
+  planTier: "basico" | "premium";
+  activeSeasonCount: number;
+};
+
+export const PLATFORM_PLAN_TIERS = [
+  { value: "basico", label: "Básico" },
+  { value: "premium", label: "Premium" },
+] as const;
+
+export type PlatformPlanTier =
+  (typeof PLATFORM_PLAN_TIERS)[number]["value"];
+
+export function planTierLabel(tier: string): string {
+  return (
+    PLATFORM_PLAN_TIERS.find((t) => t.value === tier)?.label ?? tier
+  );
+}
+
 export const PLATFORM_BILLING_STATUSES = [
   { value: "pendiente", label: "Pendiente" },
   { value: "pagado", label: "Pagado" },

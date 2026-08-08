@@ -50,6 +50,7 @@ export function SeasonForm({
   const [formatType, setFormatType] = useState<string>(
     String(v?.formatType ?? season?.format_type ?? "round_robin")
   );
+  const [advancedOpen, setAdvancedOpen] = useState(mode === "edit");
 
   return (
     <form action={formAction} className="space-y-6">
@@ -202,10 +203,23 @@ export function SeasonForm({
       </Card>
 
       <Card className="space-y-4">
-        <SectionHeader
-          title="Reglas deportivas"
-          description="Puntos, disciplina y duración. Se guarda una sola configuración por temporada."
-        />
+        <button
+          type="button"
+          onClick={() => setAdvancedOpen((open) => !open)}
+          className="flex w-full items-center justify-between gap-3 text-left"
+          aria-expanded={advancedOpen}
+        >
+          <SectionHeader
+            title="Configuración avanzada"
+            description="Puntos, disciplina y duración. Valores estándar precargados."
+          />
+          <span className="shrink-0 text-sm font-medium text-brand">
+            {advancedOpen ? "Ocultar" : "Mostrar"}
+          </span>
+        </button>
+
+        {advancedOpen && (
+          <>
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="space-y-1.5">
             <label htmlFor="pointsWin" className="block text-sm font-medium">
@@ -346,6 +360,8 @@ export function SeasonForm({
             <FieldError message={state.fieldErrors?.suspensionMatches} />
           </div>
         </div>
+          </>
+        )}
       </Card>
 
       <div className="flex flex-wrap gap-3">
