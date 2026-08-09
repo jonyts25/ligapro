@@ -214,6 +214,16 @@ function parseSeasonForm(formData: FormData) {
     yellowCardLimit: String(formData.get("yellowCardLimit") ?? "5"),
     suspensionMatches: String(formData.get("suspensionMatches") ?? "1"),
     groupsAdvancePerGroup: String(formData.get("groupsAdvancePerGroup") ?? ""),
+    walkoverEnRetiro: formData.get("walkoverEnRetiro") === "on",
+    walkoverRetiroWinnerGoals: String(
+      formData.get("walkoverRetiroWinnerGoals") ?? "3"
+    ),
+    walkoverRetiroLoserGoals: String(
+      formData.get("walkoverRetiroLoserGoals") ?? "0"
+    ),
+    fechaLimiteInscripcion: String(
+      formData.get("fechaLimiteInscripcion") ?? ""
+    ).trim(),
   };
 
   const fieldErrors: Record<string, string> = {};
@@ -302,6 +312,16 @@ function parseSeasonForm(formData: FormData) {
       yellowCardLimit: yellowLimit.value ?? 5,
       suspensionMatches: suspension.value ?? 1,
       groupsAdvancePerGroup,
+      walkoverEnRetiro: values.walkoverEnRetiro,
+      walkoverRetiroWinnerGoals: parseNonNegInt(
+        values.walkoverRetiroWinnerGoals,
+        "Goles walkover ganador"
+      ).value ?? 3,
+      walkoverRetiroLoserGoals: parseNonNegInt(
+        values.walkoverRetiroLoserGoals,
+        "Goles walkover perdedor"
+      ).value ?? 0,
+      fechaLimiteInscripcion: values.fechaLimiteInscripcion || null,
     },
   };
 }
@@ -444,6 +464,10 @@ export async function updateSeasonAction(
     p_minimum_rest_minutes: parsed.minimumRestMinutes,
     p_yellow_card_limit: parsed.yellowCardLimit,
     p_suspension_matches: parsed.suspensionMatches,
+    p_walkover_en_retiro: parsed.walkoverEnRetiro,
+    p_walkover_retiro_winner_goals: parsed.walkoverRetiroWinnerGoals,
+    p_walkover_retiro_loser_goals: parsed.walkoverRetiroLoserGoals,
+    p_fecha_limite_inscripcion: parsed.fechaLimiteInscripcion ?? undefined,
   });
 
   if (error) {

@@ -3,6 +3,7 @@
 import { useActionState, useMemo, useState } from "react";
 import {
   addExistingPlayerAction,
+  bulkCreatePlayersAndAddAction,
   createPlayerAndAddAction,
 } from "@/lib/teams/actions";
 import {
@@ -71,6 +72,11 @@ export function AddRosterPlayerForm({
   const [selectedPlayerId, setSelectedPlayerId] = useState(
     String(existingState.values?.playerId ?? "")
   );
+  const [bulkMode, setBulkMode] = useState(false);
+  const [bulkState, bulkAction, bulkPending] = useActionState(
+    bulkCreatePlayersAndAddAction,
+    initialTeamsActionState
+  );
 
   const createValues = createState.values;
   const selectableCount = availablePlayers.filter((p) => p.selectable).length;
@@ -89,60 +95,113 @@ export function AddRosterPlayerForm({
           title="Crear jugador nuevo"
           description="Registra un jugador en la organización y agrégalo al plantel."
         />
-        <ActionMessage ok={createState.ok} message={createState.message} />
-        <form action={createAction} className="space-y-4">
-          <input type="hidden" name="organizationId" value={organizationId} />
-          <input type="hidden" name="competitionId" value={competitionId} />
-          <input type="hidden" name="seasonId" value={seasonId} />
-          <input type="hidden" name="seasonTeamId" value={seasonTeamId} />
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setBulkMode(false)}
+            className={cn(
+              "rounded-xl border px-3 py-1.5 text-sm font-medium",
+              !bulkMode
+                ? "border-brand bg-brand text-brand-foreground"
+                : "border-border text-text-secondary"
+            )}
+          >
+            Uno a uno
+          </button>
+          <button
+            type="button"
+            onClick={() => setBulkMode(true)}
+            className={cn(
+              "rounded-xl border px-3 py-1.5 text-sm font-medium",
+              bulkMode
+                ? "border-brand bg-brand text-brand-foreground"
+                : "border-border text-text-secondary"
+            )}
+          >
+            Pegar lista
+          </button>
+        </div>
+        {bulkMode ? (
+          <>
+            <ActionMessage ok={bulkState.ok} message={bulkState.message} />
+            <form action={bulkAction} className="space-y-4">
+              <input type="hidden" name="organizationId" value={organizationId} />
+              <input type="hidden" name="competitionId" value={competitionId} />
+              <input type="hidden" name="seasonId" value={seasonId} />
+              <input type="hidden" name="seasonTeamId" value={seasonTeamId} />
+              <textarea
+                name="bulkNames"
+                rows={8}
+                disabled={bulkPending}
+                placeholder={"Juan Pérez\nCarlos López\n..."}
+                className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+              />
+              <SubmitButton pending={bulkPending} className="w-auto">
+                Crear jugadores en lote
+              </SubmitButton>
+            </form>
+          </>
+        ) : (
+          <>
+            <ActionMessage ok={createState.ok} message={createState.message} />
+            <form action={createAction} className="space-y-4">
+              <input type="hidden" name="organizationId" value={organizationId} />
+              <input type="hidden" name="competitionId" value={competitionId} />
+              <input type="hidden" name="seasonId" value={seasonId} />
+              <input type="hidden" name="seasonTeamId" value={seasonTeamId} />
 
-          <div className="space-y-1.5">
-            <label htmlFor="fullName" className="block text-sm font-medium">
-              Nombre completo
-            </label>
-            <input
-              id="fullName"
-              name="fullName"
-              required
-              minLength={2}
-              maxLength={100}
-              disabled={createPending}
-              defaultValue={String(createValues?.fullName ?? "")}
-              placeholder="Juan Pérez García"
-              className={cn(
-                "min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none",
-                "focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]",
-                createState.fieldErrors?.fullName && "border-danger"
-              )}
-            />
-            <FieldError message={createState.fieldErrors?.fullName} />
-          </div>
+              <div className="space-y-1.5">
+                <label htmlFor="fullName" className="block text-sm font-medium">
+                  Nombre completo
+                </label>
+                <input
+                  id="fullName"
+                  name="fullName"
+                  required
+                  minLength={2}
+                  maxLength={100}
+                  disabled={createPending}
+                  defaultValue={String(createValues?.fullName ?? "")}
+                  placeholder="Juan Pérez García"
+                  className={cn(
+                    "min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none",
+                    "focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]",
+                    createState.fieldErrors?.fullName && "border-danger"
+                  )}
+                />
+                <FieldError message={createState.fieldErrors?.fullName} />
+              </div>
 
-          <div className="space-y-1.5">
-            <label htmlFor="createJerseyNumber" className="block text-sm font-medium">
-              Dorsal{" "}
-              <span className="font-normal text-muted">(opcional)</span>
-            </label>
-            <input
-              id="createJerseyNumber"
-              name="jerseyNumber"
-              inputMode="numeric"
-              disabled={createPending}
-              defaultValue={String(createValues?.jerseyNumber ?? "")}
-              placeholder="10"
-              className={cn(
-                "min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none",
-                "focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]",
-                createState.fieldErrors?.jerseyNumber && "border-danger"
-              )}
-            />
-            <FieldError message={createState.fieldErrors?.jerseyNumber} />
-          </div>
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="createJerseyNumber"
+                  className="block text-sm font-medium"
+                >
+                  Dorsal{" "}
+                  <span className="font-normal text-muted">(opcional)</span>
+                </label>
+                <input
+                  id="createJerseyNumber"
+                  name="jerseyNumber"
+                  inputMode="numeric"
+                  disabled={createPending}
+                  defaultValue={String(createValues?.jerseyNumber ?? "")}
+                  placeholder="10"
+                  className={cn(
+                    "min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none",
+                    "focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]",
+                    createState.fieldErrors?.jerseyNumber && "border-danger"
+                  )}
+                />
+                <FieldError message={createState.fieldErrors?.jerseyNumber} />
+              </div>
 
-          <SubmitButton pending={createPending} className="w-auto">
-            Crear y agregar
-          </SubmitButton>
-        </form>
+              <SubmitButton pending={createPending} className="w-auto">
+                Crear y agregar
+              </SubmitButton>
+            </form>
+          </>
+        )}
       </Card>
 
       <Card className="space-y-4">

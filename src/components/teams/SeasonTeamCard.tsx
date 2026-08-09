@@ -3,6 +3,8 @@ import { StatusBadge } from "@/components/ui/StatusBadge";
 import { Card } from "@/components/ui/Card";
 import {
   displaySeasonTeamName,
+  seasonTeamOperationalStatusLabel,
+  seasonTeamOperationalStatusVariant,
   seasonTeamStatusLabel,
   seasonTeamStatusVariant,
   type SeasonTeamListItem,
@@ -43,10 +45,16 @@ export function SeasonTeamCard({
             </p>
           )}
         </div>
-        <StatusBadge
-          label={seasonTeamStatusLabel(seasonTeam.registration_status)}
-          variant={seasonTeamStatusVariant(seasonTeam.registration_status)}
-        />
+        <div className="flex flex-wrap gap-2">
+          <StatusBadge
+            label={seasonTeamStatusLabel(seasonTeam.registration_status)}
+            variant={seasonTeamStatusVariant(seasonTeam.registration_status)}
+          />
+          <StatusBadge
+            label={seasonTeamOperationalStatusLabel(seasonTeam.status ?? "activo")}
+            variant={seasonTeamOperationalStatusVariant(seasonTeam.status ?? "activo")}
+          />
+        </div>
       </div>
       <p className="text-sm text-text-secondary">{playerLabel}</p>
       <p className="text-sm text-muted">

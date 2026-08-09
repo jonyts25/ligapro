@@ -7,13 +7,18 @@ import { SubmitButton } from "@/components/auth/SubmitButton";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import {
   setPlatformBillingStatusAction,
+  setOrganizationPlanTierAction,
   initialPlatformBillingActionState,
+  initialPlatformPlanTierActionState,
 } from "@/lib/platform-billing/actions";
 import {
   PLATFORM_BILLING_STATUSES,
+  PLAN_TIER_OPTIONS,
   billingStatusLabel,
+  planTierLabel,
   type PlatformBillingRow,
   type PlatformBillingStatus,
+  type PlanTier,
 } from "@/lib/platform-billing/types";
 import { cn } from "@/lib/utils/cn";
 
@@ -147,6 +152,29 @@ export function PlatformBillingPanel({
     setPlatformBillingStatusAction,
     initialPlatformBillingActionState
   );
+  const [tierState, tierFormAction, tierPending] = useActionState(
+    setOrganizationPlanTierAction,
+    initialPlatformPlanTierActionState
+  );
+
+  const organizations = useMemo(() => {
+    const map = new Map<
+      string,
+      { organizationId: string; organizationName: string; planTier: PlanTier }
+    >();
+    for (const row of rows) {
+      if (!map.has(row.organizationId)) {
+        map.set(row.organizationId, {
+          organizationId: row.organizationId,
+          organizationName: row.organizationName,
+          planTier: row.planTier,
+        });
+      }
+    }
+    return [...map.values()].sort((a, b) =>
+      a.organizationName.localeCompare(b.organizationName)
+    );
+  }, [rows]);
 
   const filtered = useMemo(() => {
     const needle = search.trim().toLowerCase();
@@ -164,6 +192,71 @@ export function PlatformBillingPanel({
 
   return (
     <div className="space-y-6">
+      <Card className="space-y-4 p-4">
+        <h2 className="text-base font-semibold text-text-primary">
+          Plan por organización
+        </h2>
+        <p className="text-sm text-text-secondary">
+          Básico o Premium controla features como resumen de jornada con IA y
+          patrocinios (cuando existan).
+        </p>
+        {tierState.message && (
+          <p
+            className={cn(
+              "rounded-xl border px-3 py-2 text-sm",
+              tierState.ok
+                ? "border-success/40 bg-success/10 text-success"
+                : "border-danger/40 bg-danger/10 text-danger"
+            )}
+          >
+            {tierState.message}
+          </p>
+        )}
+        <div className="overflow-x-auto rounded-xl border border-border">
+          <table className="w-full min-w-[24rem] text-left text-sm">
+            <thead className="bg-surface-elevated text-xs uppercase tracking-wide text-muted">
+              <tr>
+                <th className="px-3 py-2 font-medium">Organización</th>
+                <th className="px-3 py-2 font-medium">Plan actual</th>
+                <th className="px-3 py-2 font-medium">Cambiar</th>
+              </tr>
+            </thead>
+            <tbody>
+              {organizations.map((org) => (
+                <tr key={org.organizationId} className="border-t border-border">
+                  <td className="px-3 py-3 font-medium">{org.organizationName}</td>
+                  <td className="px-3 py-3">{planTierLabel(org.planTier)}</td>
+                  <td className="px-3 py-3">
+                    <form action={tierFormAction} className="flex flex-wrap gap-2">
+                      <input
+                        type="hidden"
+                        name="organizationId"
+                        value={org.organizationId}
+                      />
+                      <select
+                        name="planTier"
+                        defaultValue={org.planTier}
+                        disabled={tierPending}
+                        className="min-h-11 rounded-xl border border-border bg-background px-2 text-sm"
+                      >
+                        {PLAN_TIER_OPTIONS.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
+                      <SubmitButton pending={tierPending} className="w-auto px-3">
+                        Guardar
+                      </SubmitButton>
+                    </form>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+
       <div className="flex flex-wrap gap-2">
         {(
           [

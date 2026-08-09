@@ -3,6 +3,9 @@ import { SectionHeader } from "@/components/ui/SectionHeader";
 import { MatchList } from "@/components/fixtures/MatchList";
 import type { FixtureRoundGroup } from "@/lib/fixtures/types";
 
+import { JornadaSummaryPanel } from "@/components/jornada-summaries/JornadaSummaryPanel";
+import type { JornadaSummaryRecord } from "@/lib/jornada-summaries/types";
+
 type FixtureRoundCardProps = {
   round: FixtureRoundGroup;
   organizationId: string;
@@ -10,6 +13,9 @@ type FixtureRoundCardProps = {
   seasonId: string;
   canManage?: boolean;
   canCapture?: boolean;
+  hasPremium?: boolean;
+  jornadaSummary?: JornadaSummaryRecord | null;
+  jornadaJob?: { status: string; error_message: string | null } | null;
 };
 
 export function FixtureRoundCard({
@@ -19,7 +25,17 @@ export function FixtureRoundCard({
   seasonId,
   canManage = false,
   canCapture = false,
+  hasPremium = false,
+  jornadaSummary = null,
+  jornadaJob = null,
 }: FixtureRoundCardProps) {
+  const hasFinishedMatches = round.matches.some(
+    (m) =>
+      (m.status === "finished" || m.status === "walkover") &&
+      m.homeScore != null &&
+      m.awayScore != null
+  );
+
   return (
     <Card className="space-y-4">
       <SectionHeader
@@ -42,6 +58,28 @@ export function FixtureRoundCard({
         seasonId={seasonId}
         canManage={canManage}
         canCapture={canCapture}
+      />
+      <JornadaSummaryPanel
+        organizationId={organizationId}
+        competitionId={competitionId}
+        seasonId={seasonId}
+        roundNumber={round.roundNumber}
+        hasPremium={hasPremium}
+        canManage={canManage}
+        summary={jornadaSummary}
+        job={
+          jornadaJob
+            ? {
+                status: jornadaJob.status as
+                  | "pending"
+                  | "processing"
+                  | "done"
+                  | "error",
+                error_message: jornadaJob.error_message,
+              }
+            : null
+        }
+        hasFinishedMatches={hasFinishedMatches}
       />
     </Card>
   );

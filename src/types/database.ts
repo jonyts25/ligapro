@@ -609,6 +609,54 @@ export type Database = {
           },
         ]
       }
+      jornada_summaries: {
+        Row: {
+          content: Json
+          created_at: string
+          id: string
+          is_published: boolean
+          organization_id: string
+          round_label: string
+          season_id: string
+          updated_at: string
+        }
+        Insert: {
+          content?: Json
+          created_at?: string
+          id?: string
+          is_published?: boolean
+          organization_id: string
+          round_label: string
+          season_id: string
+          updated_at?: string
+        }
+        Update: {
+          content?: Json
+          created_at?: string
+          id?: string
+          is_published?: boolean
+          organization_id?: string
+          round_label?: string
+          season_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jornada_summaries_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jornada_summaries_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       match_chronicles: {
         Row: {
           ai_job_id: string | null
@@ -1118,6 +1166,9 @@ export type Database = {
           sequence_in_round: number | null
           status: string
           updated_at: string
+          void_reason: string | null
+          voided_at: string | null
+          voided_by_profile_id: string | null
         }
         Insert: {
           away_score?: number | null
@@ -1139,6 +1190,9 @@ export type Database = {
           sequence_in_round?: number | null
           status?: string
           updated_at?: string
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by_profile_id?: string | null
         }
         Update: {
           away_score?: number | null
@@ -1160,6 +1214,9 @@ export type Database = {
           sequence_in_round?: number | null
           status?: string
           updated_at?: string
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by_profile_id?: string | null
         }
         Relationships: [
           {
@@ -1379,6 +1436,7 @@ export type Database = {
           id: string
           logo_path: string | null
           name: string
+          plan_tier: string
           slug: string
           sold_by_platform_staff_id: string | null
           updated_at: string
@@ -1390,6 +1448,7 @@ export type Database = {
           id?: string
           logo_path?: string | null
           name: string
+          plan_tier?: string
           slug: string
           sold_by_platform_staff_id?: string | null
           updated_at?: string
@@ -1401,6 +1460,7 @@ export type Database = {
           id?: string
           logo_path?: string | null
           name?: string
+          plan_tier?: string
           slug?: string
           sold_by_platform_staff_id?: string | null
           updated_at?: string
@@ -2109,6 +2169,7 @@ export type Database = {
         Row: {
           allow_draws: boolean
           created_at: string
+          fecha_limite_inscripcion: string | null
           groups_advance_per_group: number | null
           id: string
           match_duration_minutes: number
@@ -2128,6 +2189,9 @@ export type Database = {
           suspension_matches: number
           transfer_lock_days: number
           updated_at: string
+          walkover_en_retiro: boolean
+          walkover_retiro_loser_goals: number
+          walkover_retiro_winner_goals: number
           yellow_card_limit: number
         }
         Insert: {
@@ -2339,6 +2403,8 @@ export type Database = {
           roster_locked_by_captain: boolean
           season_group_id: string | null
           season_id: string
+          status: string
+          status_effective_at: string
           team_id: string
           updated_at: string
         }
@@ -2352,6 +2418,8 @@ export type Database = {
           roster_locked_by_captain?: boolean
           season_group_id?: string | null
           season_id: string
+          status?: string
+          status_effective_at?: string
           team_id: string
           updated_at?: string
         }
@@ -2927,6 +2995,8 @@ export type Database = {
           roster_locked_by_captain: boolean
           season_group_id: string | null
           season_id: string
+          status: string
+          status_effective_at: string
           team_id: string
           updated_at: string
         }[]
@@ -2942,6 +3012,14 @@ export type Database = {
       configure_knockout_round: {
         Args: { p_is_two_legs: boolean; p_round_id: string }
         Returns: undefined
+      }
+      bulk_create_players_and_add_to_roster: {
+        Args: { p_names: string[]; p_season_team_id: string }
+        Returns: number
+      }
+      bulk_create_teams: {
+        Args: { p_names: string[]; p_organization_id: string }
+        Returns: number
       }
       copy_season_teams: {
         Args: {
@@ -3077,7 +3155,9 @@ export type Database = {
         Returns: {
           enrolled_team_count: number
           has_fixture: boolean
+          organization_id: string
           organization_name: string
+          plan_tier: string
           platform_billing_status: string
           season_id: string
           season_name: string
@@ -3509,8 +3589,16 @@ export type Database = {
         }
         Returns: string
       }
+      organization_has_premium: {
+        Args: { p_organization_id: string }
+        Returns: boolean
+      }
       set_organization_logo: {
         Args: { p_logo_path: string; p_organization_id: string }
+        Returns: undefined
+      }
+      set_organization_plan_tier: {
+        Args: { p_organization_id: string; p_plan_tier: string }
         Returns: undefined
       }
       set_platform_billing_status: {
@@ -3528,6 +3616,28 @@ export type Database = {
           p_volume_multiplier_6_plus: number
         }
         Returns: undefined
+      }
+      set_season_team_status: {
+        Args: {
+          p_reason: string
+          p_season_team_id: string
+          p_status: string
+        }
+        Returns: {
+          created_at: string
+          display_name: string | null
+          group_name: string | null
+          id: string
+          organization_id: string
+          registration_status: string
+          roster_locked_by_captain: boolean
+          season_group_id: string | null
+          season_id: string
+          status: string
+          status_effective_at: string
+          team_id: string
+          updated_at: string
+        }
       }
       set_player_payment_mark: {
         Args: {
@@ -3679,6 +3789,7 @@ export type Database = {
         Args: {
           p_allow_draws: boolean
           p_ends_on: string
+          p_fecha_limite_inscripcion?: string
           p_format_type: string
           p_match_duration_minutes: number
           p_minimum_rest_minutes: number
@@ -3690,9 +3801,35 @@ export type Database = {
           p_starts_on: string
           p_suspension_matches: number
           p_visibility: string
+          p_walkover_en_retiro?: boolean
+          p_walkover_retiro_loser_goals?: number
+          p_walkover_retiro_winner_goals?: number
           p_yellow_card_limit: number
         }
         Returns: undefined
+      }
+      void_match: {
+        Args: {
+          p_away_score?: number
+          p_home_score?: number
+          p_match_id: string
+          p_outcome_status?: string
+          p_reason: string
+        }
+        Returns: {
+          away_score: number | null
+          away_season_team_id: string
+          created_at: string
+          home_score: number | null
+          home_season_team_id: string
+          id: string
+          organization_id: string
+          season_id: string
+          status: string
+          void_reason: string | null
+          voided_at: string | null
+          voided_by_profile_id: string | null
+        }
       }
       void_match_event: {
         Args: { p_event_id: string; p_reason: string }

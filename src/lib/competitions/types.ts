@@ -49,6 +49,10 @@ export type SeasonRulesRecord = {
   yellow_card_limit: number;
   suspension_matches: number;
   groups_advance_per_group: number | null;
+  walkover_en_retiro: boolean;
+  walkover_retiro_winner_goals: number;
+  walkover_retiro_loser_goals: number;
+  fecha_limite_inscripcion: string | null;
 };
 
 export type SeasonListItem = SeasonRecord & {

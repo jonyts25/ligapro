@@ -12,6 +12,12 @@ import { SeasonFixtureSummary } from "@/components/fixtures/SeasonFixtureSummary
 import { SeasonStandingsNav } from "@/components/standings/SeasonStandingsNav";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { cn } from "@/lib/utils/cn";
+import { tieneAccesoPremium } from "@/lib/organizations/premium-access";
+import {
+  getJornadaSummariesForSeason,
+  getLatestJornadaSummaryJob,
+  jornadaRoundLabel,
+} from "@/lib/jornada-summaries/queries";
 
 type PageProps = {
   params: Promise<{
@@ -37,9 +43,11 @@ export default async function SeasonCalendarPage({
     membership.role === "organization_owner" ||
     membership.role === "organization_admin";
 
-  const [season, data] = await Promise.all([
+  const [season, data, hasPremium, jornadaSummaries] = await Promise.all([
     getSeasonDetails(organizationId, competitionId, seasonId),
     getSeasonMatchesGroupedByRound(organizationId, competitionId, seasonId),
+    tieneAccesoPremium(organizationId),
+    getJornadaSummariesForSeason(organizationId, seasonId),
   ]);
   if (!season || !data) notFound();
 
@@ -141,17 +149,32 @@ export default async function SeasonCalendarPage({
           </div>
 
           <div className="space-y-4">
-            {rounds.map((round) => (
-              <FixtureRoundCard
-                key={round.roundNumber}
-                round={round}
-                organizationId={organizationId}
-                competitionId={competitionId}
-                seasonId={seasonId}
-                canManage={canManageActive}
-                canCapture={canCapture}
-              />
-            ))}
+            {await Promise.all(
+              rounds.map(async (round) => {
+                const roundLabel = jornadaRoundLabel(round.roundNumber);
+                const jornadaJob = hasPremium
+                  ? await getLatestJornadaSummaryJob(
+                      organizationId,
+                      seasonId,
+                      roundLabel
+                    )
+                  : null;
+                return (
+                  <FixtureRoundCard
+                    key={round.roundNumber}
+                    round={round}
+                    organizationId={organizationId}
+                    competitionId={competitionId}
+                    seasonId={seasonId}
+                    canManage={canManageActive}
+                    canCapture={canCapture}
+                    hasPremium={hasPremium}
+                    jornadaSummary={jornadaSummaries.get(roundLabel) ?? null}
+                    jornadaJob={jornadaJob}
+                  />
+                );
+              })
+            )}
           </div>
         </>
       )}

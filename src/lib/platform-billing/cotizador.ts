@@ -1,87 +1,157 @@
-export type DurationBand = "hasta_3" | "4_6" | "7_12";
+export type LiguillaClasificados = "ninguna" | "top4" | "top8" | "top16";
 
-export type CotizadorLine = {
-  id: string;
-  teamCount: number;
-  durationBand: DurationBand;
+export type CotizadorInput = {
+  equipos: number;
+  vueltas: 1 | 2;
+  liguilla: LiguillaClasificados;
+  partidoTercerLugar: boolean;
+  duracionMeses: number;
+  costoCanchaPorPartido: number;
+  torneosActivosMes: number;
 };
 
-export type CotizadorParams = {
-  basePricePerTeam: number;
-  durationMultiplierHasta3: number;
-  durationMultiplier4To6: number;
-  durationMultiplier7To12: number;
-  volumeMultiplier1To2: number;
-  volumeMultiplier3To5: number;
-  volumeMultiplier6Plus: number;
+export const DEFAULT_COTIZADOR_INPUT: CotizadorInput = {
+  equipos: 10,
+  vueltas: 1,
+  liguilla: "top4",
+  partidoTercerLugar: false,
+  duracionMeses: 6,
+  costoCanchaPorPartido: 300,
+  torneosActivosMes: 1,
 };
 
-export const DEFAULT_COTIZADOR_PARAMS: CotizadorParams = {
-  basePricePerTeam: 200,
-  durationMultiplierHasta3: 1.0,
-  durationMultiplier4To6: 1.6,
-  durationMultiplier7To12: 2.6,
-  volumeMultiplier1To2: 1.0,
-  volumeMultiplier3To5: 0.9,
-  volumeMultiplier6Plus: 0.8,
+export type CotizadorTier = "S" | "M" | "L" | "XL";
+
+export type CotizadorInternalBreakdown = {
+  partidosRegular: number;
+  partidosLiguilla: number;
+  partidosTotal: number;
+  partidosPorMes: number;
+  tier: CotizadorTier;
+  precioBaseMensual: number;
+  multiplicadorBandaCancha: number;
+  bandaCanchaLabel: string;
+  descuentoPortafolioPct: number;
+  descuentoPortafolioLabel: string;
 };
 
-export const DEFAULT_COTIZADOR_LINE: Omit<CotizadorLine, "id"> = {
-  teamCount: 8,
-  durationBand: "hasta_3",
+export type CotizadorQuoteResult = {
+  precioMensualFinal: number;
+  precioTemporada: number;
+  precioPorEquipoTemporada: number;
+  internal: CotizadorInternalBreakdown;
 };
 
-export function createCotizadorLine(
-  overrides: Partial<Omit<CotizadorLine, "id">> = {}
-): CotizadorLine {
+export function combinacionesRoundRobin(equipos: number): number {
+  const n = Math.max(0, Math.floor(equipos));
+  if (n < 2) return 0;
+  return (n * (n - 1)) / 2;
+}
+
+export function partidosLiguilla(
+  liguilla: LiguillaClasificados,
+  partidoTercerLugar: boolean
+): number {
+  const clasificados =
+    liguilla === "ninguna"
+      ? 0
+      : liguilla === "top4"
+        ? 4
+        : liguilla === "top8"
+          ? 8
+          : 16;
+
+  if (clasificados <= 0) return 0;
+
+  let partidos = clasificados - 1;
+  if (partidoTercerLugar && clasificados >= 4) {
+    partidos += 1;
+  }
+  return partidos;
+}
+
+export function tierFromPartidosMes(partidosMes: number): {
+  tier: CotizadorTier;
+  precioBase: number;
+} {
+  if (partidosMes <= 20) return { tier: "S", precioBase: 900 };
+  if (partidosMes <= 40) return { tier: "M", precioBase: 1400 };
+  if (partidosMes <= 70) return { tier: "L", precioBase: 2000 };
   return {
-    id: crypto.randomUUID(),
-    ...DEFAULT_COTIZADOR_LINE,
-    ...overrides,
+    tier: "XL",
+    precioBase: 2000 + (partidosMes - 70) * 20,
   };
 }
 
-export function durationMultiplier(
-  band: DurationBand,
-  params: CotizadorParams
-): number {
-  if (band === "hasta_3") return params.durationMultiplierHasta3;
-  if (band === "4_6") return params.durationMultiplier4To6;
-  return params.durationMultiplier7To12;
+export function multiplicadorBandaCancha(costo: number): {
+  mult: number;
+  label: string;
+} {
+  if (costo <= 300) return { mult: 1.0, label: "≤ $300/partido" };
+  if (costo <= 600) return { mult: 1.15, label: "$301–600/partido" };
+  return { mult: 1.3, label: "$601+/partido" };
 }
 
-export function volumeMultiplier(
-  tournamentCount: number,
-  params: CotizadorParams
-): number {
-  if (tournamentCount >= 6) return params.volumeMultiplier6Plus;
-  if (tournamentCount >= 3) return params.volumeMultiplier3To5;
-  return params.volumeMultiplier1To2;
+export function descuentoPortafolio(torneosActivos: number): {
+  pct: number;
+  label: string;
+} {
+  const n = Math.max(1, Math.floor(torneosActivos));
+  if (n <= 2) return { pct: 0, label: "1–2 torneos" };
+  if (n <= 4) return { pct: 0.08, label: "3–4 torneos" };
+  if (n <= 7) return { pct: 0.12, label: "5–7 torneos" };
+  return { pct: 0.15, label: "8–10 torneos" };
 }
 
-export function volumeBandLabel(tournamentCount: number): string {
-  if (tournamentCount >= 6) return "6+ torneos";
-  if (tournamentCount >= 3) return "3–5 torneos";
-  return "1–2 torneos";
+export function calculateCotizacion(
+  input: CotizadorInput
+): CotizadorQuoteResult | null {
+  const equipos = Math.max(0, Math.floor(input.equipos));
+  const meses = Math.max(0, Number(input.duracionMeses));
+  if (equipos < 2 || meses <= 0) return null;
+
+  const vueltas = input.vueltas === 2 ? 2 : 1;
+  const partidosRegular = combinacionesRoundRobin(equipos) * vueltas;
+  const partidosLig = partidosLiguilla(
+    input.liguilla,
+    input.partidoTercerLugar
+  );
+  const partidosTotal = partidosRegular + partidosLig;
+  const partidosPorMes = partidosTotal / meses;
+
+  const { tier, precioBase } = tierFromPartidosMes(partidosPorMes);
+  const banda = multiplicadorBandaCancha(input.costoCanchaPorPartido);
+  const portafolio = descuentoPortafolio(input.torneosActivosMes);
+
+  const precioConBanda = precioBase * banda.mult;
+  const precioMensualFinal = precioConBanda * (1 - portafolio.pct);
+  const precioTemporada = precioMensualFinal * meses;
+  const precioPorEquipoTemporada = precioTemporada / equipos;
+
+  return {
+    precioMensualFinal,
+    precioTemporada,
+    precioPorEquipoTemporada,
+    internal: {
+      partidosRegular,
+      partidosLiguilla: partidosLig,
+      partidosTotal,
+      partidosPorMes,
+      tier,
+      precioBaseMensual: precioBase,
+      multiplicadorBandaCancha: banda.mult,
+      bandaCanchaLabel: banda.label,
+      descuentoPortafolioPct: portafolio.pct,
+      descuentoPortafolioLabel: portafolio.label,
+    },
+  };
 }
 
-export function durationBandLabel(band: DurationBand): string {
-  if (band === "hasta_3") return "≤ 3 meses";
-  if (band === "4_6") return "4–6 meses";
-  return "7–12 meses";
-}
-
-/** ASCII-safe labels for PDF export (Helvetica built-in font). */
-export function durationBandLabelPdf(band: DurationBand): string {
-  if (band === "hasta_3") return "hasta 3 meses";
-  if (band === "4_6") return "4-6 meses";
-  return "7-12 meses";
-}
-
-export function volumeBandLabelPdf(tournamentCount: number): string {
-  if (tournamentCount >= 6) return "6+ torneos";
-  if (tournamentCount >= 3) return "3-5 torneos";
-  return "1-2 torneos";
+export function formatCotizadorMoney(amount: number): string {
+  return new Intl.NumberFormat("es-MX", {
+    style: "currency",
+    currency: "MXN",
+  }).format(amount);
 }
 
 const PDF_UNSAFE =
@@ -104,7 +174,6 @@ const PDF_REPLACEMENTS: Record<string, string> = {
   "\u2026": "...",
 };
 
-/** Strip/replace characters that built-in PDF fonts may not render. */
 export function sanitizePdfText(value: string): string {
   return value
     .normalize("NFKD")
@@ -121,83 +190,4 @@ export function formatQuoteDatePdf(date: Date): string {
   const m = String(date.getMonth() + 1).padStart(2, "0");
   const d = String(date.getDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;
-}
-
-export type CotizadorLineResult = {
-  lineId: string;
-  teamCount: number;
-  durationBand: DurationBand;
-  durationLabel: string;
-  durationMultiplier: number;
-  subtotal: number;
-};
-
-export type CotizadorQuoteResult = {
-  lines: CotizadorLineResult[];
-  tournamentCount: number;
-  subtotalBeforeVolume: number;
-  volumeMultiplier: number;
-  volumeBand: string;
-  volumeDiscountAmount: number;
-  finalTotal: number;
-};
-
-export function calculateLineSubtotal(
-  line: CotizadorLine,
-  params: CotizadorParams
-): CotizadorLineResult | null {
-  const teamCount = Math.max(0, Math.floor(line.teamCount));
-  if (teamCount <= 0) return null;
-
-  const durMult = durationMultiplier(line.durationBand, params);
-  return {
-    lineId: line.id,
-    teamCount,
-    durationBand: line.durationBand,
-    durationLabel: durationBandLabel(line.durationBand),
-    durationMultiplier: durMult,
-    subtotal: params.basePricePerTeam * teamCount * durMult,
-  };
-}
-
-export function calculateCotizacion(
-  lines: CotizadorLine[],
-  params: CotizadorParams
-): CotizadorQuoteResult | null {
-  const lineResults = lines
-    .map((line) => calculateLineSubtotal(line, params))
-    .filter((line): line is CotizadorLineResult => line !== null);
-
-  if (lineResults.length === 0) return null;
-
-  const subtotalBeforeVolume = lineResults.reduce(
-    (sum, line) => sum + line.subtotal,
-    0
-  );
-  const tournamentCount = lineResults.length;
-  const volMult = volumeMultiplier(tournamentCount, params);
-  const finalTotal = subtotalBeforeVolume * volMult;
-  const volumeDiscountAmount = subtotalBeforeVolume - finalTotal;
-
-  return {
-    lines: lineResults,
-    tournamentCount,
-    subtotalBeforeVolume,
-    volumeMultiplier: volMult,
-    volumeBand: volumeBandLabel(tournamentCount),
-    volumeDiscountAmount,
-    finalTotal,
-  };
-}
-
-export function formatCotizadorMoney(amount: number): string {
-  return new Intl.NumberFormat("es-MX", {
-    style: "currency",
-    currency: "MXN",
-  }).format(amount);
-}
-
-export function pricePerMonth(total: number, band: DurationBand): number {
-  const months = band === "hasta_3" ? 3 : band === "4_6" ? 6 : 12;
-  return total / months;
 }

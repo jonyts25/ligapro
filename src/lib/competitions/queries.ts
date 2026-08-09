@@ -195,7 +195,7 @@ export async function getSeasonDetails(
   const { data: rules } = await supabase
     .from("season_rules")
     .select(
-      "id, season_id, organization_id, points_win, points_draw, points_loss, allow_draws, match_duration_minutes, minimum_rest_minutes, yellow_card_limit, suspension_matches, groups_advance_per_group"
+      "id, season_id, organization_id, points_win, points_draw, points_loss, allow_draws, match_duration_minutes, minimum_rest_minutes, yellow_card_limit, suspension_matches, groups_advance_per_group, walkover_en_retiro, walkover_retiro_winner_goals, walkover_retiro_loser_goals, fecha_limite_inscripcion"
     )
     .eq("season_id", seasonId)
     .eq("organization_id", organizationId)

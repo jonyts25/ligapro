@@ -1,8 +1,12 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
-import { createTeamAction, updateTeamAction } from "@/lib/teams/actions";
+import {
+  bulkCreateTeamsAction,
+  createTeamAction,
+  updateTeamAction,
+} from "@/lib/teams/actions";
 import {
   initialTeamsActionState,
   type TeamRecord,
@@ -24,6 +28,60 @@ export function TeamForm({ organizationId, mode, team }: TeamFormProps) {
     initialTeamsActionState
   );
   const name = String(state.values?.name ?? team?.name ?? "");
+  const [bulkMode, setBulkMode] = useState(false);
+  const [bulkState, bulkAction, bulkPending] = useActionState(
+    bulkCreateTeamsAction,
+    initialTeamsActionState
+  );
+
+  if (mode === "create" && bulkMode) {
+    return (
+      <Card>
+        {(bulkState.message || state.message) && (
+          <p
+            className={`mb-4 rounded-xl border px-3 py-2 text-sm ${
+              (bulkState.ok || state.ok)
+                ? "border-success/40 bg-success/10 text-success"
+                : "border-danger/40 bg-danger/10 text-danger"
+            }`}
+          >
+            {bulkState.message ?? state.message}
+          </p>
+        )}
+        <form action={bulkAction} className="space-y-4">
+          <input type="hidden" name="organizationId" value={organizationId} />
+          <div className="space-y-1.5">
+            <label htmlFor="bulkNames" className="block text-sm font-medium">
+              Pegar lista de equipos
+            </label>
+            <textarea
+              id="bulkNames"
+              name="bulkNames"
+              rows={8}
+              disabled={bulkPending}
+              placeholder={"Los Halcones FC\nAtlas Amateur\n..."}
+              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+            />
+            <p className="text-xs text-text-secondary">
+              Una línea por equipo. Ideal para pegar desde Excel.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <SubmitButton pending={bulkPending} className="w-auto">
+              Crear equipos
+            </SubmitButton>
+            <button
+              type="button"
+              onClick={() => setBulkMode(false)}
+              className="inline-flex min-h-11 items-center rounded-xl border border-border px-4 text-sm font-medium"
+            >
+              Modo individual
+            </button>
+          </div>
+        </form>
+      </Card>
+    );
+  }
 
   return (
     <Card>
@@ -77,6 +135,15 @@ export function TeamForm({ organizationId, mode, team }: TeamFormProps) {
           <SubmitButton pending={pending} className="w-auto">
             {mode === "create" ? "Crear equipo" : "Guardar cambios"}
           </SubmitButton>
+          {mode === "create" && (
+            <button
+              type="button"
+              onClick={() => setBulkMode(true)}
+              className="inline-flex min-h-11 items-center rounded-xl border border-border px-4 text-sm font-medium text-text-secondary"
+            >
+              Pegar lista
+            </button>
+          )}
           <Link
             href={
               mode === "edit" && team

@@ -1,25 +1,20 @@
 import { jsPDF } from "jspdf";
-import autoTable from "jspdf-autotable";
 import { PLATFORM_NAME } from "@/lib/platform/config";
 import {
-  durationBandLabelPdf,
   formatCotizadorMoneyPdf,
   formatQuoteDatePdf,
   sanitizePdfText,
-  volumeBandLabelPdf,
-  type CotizadorParams,
   type CotizadorQuoteResult,
 } from "@/lib/platform-billing/cotizador";
 
 export type CotizadorPdfInput = {
   quote: CotizadorQuoteResult;
-  params: CotizadorParams;
   clientName?: string;
   quotedAt?: Date;
 };
 
 export function buildCotizadorPdf(input: CotizadorPdfInput): Uint8Array {
-  const { quote, params, clientName } = input;
+  const { quote, clientName } = input;
   const quotedAt = input.quotedAt ?? new Date();
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
@@ -45,84 +40,59 @@ export function buildCotizadorPdf(input: CotizadorPdfInput): Uint8Array {
   }
 
   doc.setTextColor(0);
+  y += 12;
 
-  autoTable(doc, {
-    startY: y + 6,
-    head: [["Torneo", "Equipos", "Duracion", "Mult. dur.", "Subtotal"]],
-    body: quote.lines.map((line, index) => [
-      `#${index + 1}`,
-      String(line.teamCount),
-      durationBandLabelPdf(line.durationBand),
-      `x${line.durationMultiplier.toFixed(2)}`,
-      formatCotizadorMoneyPdf(line.subtotal),
-    ]),
-    styles: { fontSize: 9, cellPadding: 2.5 },
-    headStyles: { fillColor: [20, 33, 52] },
-    theme: "grid",
-  });
-
-  const tableEnd = (doc as jsPDF & { lastAutoTable?: { finalY: number } })
-    .lastAutoTable?.finalY;
-  y = (tableEnd ?? y + 40) + 10;
-
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
-
-  const volumeBandPdf = volumeBandLabelPdf(quote.tournamentCount);
-  const summaryRows: Array<[string, string]> = [
-    [
-      "Total antes de descuento por volumen",
-      formatCotizadorMoneyPdf(quote.subtotalBeforeVolume),
-    ],
-    [
-      `Descuento por volumen (${volumeBandPdf}, x${quote.volumeMultiplier.toFixed(2)})`,
-      quote.volumeDiscountAmount > 0
-        ? `-${formatCotizadorMoneyPdf(quote.volumeDiscountAmount)}`
-        : formatCotizadorMoneyPdf(0),
-    ],
-  ];
-
-  for (const [label, value] of summaryRows) {
-    doc.text(sanitizePdfText(label), 14, y);
-    doc.text(value, 196, y, { align: "right" });
-    y += 6;
-  }
-
-  y += 4;
+  doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(12);
-  doc.text("Total final", 14, y);
-  doc.text(formatCotizadorMoneyPdf(quote.finalTotal), 196, y, { align: "right" });
+  doc.text("Precios para el cliente", 14, y);
+  y += 7;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.text(
+    `Mensual: ${formatCotizadorMoneyPdf(quote.precioMensualFinal)}`,
+    14,
+    y
+  );
+  y += 5;
+  doc.text(
+    `Temporada: ${formatCotizadorMoneyPdf(quote.precioTemporada)}`,
+    14,
+    y
+  );
+  y += 5;
+  doc.text(
+    `Por equipo (temporada): ${formatCotizadorMoneyPdf(quote.precioPorEquipoTemporada)}`,
+    14,
+    y
+  );
 
   y += 10;
+  doc.setFont("helvetica", "bold");
+  doc.text("Desglose interno (staff)", 14, y);
+  y += 7;
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
-  doc.setTextColor(100);
-  doc.text(
-    sanitizePdfText(
-      `Precio base por equipo: ${formatCotizadorMoneyPdf(params.basePricePerTeam)}. Cotizacion hipotetica generada en ${PLATFORM_NAME}.`
-    ),
-    14,
-    y,
-    { maxWidth: 182 }
-  );
+  const internal = quote.internal;
+  const lines = [
+    `Partidos/mes: ${internal.partidosPorMes.toFixed(2)}`,
+    `Tier: ${internal.tier}`,
+    `Banda cancha: x${internal.multiplicadorBandaCancha.toFixed(2)}`,
+    `Descuento portafolio: ${(internal.descuentoPortafolioPct * 100).toFixed(0)}%`,
+  ];
+  for (const line of lines) {
+    doc.text(sanitizePdfText(line), 14, y);
+    y += 5;
+  }
 
   return new Uint8Array(doc.output("arraybuffer"));
 }
 
 export function downloadCotizadorPdf(input: CotizadorPdfInput): void {
   const bytes = buildCotizadorPdf(input);
-  const blob = new Blob([bytes as BlobPart], { type: "application/pdf" });
+  const blob = new Blob([Buffer.from(bytes)]);
   const url = URL.createObjectURL(blob);
-  const dateSlug = formatQuoteDatePdf(input.quotedAt ?? new Date());
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = `cotizacion-${dateSlug}.pdf`;
+  anchor.download = `cotizacion-${formatQuoteDatePdf(input.quotedAt ?? new Date())}.pdf`;
   anchor.click();
   URL.revokeObjectURL(url);
-}
-
-export function extractCotizadorPdfText(input: CotizadorPdfInput): string {
-  const bytes = buildCotizadorPdf(input);
-  return new TextDecoder("latin1").decode(bytes);
 }

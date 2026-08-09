@@ -50,6 +50,7 @@ export function SeasonForm({
   const [formatType, setFormatType] = useState<string>(
     String(v?.formatType ?? season?.format_type ?? "round_robin")
   );
+  const [advancedOpen, setAdvancedOpen] = useState(mode === "edit");
 
   return (
     <form action={formAction} className="space-y-6">
@@ -202,10 +203,23 @@ export function SeasonForm({
       </Card>
 
       <Card className="space-y-4">
-        <SectionHeader
-          title="Reglas deportivas"
-          description="Puntos, disciplina y duración. Se guarda una sola configuración por temporada."
-        />
+        <button
+          type="button"
+          onClick={() => setAdvancedOpen((open) => !open)}
+          className="flex w-full items-center justify-between gap-3 text-left"
+          aria-expanded={advancedOpen}
+        >
+          <SectionHeader
+            title="Configuración avanzada"
+            description="Puntos, disciplina, duración e inscripciones. Valores estándar precargados."
+          />
+          <span className="shrink-0 text-sm font-medium text-brand">
+            {advancedOpen ? "Ocultar" : "Mostrar"}
+          </span>
+        </button>
+
+        {advancedOpen && (
+          <div className="space-y-4 border-t border-border pt-4">
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="space-y-1.5">
             <label htmlFor="pointsWin" className="block text-sm font-medium">
@@ -346,6 +360,88 @@ export function SeasonForm({
             <FieldError message={state.fieldErrors?.suspensionMatches} />
           </div>
         </div>
+
+        {mode === "edit" && (
+          <>
+            <label className="flex items-center gap-3 text-sm text-text-secondary">
+              <input
+                type="checkbox"
+                name="walkoverEnRetiro"
+                disabled={pending}
+                defaultChecked={Boolean(
+                  v?.walkoverEnRetiro ?? rules?.walkover_en_retiro ?? false
+                )}
+              />
+              Walkover al retirarse un equipo (victoria al rival)
+            </label>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="walkoverRetiroWinnerGoals"
+                  className="block text-sm font-medium"
+                >
+                  Goles walkover (ganador)
+                </label>
+                <input
+                  id="walkoverRetiroWinnerGoals"
+                  name="walkoverRetiroWinnerGoals"
+                  type="number"
+                  min={0}
+                  disabled={pending}
+                  defaultValue={String(
+                    v?.walkoverRetiroWinnerGoals ??
+                      rules?.walkover_retiro_winner_goals ??
+                      3
+                  )}
+                  className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="walkoverRetiroLoserGoals"
+                  className="block text-sm font-medium"
+                >
+                  Goles walkover (perdedor)
+                </label>
+                <input
+                  id="walkoverRetiroLoserGoals"
+                  name="walkoverRetiroLoserGoals"
+                  type="number"
+                  min={0}
+                  disabled={pending}
+                  defaultValue={String(
+                    v?.walkoverRetiroLoserGoals ??
+                      rules?.walkover_retiro_loser_goals ??
+                      0
+                  )}
+                  className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="fechaLimiteInscripcion"
+                  className="block text-sm font-medium"
+                >
+                  Fecha límite de inscripción
+                </label>
+                <input
+                  id="fechaLimiteInscripcion"
+                  name="fechaLimiteInscripcion"
+                  type="date"
+                  disabled={pending}
+                  defaultValue={String(
+                    v?.fechaLimiteInscripcion ??
+                      rules?.fecha_limite_inscripcion ??
+                      ""
+                  )}
+                  className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
+                />
+              </div>
+            </div>
+          </>
+        )}
+          </div>
+        )}
       </Card>
 
       <div className="flex flex-wrap gap-3">
