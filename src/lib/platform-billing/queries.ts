@@ -1,5 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
-import type { PlatformBillingRow } from "@/lib/platform-billing/types";
+import type {
+  PlatformBillingRow,
+  PlatformOrganizationBillingRow,
+} from "@/lib/platform-billing/types";
 import {
   DEFAULT_COTIZADOR_PARAMS,
   type CotizadorParams,
@@ -19,6 +22,13 @@ type OverviewRpcRow = {
   platform_billing_status: string;
   enrolled_team_count: number;
   has_fixture: boolean;
+};
+
+type OrgBillingRpcRow = {
+  organization_id: string;
+  organization_name: string;
+  plan_tier: string;
+  active_season_count: number;
 };
 
 type PricingDefaultsRpcRow = {
@@ -64,6 +74,26 @@ export async function getPlatformBillingOverview(): Promise<
   }));
 }
 
+export async function getPlatformOrganizationsBilling(): Promise<
+  PlatformOrganizationBillingRow[]
+> {
+  const supabase = await createClient();
+  const { data, error } = await (supabase as unknown as UntypedRpc).rpc(
+    "get_platform_organizations_billing"
+  );
+  if (error) {
+    throw new Error(error.message);
+  }
+  const rows = (data ?? []) as OrgBillingRpcRow[];
+  return rows.map((row) => ({
+    organizationId: row.organization_id,
+    organizationName: row.organization_name,
+    planTier: row.plan_tier === "premium" ? "premium" : "basico",
+    activeSeasonCount: Number(row.active_season_count),
+  }));
+}
+
+/** @deprecated Cotizador v2 uses fixed tiers in code; kept for legacy RPC tests. */
 export async function getPlatformPricingDefaults(): Promise<CotizadorParams> {
   const supabase = await createClient();
   const { data, error } = await (supabase as unknown as UntypedRpc).rpc(

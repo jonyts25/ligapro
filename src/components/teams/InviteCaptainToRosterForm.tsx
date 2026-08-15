@@ -80,8 +80,11 @@ export function InviteCaptainToRosterForm({
         <div className="space-y-1.5">
           <label htmlFor={`invite-phone-${rosterId}`} className="block text-sm">
             Teléfono para WhatsApp{" "}
-            <span className="text-muted">(opcional, no se guarda)</span>
+            <span className="text-muted">(opcional)</span>
           </label>
+          <p className="text-xs text-muted">
+            Se guarda en el perfil del jugador para poder contactarlo después.
+          </p>
           <input
             id={`invite-phone-${rosterId}`}
             name="phone"

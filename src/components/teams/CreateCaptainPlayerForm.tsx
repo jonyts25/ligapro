@@ -89,8 +89,11 @@ export function CreateCaptainPlayerForm({
         <div className="space-y-1.5">
           <label htmlFor="capPhone" className="block text-sm font-medium">
             Teléfono para WhatsApp{" "}
-            <span className="font-normal text-muted">(opcional, no se guarda)</span>
+            <span className="font-normal text-muted">(opcional)</span>
           </label>
+          <p className="text-xs text-muted">
+            Se guarda en el perfil del jugador para poder contactarlo después.
+          </p>
           <input
             id="capPhone"
             name="phone"

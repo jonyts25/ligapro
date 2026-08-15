@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  buildAdminRosterContactMessage,
   buildCaptainWhatsAppLink,
   buildRescheduleWhatsAppMessage,
 } from "@/lib/captain/whatsapp";
@@ -9,6 +10,13 @@ describe("buildCaptainWhatsAppLink", () => {
   it("strips non-digits from phone", () => {
     const url = buildCaptainWhatsAppLink("+52 55 1234 5678", "Hola");
     assert.match(url, /^https:\/\/wa\.me\/525512345678\?text=/);
+  });
+});
+
+describe("buildAdminRosterContactMessage", () => {
+  it("includes competition name", () => {
+    const msg = buildAdminRosterContactMessage("Liga Premier");
+    assert.match(msg, /administrador de Liga Premier/);
   });
 });
 

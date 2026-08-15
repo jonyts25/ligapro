@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { humanizeCaptainRosterAddError } from "@/lib/captain/roster-errors";
+import { humanizeCaptainRosterAddError, humanizeCaptainJerseyUpdateError } from "@/lib/captain/roster-errors";
 
 describe("humanizeCaptainRosterAddError", () => {
   it("maps max roster size", () => {
@@ -22,5 +22,14 @@ describe("humanizeCaptainRosterAddError", () => {
       "Player already occupies another active roster seat in this season"
     );
     assert.match(msg, /otro equipo en esta temporada/);
+  });
+});
+
+describe("humanizeCaptainJerseyUpdateError", () => {
+  it("maps roster lock for jersey edits", () => {
+    const msg = humanizeCaptainJerseyUpdateError(
+      "Roster jersey edits by the captain are locked for this team"
+    );
+    assert.match(msg, /plantel está bloqueado/);
   });
 });

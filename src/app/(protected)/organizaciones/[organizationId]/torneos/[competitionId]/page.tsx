@@ -6,6 +6,8 @@ import { getCompetitionWithSeasons } from "@/lib/competitions/queries";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { SeasonList } from "@/components/competitions/SeasonList";
+import { CompetitionDeletePanel } from "@/components/competitions/CompetitionDeletePanel";
+import { canDeleteCompetition } from "@/lib/competitions/season-visibility";
 
 type PageProps = {
   params: Promise<{ organizationId: string; competitionId: string }>;
@@ -27,6 +29,8 @@ export default async function CompetitionDetailPage({ params }: PageProps) {
     competitionId
   );
   if (!competition) notFound();
+
+  const deletable = canManage && canDeleteCompetition(competition.seasons.length);
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -74,6 +78,14 @@ export default async function CompetitionDetailPage({ params }: PageProps) {
         seasons={competition.seasons}
         canManage={canManage}
       />
+
+      {deletable && (
+        <CompetitionDeletePanel
+          organizationId={organizationId}
+          competitionId={competitionId}
+          competitionName={competition.name}
+        />
+      )}
     </div>
   );
 }

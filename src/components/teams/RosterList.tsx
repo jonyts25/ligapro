@@ -8,6 +8,7 @@ type RosterListProps = {
   seasonId: string;
   seasonTeamId: string;
   teamLabel: string;
+  competitionName: string;
   roster: RosterListItem[];
   canManage: boolean;
 };
@@ -18,6 +19,7 @@ export function RosterList({
   seasonId,
   seasonTeamId,
   teamLabel,
+  competitionName,
   roster,
   canManage,
 }: RosterListProps) {
@@ -43,6 +45,7 @@ export function RosterList({
             seasonId={seasonId}
             seasonTeamId={seasonTeamId}
             teamLabel={teamLabel}
+            competitionName={competitionName}
             player={player}
             canManage={canManage}
             hasCaptain={hasCaptain}

@@ -12,7 +12,10 @@ import {
   humanizeCaptainProfileError,
   humanizeCaptainRescheduleError,
 } from "@/lib/captain/errors";
-import { humanizeCaptainRosterAddError } from "@/lib/captain/roster-errors";
+import {
+  humanizeCaptainRosterAddError,
+  humanizeCaptainJerseyUpdateError,
+} from "@/lib/captain/roster-errors";
 import type { CaptainActionState } from "@/lib/captain/types";
 
 function revalidateCaptainPaths(seasonTeamId: string, matchId?: string) {
@@ -242,6 +245,7 @@ export async function createPlayerAndAddCaptainAction(
   const seasonTeamId = String(formData.get("seasonTeamId") ?? "");
   const fullName = String(formData.get("fullName") ?? "").trim();
   const jerseyRaw = String(formData.get("jerseyNumber") ?? "");
+  const phoneRaw = String(formData.get("phone") ?? "").trim();
 
   const allowed = await hasCaptainTeamAccess(user.id, seasonTeamId);
   if (!allowed) {
@@ -271,6 +275,7 @@ export async function createPlayerAndAddCaptainAction(
     p_full_name: fullName,
     p_jersey_number: jersey.value ?? undefined,
     p_registration_status: "active",
+    p_phone: phoneRaw || null,
   });
 
   if (error) {
@@ -284,5 +289,48 @@ export async function createPlayerAndAddCaptainAction(
   return {
     ok: true,
     message: "Jugador agregado al plantel.",
+  };
+}
+
+export async function updateOwnRosterJerseyAction(
+  _prev: CaptainActionState,
+  formData: FormData
+): Promise<CaptainActionState> {
+  const user = await requireUser();
+  const seasonTeamId = String(formData.get("seasonTeamId") ?? "");
+  const seasonTeamPlayerId = String(formData.get("seasonTeamPlayerId") ?? "");
+  const jerseyRaw = String(formData.get("jerseyNumber") ?? "");
+
+  const allowed = await hasCaptainTeamAccess(user.id, seasonTeamId);
+  if (!allowed) {
+    return { ok: false, message: "No tienes acceso a este equipo." };
+  }
+
+  const jersey = parseOptionalJersey(jerseyRaw);
+  if (jersey.error) {
+    return {
+      ok: false,
+      message: jersey.error,
+      fieldErrors: { jerseyNumber: jersey.error },
+    };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("update_captain_roster_jersey", {
+    p_season_team_player_id: seasonTeamPlayerId,
+    p_jersey_number: jersey.value,
+  });
+
+  if (error) {
+    return {
+      ok: false,
+      message: humanizeCaptainJerseyUpdateError(error.message),
+    };
+  }
+
+  revalidateCaptainPaths(seasonTeamId);
+  return {
+    ok: true,
+    message: "Dorsal actualizado.",
   };
 }

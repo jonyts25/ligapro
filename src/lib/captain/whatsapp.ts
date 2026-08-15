@@ -10,6 +10,10 @@ export function buildCaptainWhatsAppLink(
   return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
 }
 
+export function buildAdminRosterContactMessage(competitionName: string): string {
+  return `Hola, soy el administrador de ${competitionName}. Te contacto por tu participación en el torneo.`;
+}
+
 export function buildRescheduleWhatsAppMessage(params: {
   teamName: string;
   opponentName: string;

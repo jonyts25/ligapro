@@ -20,6 +20,7 @@ import { getPublicSiteUrl } from "@/lib/site-url";
 import { buildCaptainWhatsAppLink } from "@/lib/captain/whatsapp";
 import { humanizeCaptainInvitationAdminError } from "@/lib/captain/errors";
 import { PLATFORM_NAME } from "@/lib/platform/config";
+import { canConfirmTeamRegistration } from "@/lib/teams/confirm-registration";
 
 function validateName(name: string, label: string): string | null {
   const trimmed = name.trim();
@@ -85,6 +86,7 @@ async function revalidateTeamPaths(
     revalidatePath(`${base}/canchas`);
     if (opts.seasonTeamId) {
       revalidatePath(`${base}/equipos/${opts.seasonTeamId}`);
+      revalidatePath(`/mi-equipo/${opts.seasonTeamId}`);
     }
 
     const supabase = await createClient();
@@ -794,6 +796,39 @@ async function fetchPendingInvitationToken(
   return data?.token ?? null;
 }
 
+async function savePlayerPhoneForRosterEntry(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  organizationId: string,
+  seasonTeamPlayerId: string,
+  phoneRaw: string
+): Promise<string | null> {
+  const phone = phoneRaw.trim();
+  if (!phone) return null;
+
+  const { data: rosterEntry } = await supabase
+    .from("season_team_players")
+    .select("player_id")
+    .eq("id", seasonTeamPlayerId)
+    .eq("organization_id", organizationId)
+    .maybeSingle();
+
+  if (!rosterEntry?.player_id) {
+    return "No se pudo guardar el teléfono del jugador.";
+  }
+
+  const { error } = await supabase
+    .from("players")
+    .update({ phone })
+    .eq("id", rosterEntry.player_id)
+    .eq("organization_id", organizationId);
+
+  if (error) {
+    return "No se pudo guardar el teléfono del jugador.";
+  }
+
+  return null;
+}
+
 export async function createCaptainPlayerWithInvitationAction(
   _prev: TeamsActionState,
   formData: FormData
@@ -860,6 +895,13 @@ export async function createCaptainPlayerWithInvitationAction(
     };
   }
 
+  const phoneSaveError = await savePlayerPhoneForRosterEntry(
+    supabase,
+    organizationId,
+    stpId,
+    phoneRaw
+  );
+
   const token = await fetchPendingInvitationToken(supabase, stpId);
   const inviteUrl = token
     ? `${getPublicSiteUrl()}/invitacion/${token}`
@@ -877,9 +919,11 @@ export async function createCaptainPlayerWithInvitationAction(
 
   return {
     ok: true,
-    message: inviteUrl
-      ? "Capitán creado. Comparte el enlace de invitación."
-      : "Capitán creado e invitación enviada.",
+    message: phoneSaveError
+      ? `${inviteUrl ? "Capitán creado. Comparte el enlace de invitación." : "Capitán creado e invitación enviada."} ${phoneSaveError}`
+      : inviteUrl
+        ? "Capitán creado. Comparte el enlace de invitación."
+        : "Capitán creado e invitación enviada.",
     inviteUrl,
     whatsAppHref,
     values: { fullName: "", email: "", phone: "", jerseyNumber: "" },
@@ -926,6 +970,13 @@ export async function inviteCaptainToRosterAction(
     };
   }
 
+  const phoneSaveError = await savePlayerPhoneForRosterEntry(
+    supabase,
+    organizationId,
+    rosterId,
+    phoneRaw
+  );
+
   const token = await fetchPendingInvitationToken(supabase, rosterId);
   const inviteUrl = token
     ? `${getPublicSiteUrl()}/invitacion/${token}`
@@ -943,12 +994,108 @@ export async function inviteCaptainToRosterAction(
 
   return {
     ok: true,
-    message: inviteUrl
-      ? "Invitación creada. Comparte el enlace con el capitán."
-      : "Invitación enviada.",
+    message: phoneSaveError
+      ? `${inviteUrl ? "Invitación creada. Comparte el enlace con el capitán." : "Invitación enviada."} ${phoneSaveError}`
+      : inviteUrl
+        ? "Invitación creada. Comparte el enlace con el capitán."
+        : "Invitación enviada.",
     inviteUrl,
     whatsAppHref,
     values: { email: "", phone: "" },
+  };
+}
+
+export async function confirmTeamRegistrationAction(
+  _prev: TeamsActionState,
+  formData: FormData
+): Promise<TeamsActionState> {
+  const user = await requireUser();
+  const organizationId = String(formData.get("organizationId") ?? "");
+  const competitionId = String(formData.get("competitionId") ?? "");
+  const seasonId = String(formData.get("seasonId") ?? "");
+  const seasonTeamId = String(formData.get("seasonTeamId") ?? "");
+  await requireOrganizationAdmin(user.id, organizationId);
+
+  if (String(formData.get("confirmed") ?? "") !== "1") {
+    return {
+      ok: false,
+      message: "Confirma que deseas confirmar el equipo.",
+    };
+  }
+
+  const supabase = await createClient();
+
+  const { data: seasonTeam } = await supabase
+    .from("season_teams")
+    .select("id, registration_status, season_id")
+    .eq("id", seasonTeamId)
+    .eq("organization_id", organizationId)
+    .eq("season_id", seasonId)
+    .maybeSingle();
+
+  if (!seasonTeam) {
+    return { ok: false, message: "No encontramos al equipo en esta temporada." };
+  }
+
+  const [{ count: activeCount }, { data: rules }] = await Promise.all([
+    supabase
+      .from("season_team_players")
+      .select("*", { count: "exact", head: true })
+      .eq("season_team_id", seasonTeamId)
+      .eq("organization_id", organizationId)
+      .eq("registration_status", "active"),
+    supabase
+      .from("season_rules")
+      .select("max_roster_size")
+      .eq("season_id", seasonId)
+      .eq("organization_id", organizationId)
+      .maybeSingle(),
+  ]);
+
+  const validation = canConfirmTeamRegistration({
+    registrationStatus: seasonTeam.registration_status,
+    activePlayerCount: activeCount ?? 0,
+    maxRosterSize: rules?.max_roster_size ?? null,
+  });
+
+  if (!validation.ok) {
+    return { ok: false, message: validation.message };
+  }
+
+  const { error: statusError } = await supabase
+    .from("season_teams")
+    .update({ registration_status: "confirmed" })
+    .eq("id", seasonTeamId)
+    .eq("organization_id", organizationId)
+    .eq("registration_status", "registered");
+
+  if (statusError) {
+    return { ok: false, message: statusError.message };
+  }
+
+  const { error: lockError } = await supabase.rpc("set_roster_lock", {
+    p_season_team_id: seasonTeamId,
+    p_locked: true,
+  });
+
+  if (lockError) {
+    return {
+      ok: false,
+      message:
+        "El equipo quedó confirmado, pero no pudimos bloquear el plantel del capitán. Revisa el estado del equipo.",
+    };
+  }
+
+  await revalidateTeamPaths(organizationId, {
+    competitionId,
+    seasonId,
+    seasonTeamId,
+  });
+
+  return {
+    ok: true,
+    message:
+      "Equipo confirmado. El plantel del capitán quedó bloqueado para altas y cambios de dorsal.",
   };
 }
 
@@ -990,5 +1137,157 @@ export async function copySeasonTeamsAction(
   return {
     ok: true,
     message: `${copied ?? 0} equipo(s) copiado(s) a esta temporada.`,
+  };
+}
+
+export async function setSeasonTeamOperationalStatusAction(
+  _prev: TeamsActionState,
+  formData: FormData
+): Promise<TeamsActionState> {
+  const user = await requireUser();
+  const organizationId = String(formData.get("organizationId") ?? "");
+  const competitionId = String(formData.get("competitionId") ?? "");
+  const seasonId = String(formData.get("seasonId") ?? "");
+  const seasonTeamId = String(formData.get("seasonTeamId") ?? "");
+  const status = String(formData.get("status") ?? "");
+  const reason = String(formData.get("reason") ?? "").trim();
+
+  await requireOrganizationAdmin(user.id, organizationId);
+
+  if (!seasonTeamId || !reason) {
+    return { ok: false, message: "Indica el motivo del cambio de estado." };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await (supabase as unknown as {
+    rpc: (
+      fn: string,
+      args?: Record<string, unknown>
+    ) => PromiseLike<{ data: unknown; error: { message: string } | null }>;
+  }).rpc("set_season_team_status", {
+    p_season_team_id: seasonTeamId,
+    p_status: status,
+    p_reason: reason,
+  });
+
+  if (error) {
+    return { ok: false, message: error.message };
+  }
+
+  await revalidateTeamPaths(organizationId, {
+    competitionId,
+    seasonId,
+    seasonTeamId,
+  });
+
+  return { ok: true, message: "Estado del equipo actualizado." };
+}
+
+export async function createTeamsBulkAction(
+  _prev: TeamsActionState,
+  formData: FormData
+): Promise<TeamsActionState> {
+  const user = await requireUser();
+  const organizationId = String(formData.get("organizationId") ?? "");
+  const bulkList = String(formData.get("bulkList") ?? "");
+
+  await requireOrganizationAdmin(user.id, organizationId);
+
+  const names = bulkList
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  if (names.length === 0) {
+    return { ok: false, message: "Pega al menos un nombre de equipo (uno por línea)." };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await (supabase as unknown as {
+    rpc: (
+      fn: string,
+      args?: Record<string, unknown>
+    ) => PromiseLike<{ data: unknown; error: { message: string } | null }>;
+  }).rpc("create_teams_bulk", {
+    p_organization_id: organizationId,
+    p_names: names,
+  });
+
+  if (error) {
+    return { ok: false, message: error.message };
+  }
+
+  const result = data as { created_count?: number } | null;
+
+  await revalidateTeamPaths(organizationId);
+  return {
+    ok: true,
+    message: `${result?.created_count ?? names.length} equipo(s) creado(s).`,
+  };
+}
+
+export async function createPlayersBulkAction(
+  _prev: TeamsActionState,
+  formData: FormData
+): Promise<TeamsActionState> {
+  const user = await requireUser();
+  const organizationId = String(formData.get("organizationId") ?? "");
+  const competitionId = String(formData.get("competitionId") ?? "");
+  const seasonId = String(formData.get("seasonId") ?? "");
+  const seasonTeamId = String(formData.get("seasonTeamId") ?? "");
+  const bulkList = String(formData.get("bulkList") ?? "");
+
+  await requireOrganizationAdmin(user.id, organizationId);
+
+  const entries = bulkList
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const parts = line.split(/[,;\t]/).map((p) => p.trim());
+      const fullName = parts[0] ?? "";
+      const jerseyRaw = parts[1];
+      const jerseyNumber =
+        jerseyRaw && /^\d+$/.test(jerseyRaw) ? Number.parseInt(jerseyRaw, 10) : null;
+      return { full_name: fullName, jersey_number: jerseyNumber };
+    })
+    .filter((e) => e.full_name.length >= 2);
+
+  if (entries.length === 0) {
+    return {
+      ok: false,
+      message: "Pega al menos un jugador por línea (nombre o nombre,dorsal).",
+    };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await (supabase as unknown as {
+    rpc: (
+      fn: string,
+      args?: Record<string, unknown>
+    ) => PromiseLike<{ data: unknown; error: { message: string } | null }>;
+  }).rpc(
+    "create_players_and_add_to_roster_bulk",
+    {
+      p_season_team_id: seasonTeamId,
+      p_entries: entries,
+    }
+  );
+
+  if (error) {
+    return { ok: false, message: error.message };
+  }
+
+  const result = data as { created_count?: number } | null;
+
+  await revalidateTeamPaths(organizationId, {
+    competitionId,
+    seasonId,
+    seasonTeamId,
+  });
+
+  return {
+    ok: true,
+    message: `${result?.created_count ?? entries.length} jugador(es) agregado(s).`,
   };
 }

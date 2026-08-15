@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth/require-user";
 import { isPlatformStaff } from "@/lib/platform-billing/queries";
-import type { PlatformBillingStatus } from "@/lib/platform-billing/types";
+import type { PlatformBillingStatus, PlatformPlanTier } from "@/lib/platform-billing/types";
 import type { CotizadorParams } from "@/lib/platform-billing/cotizador";
 
 export type PlatformBillingActionState = {
@@ -145,4 +145,49 @@ export async function setPlatformPricingDefaultsAction(
 
   revalidatePath("/plataforma/cotizador");
   return { ok: true, message: null };
+}
+
+export async function setOrganizationPlanTierAction(
+  _prev: PlatformBillingActionState,
+  formData: FormData
+): Promise<PlatformBillingActionState> {
+  const user = await requireUser();
+  if (!(await isPlatformStaff(user.id))) {
+    return { ok: false, message: "No autorizado." };
+  }
+
+  const organizationId = String(formData.get("organizationId") ?? "");
+  const planTier = String(formData.get("planTier") ?? "") as PlatformPlanTier;
+  const confirmed = String(formData.get("confirmed") ?? "") === "1";
+
+  if (!organizationId) {
+    return { ok: false, message: "Organización no válida." };
+  }
+  if (planTier !== "basico" && planTier !== "premium") {
+    return { ok: false, message: "Tier no válido." };
+  }
+  if (!confirmed) {
+    return { ok: false, message: "Confirma el cambio antes de aplicarlo." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await (supabase as unknown as {
+    rpc: (
+      fn: string,
+      args?: Record<string, unknown>
+    ) => PromiseLike<{ error: { message: string } | null }>;
+  }).rpc("set_organization_plan_tier", {
+    p_organization_id: organizationId,
+    p_plan_tier: planTier,
+  });
+
+  if (error) {
+    return { ok: false, message: error.message };
+  }
+
+  revalidatePath("/plataforma/facturacion");
+  return {
+    ok: true,
+    message: `Plan actualizado a ${planTier === "premium" ? "Premium" : "Básico"}.`,
+  };
 }

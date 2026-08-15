@@ -6,6 +6,7 @@ import { PLATFORM_NAME } from "@/lib/platform/config";
 import { cn } from "@/lib/utils/cn";
 
 const LINKS = [
+  { href: "/plataforma", label: "Inicio" },
   { href: "/plataforma/facturacion", label: "Facturación" },
   { href: "/plataforma/cotizador", label: "Cotizador" },
   { href: "/plataforma/finanzas", label: "Finanzas" },
@@ -21,7 +22,10 @@ export function PlatformPlataformaNav() {
       className="flex flex-wrap gap-2"
     >
       {LINKS.map(({ href, label }) => {
-        const active = pathname === href;
+        const active =
+          href === "/plataforma"
+            ? pathname === href
+            : pathname === href || pathname.startsWith(`${href}/`);
         return (
           <Link
             key={href}
