@@ -8,6 +8,8 @@ import {
 } from "@/lib/teams/queries";
 import {
   displaySeasonTeamName,
+  seasonTeamOperationalStatusLabel,
+  seasonTeamOperationalStatusVariant,
   seasonTeamStatusLabel,
   seasonTeamStatusVariant,
 } from "@/lib/teams/types";
@@ -19,6 +21,7 @@ import { ConfirmSeasonTeamPanel } from "@/components/teams/ConfirmSeasonTeamPane
 import { RosterList } from "@/components/teams/RosterList";
 import { AddRosterPlayerForm } from "@/components/teams/AddRosterPlayerForm";
 import { CreateCaptainPlayerForm } from "@/components/teams/CreateCaptainPlayerForm";
+import { SeasonTeamOperationalStatusForm } from "@/components/teams/SeasonTeamOperationalStatusForm";
 import { RosterExportButtons } from "@/components/export/ExportButtons";
 
 type PageProps = {
@@ -73,8 +76,12 @@ export default async function SeasonTeamRosterPage({ params }: PageProps) {
 
       <Card className="flex flex-wrap items-center gap-3">
         <StatusBadge
-          label={seasonTeamStatusLabel(detail.registration_status)}
+          label={`Inscripción: ${seasonTeamStatusLabel(detail.registration_status)}`}
           variant={seasonTeamStatusVariant(detail.registration_status)}
+        />
+        <StatusBadge
+          label={`Operativo: ${seasonTeamOperationalStatusLabel(detail.status)}`}
+          variant={seasonTeamOperationalStatusVariant(detail.status)}
         />
         {detail.group_name && (
           <span className="text-sm text-muted">Grupo: {detail.group_name}</span>
@@ -101,6 +108,16 @@ export default async function SeasonTeamRosterPage({ params }: PageProps) {
         seasonId={seasonId}
         seasonTeamId={seasonTeamId}
       />
+
+      {canManage && (
+        <SeasonTeamOperationalStatusForm
+          organizationId={organizationId}
+          competitionId={competitionId}
+          seasonId={seasonId}
+          seasonTeamId={seasonTeamId}
+          currentStatus={detail.status}
+        />
+      )}
 
       <RosterList
         organizationId={organizationId}

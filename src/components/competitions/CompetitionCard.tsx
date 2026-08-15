@@ -4,9 +4,9 @@ import { Card } from "@/components/ui/Card";
 import {
   formatLabel,
   visibilityBadgeVariant,
-  visibilityLabel,
   type CompetitionListItem,
 } from "@/lib/competitions/types";
+import { displaySeasonVisibilityLabel } from "@/lib/competitions/season-visibility";
 
 type CompetitionCardProps = {
   organizationId: string;
@@ -39,7 +39,7 @@ export function CompetitionCard({
           </p>
           <div className="flex flex-wrap gap-2">
             <StatusBadge
-              label={visibilityLabel(competition.latestSeason.visibility)}
+              label={displaySeasonVisibilityLabel(competition.latestSeason.visibility)}
               variant={visibilityBadgeVariant(competition.latestSeason.visibility)}
             />
             <span className="text-xs text-muted">

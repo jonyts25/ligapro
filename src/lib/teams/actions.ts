@@ -1088,3 +1088,155 @@ export async function copySeasonTeamsAction(
     message: `${copied ?? 0} equipo(s) copiado(s) a esta temporada.`,
   };
 }
+
+export async function setSeasonTeamOperationalStatusAction(
+  _prev: TeamsActionState,
+  formData: FormData
+): Promise<TeamsActionState> {
+  const user = await requireUser();
+  const organizationId = String(formData.get("organizationId") ?? "");
+  const competitionId = String(formData.get("competitionId") ?? "");
+  const seasonId = String(formData.get("seasonId") ?? "");
+  const seasonTeamId = String(formData.get("seasonTeamId") ?? "");
+  const status = String(formData.get("status") ?? "");
+  const reason = String(formData.get("reason") ?? "").trim();
+
+  await requireOrganizationAdmin(user.id, organizationId);
+
+  if (!seasonTeamId || !reason) {
+    return { ok: false, message: "Indica el motivo del cambio de estado." };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await (supabase as unknown as {
+    rpc: (
+      fn: string,
+      args?: Record<string, unknown>
+    ) => PromiseLike<{ data: unknown; error: { message: string } | null }>;
+  }).rpc("set_season_team_status", {
+    p_season_team_id: seasonTeamId,
+    p_status: status,
+    p_reason: reason,
+  });
+
+  if (error) {
+    return { ok: false, message: error.message };
+  }
+
+  await revalidateTeamPaths(organizationId, {
+    competitionId,
+    seasonId,
+    seasonTeamId,
+  });
+
+  return { ok: true, message: "Estado del equipo actualizado." };
+}
+
+export async function createTeamsBulkAction(
+  _prev: TeamsActionState,
+  formData: FormData
+): Promise<TeamsActionState> {
+  const user = await requireUser();
+  const organizationId = String(formData.get("organizationId") ?? "");
+  const bulkList = String(formData.get("bulkList") ?? "");
+
+  await requireOrganizationAdmin(user.id, organizationId);
+
+  const names = bulkList
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  if (names.length === 0) {
+    return { ok: false, message: "Pega al menos un nombre de equipo (uno por línea)." };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await (supabase as unknown as {
+    rpc: (
+      fn: string,
+      args?: Record<string, unknown>
+    ) => PromiseLike<{ data: unknown; error: { message: string } | null }>;
+  }).rpc("create_teams_bulk", {
+    p_organization_id: organizationId,
+    p_names: names,
+  });
+
+  if (error) {
+    return { ok: false, message: error.message };
+  }
+
+  const result = data as { created_count?: number } | null;
+
+  await revalidateTeamPaths(organizationId);
+  return {
+    ok: true,
+    message: `${result?.created_count ?? names.length} equipo(s) creado(s).`,
+  };
+}
+
+export async function createPlayersBulkAction(
+  _prev: TeamsActionState,
+  formData: FormData
+): Promise<TeamsActionState> {
+  const user = await requireUser();
+  const organizationId = String(formData.get("organizationId") ?? "");
+  const competitionId = String(formData.get("competitionId") ?? "");
+  const seasonId = String(formData.get("seasonId") ?? "");
+  const seasonTeamId = String(formData.get("seasonTeamId") ?? "");
+  const bulkList = String(formData.get("bulkList") ?? "");
+
+  await requireOrganizationAdmin(user.id, organizationId);
+
+  const entries = bulkList
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const parts = line.split(/[,;\t]/).map((p) => p.trim());
+      const fullName = parts[0] ?? "";
+      const jerseyRaw = parts[1];
+      const jerseyNumber =
+        jerseyRaw && /^\d+$/.test(jerseyRaw) ? Number.parseInt(jerseyRaw, 10) : null;
+      return { full_name: fullName, jersey_number: jerseyNumber };
+    })
+    .filter((e) => e.full_name.length >= 2);
+
+  if (entries.length === 0) {
+    return {
+      ok: false,
+      message: "Pega al menos un jugador por línea (nombre o nombre,dorsal).",
+    };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await (supabase as unknown as {
+    rpc: (
+      fn: string,
+      args?: Record<string, unknown>
+    ) => PromiseLike<{ data: unknown; error: { message: string } | null }>;
+  }).rpc(
+    "create_players_and_add_to_roster_bulk",
+    {
+      p_season_team_id: seasonTeamId,
+      p_entries: entries,
+    }
+  );
+
+  if (error) {
+    return { ok: false, message: error.message };
+  }
+
+  const result = data as { created_count?: number } | null;
+
+  await revalidateTeamPaths(organizationId, {
+    competitionId,
+    seasonId,
+    seasonTeamId,
+  });
+
+  return {
+    ok: true,
+    message: `${result?.created_count ?? entries.length} jugador(es) agregado(s).`,
+  };
+}

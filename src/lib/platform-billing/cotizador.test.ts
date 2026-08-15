@@ -1,109 +1,71 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
-  DEFAULT_COTIZADOR_PARAMS,
   calculateCotizacion,
-  calculateLineSubtotal,
-  durationMultiplier,
-  pricePerMonth,
-  volumeMultiplier,
-  volumeBandLabel,
+  courtCostMultiplier,
+  DEFAULT_COTIZADOR_INPUT,
+  playoffMatches,
+  portfolioDiscountRate,
+  regularMatches,
+  tierForMatchesPerMonth,
 } from "@/lib/platform-billing/cotizador";
 
-const line = (id: string, teamCount: number, durationBand: "hasta_3" | "4_6" | "7_12") => ({
-  id,
-  teamCount,
-  durationBand,
-});
-
-describe("cotizador", () => {
-  it("calculates a single line without volume discount", () => {
-    const quote = calculateCotizacion(
-      [line("a", 10, "hasta_3")],
-      DEFAULT_COTIZADOR_PARAMS
-    );
-
-    assert.ok(quote);
-    assert.equal(quote.lines.length, 1);
-    assert.equal(quote.lines[0].subtotal, 2000);
-    assert.equal(quote.subtotalBeforeVolume, 2000);
-    assert.equal(quote.volumeMultiplier, 1.0);
-    assert.equal(quote.volumeDiscountAmount, 0);
-    assert.equal(quote.finalTotal, 2000);
+describe("cotizador por partido", () => {
+  it("calculates regular matches for 8 teams single round", () => {
+    assert.equal(regularMatches(8, 1), 28);
+    assert.equal(regularMatches(8, 2), 56);
   });
 
-  it("sums line subtotals and applies volume on combined total", () => {
-    const quote = calculateCotizacion(
-      [
-        line("a", 8, "hasta_3"),
-        line("b", 12, "4_6"),
-        line("c", 6, "7_12"),
-      ],
-      DEFAULT_COTIZADOR_PARAMS
-    );
+  it("calculates playoff matches with optional third place", () => {
+    assert.equal(playoffMatches("none", false), 0);
+    assert.equal(playoffMatches("top4", false), 3);
+    assert.equal(playoffMatches("top4", true), 4);
+    assert.equal(playoffMatches("top8", false), 7);
+  });
+
+  it("assigns tier S for low volume", () => {
+    const tier = tierForMatchesPerMonth(15);
+    assert.equal(tier.tier, "S");
+    assert.equal(tier.basePrice, 900);
+  });
+
+  it("assigns tier XL with marginal pricing above 70", () => {
+    const tier = tierForMatchesPerMonth(75);
+    assert.equal(tier.tier, "XL");
+    assert.equal(tier.basePrice, 2000 + 5 * 20);
+  });
+
+  it("applies court cost band and portfolio discount", () => {
+    assert.equal(courtCostMultiplier(300), 1.0);
+    assert.equal(courtCostMultiplier(450), 1.15);
+    assert.equal(courtCostMultiplier(700), 1.3);
+    assert.equal(portfolioDiscountRate(2), 0);
+    assert.equal(portfolioDiscountRate(5), 0.12);
+  });
+
+  it("produces client-visible prices for a typical league", () => {
+    const quote = calculateCotizacion({
+      ...DEFAULT_COTIZADOR_INPUT,
+      teamCount: 10,
+      durationMonths: 5,
+      courtCostPerMatch: 400,
+      activeTournaments: 1,
+    });
 
     assert.ok(quote);
-    const expectedSubtotal =
-      8 * 200 * 1.0 + 12 * 200 * 1.6 + 6 * 200 * 2.6;
-    assert.equal(quote.subtotalBeforeVolume, expectedSubtotal);
-    assert.equal(quote.tournamentCount, 3);
-    assert.equal(quote.volumeMultiplier, 0.9);
-    assert.equal(quote.finalTotal, expectedSubtotal * 0.9);
+    assert.ok(quote.monthlyPrice > 0);
+    assert.ok(quote.seasonPrice > quote.monthlyPrice);
     assert.equal(
-      quote.volumeDiscountAmount,
-      expectedSubtotal - expectedSubtotal * 0.9
+      quote.pricePerTeamSeason,
+      quote.seasonPrice / 10
     );
+    assert.equal(quote.internal.regularMatches, 45);
   });
 
-  it("uses 6+ volume band when there are six tournaments", () => {
-    const lines = Array.from({ length: 6 }, (_, index) =>
-      line(String(index), 4, "hasta_3")
-    );
-    const quote = calculateCotizacion(lines, DEFAULT_COTIZADOR_PARAMS);
-
-    assert.ok(quote);
-    assert.equal(volumeMultiplier(6, DEFAULT_COTIZADOR_PARAMS), 0.8);
-    assert.equal(volumeBandLabel(6), "6+ torneos");
-    assert.equal(quote.volumeMultiplier, 0.8);
-  });
-
-  it("returns null when no valid lines exist", () => {
+  it("returns null for fewer than 2 teams", () => {
     assert.equal(
-      calculateCotizacion([line("a", 0, "hasta_3")], DEFAULT_COTIZADOR_PARAMS),
+      calculateCotizacion({ ...DEFAULT_COTIZADOR_INPUT, teamCount: 1 }),
       null
-    );
-  });
-
-  it("respects custom params per line", () => {
-    const params = {
-      ...DEFAULT_COTIZADOR_PARAMS,
-      basePricePerTeam: 150,
-      durationMultiplierHasta3: 1.2,
-    };
-
-    assert.equal(durationMultiplier("hasta_3", params), 1.2);
-    const subtotal = calculateLineSubtotal(line("a", 2, "hasta_3"), params);
-    assert.ok(subtotal);
-    assert.equal(subtotal.subtotal, 360);
-  });
-
-  it("keeps duration curve monotonic in total and decreasing per month", () => {
-    const teams = 10;
-    const sixMonths = calculateLineSubtotal(
-      line("six", teams, "4_6"),
-      DEFAULT_COTIZADOR_PARAMS
-    );
-    const twelveMonths = calculateLineSubtotal(
-      line("twelve", teams, "7_12"),
-      DEFAULT_COTIZADOR_PARAMS
-    );
-
-    assert.ok(sixMonths);
-    assert.ok(twelveMonths);
-    assert.ok(twelveMonths.subtotal > sixMonths.subtotal);
-    assert.ok(
-      pricePerMonth(twelveMonths.subtotal, "7_12") <
-        pricePerMonth(sixMonths.subtotal, "4_6")
     );
   });
 });

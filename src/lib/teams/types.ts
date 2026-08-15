@@ -1,3 +1,12 @@
+export const SEASON_TEAM_OPERATIONAL_STATUS_OPTIONS = [
+  { value: "activo", label: "Activo" },
+  { value: "retirado", label: "Retirado" },
+  { value: "suspendido", label: "Suspendido" },
+] as const;
+
+export type SeasonTeamOperationalStatus =
+  (typeof SEASON_TEAM_OPERATIONAL_STATUS_OPTIONS)[number]["value"];
+
 export const SEASON_TEAM_STATUS_OPTIONS = [
   { value: "registered", label: "Pendiente" },
   { value: "confirmed", label: "Confirmado" },
@@ -43,6 +52,8 @@ export type SeasonTeamRecord = {
   display_name: string | null;
   group_name: string | null;
   registration_status: SeasonTeamRegistrationStatus;
+  status: SeasonTeamOperationalStatus;
+  status_effective_at: string;
 };
 
 export type RosterEntryRecord = {
@@ -115,6 +126,22 @@ export const initialTeamsActionState: TeamsActionState = {
   ok: false,
   message: null,
 };
+
+export function seasonTeamOperationalStatusLabel(value: string): string {
+  return (
+    SEASON_TEAM_OPERATIONAL_STATUS_OPTIONS.find((o) => o.value === value)
+      ?.label ?? value
+  );
+}
+
+export function seasonTeamOperationalStatusVariant(
+  value: string
+): "default" | "success" | "warning" | "info" {
+  if (value === "activo") return "success";
+  if (value === "retirado") return "warning";
+  if (value === "suspendido") return "info";
+  return "default";
+}
 
 export function seasonTeamStatusLabel(value: string): string {
   return (

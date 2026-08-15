@@ -6,6 +6,7 @@ import type {
   SeasonRosterStats,
   SeasonTeamDetail,
   SeasonTeamListItem,
+  SeasonTeamOperationalStatus,
   SeasonTeamRegistrationStatus,
   TeamDetail,
   TeamListItem,
@@ -145,7 +146,7 @@ export async function getSeasonTeams(
   const { data: seasonTeams } = await supabase
     .from("season_teams")
     .select(
-      "id, season_id, team_id, organization_id, display_name, group_name, registration_status, teams(name)"
+      "id, season_id, team_id, organization_id, display_name, group_name, registration_status, status, status_effective_at, teams(name)"
     )
     .eq("organization_id", organizationId)
     .eq("season_id", seasonId)
@@ -203,6 +204,9 @@ export async function getSeasonTeams(
       group_name: st.group_name,
       registration_status:
         st.registration_status as SeasonTeamRegistrationStatus,
+      status: (st.status ?? "activo") as SeasonTeamOperationalStatus,
+      status_effective_at:
+        st.status_effective_at ?? new Date().toISOString(),
       teamName: teamName ?? "Equipo",
       playerCount: m?.playerCount ?? 0,
       captainName: m?.captainName ?? null,
@@ -245,7 +249,7 @@ export async function getSeasonTeamRoster(
   const { data: seasonTeam } = await supabase
     .from("season_teams")
     .select(
-      "id, season_id, team_id, organization_id, display_name, group_name, registration_status, roster_locked_by_captain, teams(name), seasons(id, name, competition_id, competitions(id, name))"
+      "id, season_id, team_id, organization_id, display_name, group_name, registration_status, roster_locked_by_captain, status, status_effective_at, teams(name), seasons(id, name, competition_id, competitions(id, name))"
     )
     .eq("id", seasonTeamId)
     .eq("season_id", seasonId)
@@ -339,6 +343,8 @@ export async function getSeasonTeamRoster(
     group_name: seasonTeam.group_name,
     registration_status:
       seasonTeam.registration_status as SeasonTeamRegistrationStatus,
+    status: (seasonTeam.status ?? "activo") as SeasonTeamOperationalStatus,
+    status_effective_at: seasonTeam.status_effective_at ?? new Date().toISOString(),
     teamName: teamName ?? "Equipo",
     seasonName: season.name,
     competitionId: season.competition_id,
