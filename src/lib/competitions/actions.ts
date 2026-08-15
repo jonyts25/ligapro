@@ -104,13 +104,14 @@ export async function createCompetitionAction(
   await requireOrganizationAdmin(user.id, organizationId);
 
   const name = String(formData.get("name") ?? "");
+  const isYouth = formData.get("isYouth") === "on";
   const nameError = validateName(name, "nombre del torneo");
   if (nameError) {
     return {
       ok: false,
       message: nameError,
       fieldErrors: { name: nameError },
-      values: { name },
+      values: { name, isYouth },
     };
   }
 
@@ -120,6 +121,7 @@ export async function createCompetitionAction(
     .insert({
       organization_id: organizationId,
       name: name.trim(),
+      is_youth: isYouth,
     })
     .select("id")
     .single();
@@ -128,7 +130,7 @@ export async function createCompetitionAction(
     return {
       ok: false,
       message: "No pudimos crear el torneo. Inténtalo nuevamente.",
-      values: { name },
+      values: { name, isYouth },
     };
   }
 
@@ -146,13 +148,14 @@ export async function updateCompetitionAction(
   await requireOrganizationAdmin(user.id, organizationId);
 
   const name = String(formData.get("name") ?? "");
+  const isYouth = formData.get("isYouth") === "on";
   const nameError = validateName(name, "nombre del torneo");
   if (nameError) {
     return {
       ok: false,
       message: nameError,
       fieldErrors: { name: nameError },
-      values: { name },
+      values: { name, isYouth },
     };
   }
 
@@ -170,7 +173,7 @@ export async function updateCompetitionAction(
 
   const { error } = await supabase
     .from("competitions")
-    .update({ name: name.trim() })
+    .update({ name: name.trim(), is_youth: isYouth })
     .eq("id", competitionId)
     .eq("organization_id", organizationId);
 
@@ -178,7 +181,7 @@ export async function updateCompetitionAction(
     return {
       ok: false,
       message: "No pudimos guardar el torneo. Inténtalo nuevamente.",
-      values: { name },
+      values: { name, isYouth },
     };
   }
 
@@ -186,7 +189,7 @@ export async function updateCompetitionAction(
   return {
     ok: true,
     message: "Torneo actualizado correctamente.",
-    values: { name: name.trim() },
+    values: { name: name.trim(), isYouth },
   };
 }
 

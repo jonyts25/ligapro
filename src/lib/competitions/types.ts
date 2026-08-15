@@ -22,6 +22,7 @@ export type CompetitionRecord = {
   id: string;
   organization_id: string;
   name: string;
+  is_youth: boolean;
 };
 
 export type SeasonRecord = {

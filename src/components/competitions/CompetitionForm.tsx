@@ -30,6 +30,9 @@ export function CompetitionForm({
     initialCompetitionActionState
   );
   const name = String(state.values?.name ?? competition?.name ?? "");
+  const isYouth = Boolean(
+    state.values?.isYouth ?? competition?.is_youth ?? false
+  );
 
   return (
     <Card>
@@ -75,6 +78,22 @@ export function CompetitionForm({
             </p>
           )}
         </div>
+        <label className="flex items-start gap-3 text-sm text-text-secondary">
+          <input
+            type="checkbox"
+            name="isYouth"
+            defaultChecked={isYouth}
+            disabled={pending}
+            className="mt-0.5 min-h-4 min-w-4"
+          />
+          <span>
+            <span className="block font-medium text-text-primary">
+              Torneo infantil
+            </span>
+            En las páginas públicas de la temporada se mostrarán nombres
+            abreviados de los jugadores (por ejemplo, Juan P.).
+          </span>
+        </label>
         <p className="text-xs text-muted">
           Si necesitas categorías con reglas o calendarios distintos, crea
           torneos separados (por ejemplo Libre y Veteranos +35).

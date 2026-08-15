@@ -66,7 +66,7 @@ export async function getOrganizationCompetitions(
 
   const { data: competitions } = await supabase
     .from("competitions")
-    .select("id, organization_id, name")
+    .select("id, organization_id, name, is_youth")
     .eq("organization_id", organizationId)
     .order("name");
 
@@ -130,7 +130,7 @@ export async function getCompetitionWithSeasons(
 
   const { data: competition } = await supabase
     .from("competitions")
-    .select("id, organization_id, name")
+    .select("id, organization_id, name, is_youth")
     .eq("id", competitionId)
     .eq("organization_id", organizationId)
     .maybeSingle();

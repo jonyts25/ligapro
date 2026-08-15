@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { mapPublicPlayerName } from "@/lib/public-season/player-names";
 import type {
   PublicDisciplineRow,
   PublicMatchRow,
@@ -6,6 +7,7 @@ import type {
   PublicSeasonOverview,
   PublicStandingRow,
 } from "@/lib/public-season/types";
+import { getPublicSeasonYouthFlag } from "@/lib/public-season/youth-flag";
 
 type UntypedRpc = {
   rpc: (
@@ -171,13 +173,14 @@ export async function getPublicSeasonScorers(
   organizationId: string,
   seasonSlug: string
 ): Promise<PublicScorerRow[]> {
+  const isYouth = await getPublicSeasonYouthFlag(organizationId, seasonSlug);
   const rows = await callRpc<ScorerRpcRow>("get_public_season_scorers", {
     p_organization_id: organizationId,
     p_season_slug: seasonSlug,
   });
   return rows.map((row) => ({
     position: row.position,
-    playerName: row.player_name,
+    playerName: mapPublicPlayerName(row.player_name, isYouth),
     teamName: row.team_name,
     goals: row.goals,
   }));
@@ -187,6 +190,7 @@ export async function getPublicSeasonDiscipline(
   organizationId: string,
   seasonSlug: string
 ): Promise<PublicDisciplineRow[]> {
+  const isYouth = await getPublicSeasonYouthFlag(organizationId, seasonSlug);
   const rows = await callRpc<DisciplineRpcRow>(
     "get_public_season_discipline",
     {
@@ -195,7 +199,7 @@ export async function getPublicSeasonDiscipline(
     }
   );
   return rows.map((row) => ({
-    playerName: row.player_name,
+    playerName: mapPublicPlayerName(row.player_name, isYouth),
     teamName: row.team_name,
     isSuspended: row.is_suspended,
     matchesRemaining: row.matches_remaining,
@@ -277,6 +281,7 @@ export async function getPublicMatchEvents(
   seasonSlug: string,
   matchId: string
 ) {
+  const isYouth = await getPublicSeasonYouthFlag(organizationId, seasonSlug);
   const rows = await callRpc<PublicMatchEventRpcRow>("get_public_match_events", {
     p_organization_id: organizationId,
     p_season_slug: seasonSlug,
@@ -285,7 +290,7 @@ export async function getPublicMatchEvents(
   return rows.map((row) => ({
     minute: row.minute,
     eventType: row.event_type,
-    playerName: row.player_name,
+    playerName: mapPublicPlayerName(row.player_name, isYouth),
     teamName: row.team_name,
   }));
 }
