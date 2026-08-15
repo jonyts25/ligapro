@@ -7,11 +7,17 @@ import { getSeasonDetails } from "@/lib/competitions/queries";
 import { canManageActiveSeason } from "@/lib/competitions/season-visibility";
 import { getSeasonMatchesGroupedByRound } from "@/lib/fixtures/queries";
 import { FixtureRoundCard } from "@/components/fixtures/FixtureRoundCard";
+import { JornadaSummaryPanel } from "@/components/fixtures/JornadaSummaryPanel";
 import { MatchdayTabs } from "@/components/fixtures/MatchdayTabs";
 import { SeasonFixtureSummary } from "@/components/fixtures/SeasonFixtureSummary";
 import { SeasonStandingsNav } from "@/components/standings/SeasonStandingsNav";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { cn } from "@/lib/utils/cn";
+import { tieneAccesoPremium } from "@/lib/billing/premium-access";
+import {
+  getJornadaSummary,
+  getLatestJornadaSummaryJob,
+} from "@/lib/jornada-summaries/queries";
 
 type PageProps = {
   params: Promise<{
@@ -37,9 +43,10 @@ export default async function SeasonCalendarPage({
     membership.role === "organization_owner" ||
     membership.role === "organization_admin";
 
-  const [season, data] = await Promise.all([
+  const [season, data, hasPremium] = await Promise.all([
     getSeasonDetails(organizationId, competitionId, seasonId),
     getSeasonMatchesGroupedByRound(organizationId, competitionId, seasonId),
+    tieneAccesoPremium(organizationId),
   ]);
   if (!season || !data) notFound();
 
@@ -48,6 +55,14 @@ export default async function SeasonCalendarPage({
 
   const selectedRound =
     jornada && /^\d+$/.test(jornada) ? Number(jornada) : ("all" as const);
+
+  const jornadaSummaryData =
+    selectedRound !== "all" && hasPremium
+      ? await Promise.all([
+          getJornadaSummary(organizationId, seasonId, selectedRound),
+          getLatestJornadaSummaryJob(organizationId, seasonId, selectedRound),
+        ])
+      : null;
   const filter =
     filtro === "pendientes" || filtro === "programadas" ? filtro : "todas";
 
@@ -139,6 +154,20 @@ export default async function SeasonCalendarPage({
               );
             })}
           </div>
+
+          {jornadaSummaryData && selectedRound !== "all" && (
+            <JornadaSummaryPanel
+              organizationId={organizationId}
+              competitionId={competitionId}
+              seasonId={seasonId}
+              seasonName={data.seasonName}
+              roundNumber={selectedRound}
+              canManage={canManageActive}
+              hasPremium={hasPremium}
+              summary={jornadaSummaryData[0]}
+              job={jornadaSummaryData[1]}
+            />
+          )}
 
           <div className="space-y-4">
             {rounds.map((round) => (

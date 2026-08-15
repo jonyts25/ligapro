@@ -1,8 +1,12 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
-import { createTeamAction, updateTeamAction } from "@/lib/teams/actions";
+import {
+  createTeamAction,
+  createTeamsBulkAction,
+  updateTeamAction,
+} from "@/lib/teams/actions";
 import {
   initialTeamsActionState,
   type TeamRecord,
@@ -23,6 +27,11 @@ export function TeamForm({ organizationId, mode, team }: TeamFormProps) {
     action,
     initialTeamsActionState
   );
+  const [bulkState, bulkAction, bulkPending] = useActionState(
+    createTeamsBulkAction,
+    initialTeamsActionState
+  );
+  const [bulkMode, setBulkMode] = useState(false);
   const name = String(state.values?.name ?? team?.name ?? "");
 
   return (
@@ -39,6 +48,62 @@ export function TeamForm({ organizationId, mode, team }: TeamFormProps) {
           {state.message}
         </p>
       )}
+      {bulkState.message && (
+        <p
+          className={`mb-4 rounded-xl border px-3 py-2 text-sm ${
+            bulkState.ok
+              ? "border-success/40 bg-success/10 text-success"
+              : "border-danger/40 bg-danger/10 text-danger"
+          }`}
+          role={bulkState.ok ? "status" : "alert"}
+        >
+          {bulkState.message}
+        </p>
+      )}
+      {mode === "create" && (
+        <div className="mb-4 flex gap-2">
+          <button
+            type="button"
+            onClick={() => setBulkMode(false)}
+            className={`rounded-xl border px-3 py-2 text-sm font-medium ${
+              !bulkMode ? "border-brand bg-brand/10 text-brand" : "border-border"
+            }`}
+          >
+            Un equipo
+          </button>
+          <button
+            type="button"
+            onClick={() => setBulkMode(true)}
+            className={`rounded-xl border px-3 py-2 text-sm font-medium ${
+              bulkMode ? "border-brand bg-brand/10 text-brand" : "border-border"
+            }`}
+          >
+            Pegar lista
+          </button>
+        </div>
+      )}
+      {mode === "create" && bulkMode ? (
+        <form action={bulkAction} className="space-y-5">
+          <input type="hidden" name="organizationId" value={organizationId} />
+          <div className="space-y-1.5">
+            <label htmlFor="bulkList" className="block text-sm font-medium">
+              Nombres de equipos (uno por línea)
+            </label>
+            <textarea
+              id="bulkList"
+              name="bulkList"
+              required
+              rows={8}
+              disabled={bulkPending}
+              placeholder={"Halcones FC\nLeones SC\n..."}
+              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+            />
+          </div>
+          <SubmitButton pending={bulkPending} className="w-auto">
+            Crear equipos
+          </SubmitButton>
+        </form>
+      ) : (
       <form action={formAction} className="space-y-5">
         <input type="hidden" name="organizationId" value={organizationId} />
         {mode === "edit" && team && (
@@ -89,6 +154,7 @@ export function TeamForm({ organizationId, mode, team }: TeamFormProps) {
           </Link>
         </div>
       </form>
+      )}
     </Card>
   );
 }

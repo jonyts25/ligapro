@@ -4,6 +4,7 @@ import { useActionState, useMemo, useState } from "react";
 import {
   addExistingPlayerAction,
   createPlayerAndAddAction,
+  createPlayersBulkAction,
 } from "@/lib/teams/actions";
 import {
   initialTeamsActionState,
@@ -64,6 +65,11 @@ export function AddRosterPlayerForm({
     createPlayerAndAddAction,
     initialTeamsActionState
   );
+  const [bulkState, bulkAction, bulkPending] = useActionState(
+    createPlayersBulkAction,
+    initialTeamsActionState
+  );
+  const [bulkMode, setBulkMode] = useState(false);
   const [existingState, existingAction, existingPending] = useActionState(
     addExistingPlayerAction,
     initialTeamsActionState
@@ -85,11 +91,59 @@ export function AddRosterPlayerForm({
   return (
     <div className="space-y-6">
       <Card className="space-y-4">
-        <SectionHeader
-          title="Crear jugador nuevo"
-          description="Registra un jugador en la organización y agrégalo al plantel."
-        />
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <SectionHeader
+            title="Crear jugador nuevo"
+            description="Registra un jugador en la organización y agrégalo al plantel."
+          />
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setBulkMode(false)}
+              className={`rounded-xl border px-3 py-1.5 text-xs font-medium ${
+                !bulkMode ? "border-brand text-brand" : "border-border"
+              }`}
+            >
+              Individual
+            </button>
+            <button
+              type="button"
+              onClick={() => setBulkMode(true)}
+              className={`rounded-xl border px-3 py-1.5 text-xs font-medium ${
+                bulkMode ? "border-brand text-brand" : "border-border"
+              }`}
+            >
+              Pegar lista
+            </button>
+          </div>
+        </div>
         <ActionMessage ok={createState.ok} message={createState.message} />
+        <ActionMessage ok={bulkState.ok} message={bulkState.message} />
+        {bulkMode ? (
+          <form action={bulkAction} className="space-y-4">
+            <input type="hidden" name="organizationId" value={organizationId} />
+            <input type="hidden" name="competitionId" value={competitionId} />
+            <input type="hidden" name="seasonId" value={seasonId} />
+            <input type="hidden" name="seasonTeamId" value={seasonTeamId} />
+            <div className="space-y-1.5">
+              <label htmlFor="bulkPlayers" className="block text-sm font-medium">
+                Jugadores (uno por línea; opcional: nombre,dorsal)
+              </label>
+              <textarea
+                id="bulkPlayers"
+                name="bulkList"
+                required
+                rows={8}
+                disabled={bulkPending}
+                placeholder={"Juan Pérez,10\nMaría López\n..."}
+                className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+              />
+            </div>
+            <SubmitButton pending={bulkPending} className="w-auto">
+              Crear jugadores en lote
+            </SubmitButton>
+          </form>
+        ) : (
         <form action={createAction} className="space-y-4">
           <input type="hidden" name="organizationId" value={organizationId} />
           <input type="hidden" name="competitionId" value={competitionId} />
@@ -143,6 +197,7 @@ export function AddRosterPlayerForm({
             Crear y agregar
           </SubmitButton>
         </form>
+        )}
       </Card>
 
       <Card className="space-y-4">
