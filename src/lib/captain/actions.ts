@@ -275,7 +275,7 @@ export async function createPlayerAndAddCaptainAction(
     p_full_name: fullName,
     p_jersey_number: jersey.value ?? undefined,
     p_registration_status: "active",
-    p_phone: phoneRaw || null,
+    p_phone: phoneRaw || undefined,
   });
 
   if (error) {
