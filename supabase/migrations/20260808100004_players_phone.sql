@@ -3,6 +3,9 @@
 ALTER TABLE public.players
   ADD COLUMN IF NOT EXISTS phone text;
 
+-- Replace the 4-arg overload; CREATE OR REPLACE alone would leave both signatures.
+DROP FUNCTION IF EXISTS public.create_player_and_add_to_roster(uuid, text, integer, text);
+
 CREATE OR REPLACE FUNCTION public.create_player_and_add_to_roster(
   p_season_team_id uuid,
   p_full_name text,
@@ -88,7 +91,5 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.create_player_and_add_to_roster(uuid, text, integer, text)
-  FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.create_player_and_add_to_roster(uuid, text, integer, text, text)
   TO authenticated;
