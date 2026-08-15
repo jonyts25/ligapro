@@ -3541,6 +3541,10 @@ export type Database = {
         Args: { p_photo_path: string; p_player_id: string }
         Returns: undefined
       }
+      update_captain_roster_jersey: {
+        Args: { p_jersey_number?: number | null; p_season_team_player_id: string }
+        Returns: undefined
+      }
       set_roster_lock: {
         Args: { p_locked: boolean; p_season_team_id: string }
         Returns: undefined

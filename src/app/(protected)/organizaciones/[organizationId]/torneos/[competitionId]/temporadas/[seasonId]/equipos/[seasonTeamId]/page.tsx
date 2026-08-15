@@ -15,6 +15,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { SeasonRosterSummary } from "@/components/teams/SeasonRosterSummary";
+import { ConfirmSeasonTeamPanel } from "@/components/teams/ConfirmSeasonTeamPanel";
 import { RosterList } from "@/components/teams/RosterList";
 import { AddRosterPlayerForm } from "@/components/teams/AddRosterPlayerForm";
 import { CreateCaptainPlayerForm } from "@/components/teams/CreateCaptainPlayerForm";
@@ -84,6 +85,15 @@ export default async function SeasonTeamRosterPage({ params }: PageProps) {
       </Card>
 
       <SeasonRosterSummary seasonTeam={detail} />
+
+      {canManage && (
+        <ConfirmSeasonTeamPanel
+          organizationId={organizationId}
+          competitionId={competitionId}
+          seasonId={seasonId}
+          seasonTeam={detail}
+        />
+      )}
 
       <RosterExportButtons
         organizationId={organizationId}

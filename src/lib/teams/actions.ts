@@ -20,6 +20,7 @@ import { getPublicSiteUrl } from "@/lib/site-url";
 import { buildCaptainWhatsAppLink } from "@/lib/captain/whatsapp";
 import { humanizeCaptainInvitationAdminError } from "@/lib/captain/errors";
 import { PLATFORM_NAME } from "@/lib/platform/config";
+import { canConfirmTeamRegistration } from "@/lib/teams/confirm-registration";
 
 function validateName(name: string, label: string): string | null {
   const trimmed = name.trim();
@@ -85,6 +86,7 @@ async function revalidateTeamPaths(
     revalidatePath(`${base}/canchas`);
     if (opts.seasonTeamId) {
       revalidatePath(`${base}/equipos/${opts.seasonTeamId}`);
+      revalidatePath(`/mi-equipo/${opts.seasonTeamId}`);
     }
 
     const supabase = await createClient();
@@ -949,6 +951,100 @@ export async function inviteCaptainToRosterAction(
     inviteUrl,
     whatsAppHref,
     values: { email: "", phone: "" },
+  };
+}
+
+export async function confirmTeamRegistrationAction(
+  _prev: TeamsActionState,
+  formData: FormData
+): Promise<TeamsActionState> {
+  const user = await requireUser();
+  const organizationId = String(formData.get("organizationId") ?? "");
+  const competitionId = String(formData.get("competitionId") ?? "");
+  const seasonId = String(formData.get("seasonId") ?? "");
+  const seasonTeamId = String(formData.get("seasonTeamId") ?? "");
+  await requireOrganizationAdmin(user.id, organizationId);
+
+  if (String(formData.get("confirmed") ?? "") !== "1") {
+    return {
+      ok: false,
+      message: "Confirma que deseas confirmar el equipo.",
+    };
+  }
+
+  const supabase = await createClient();
+
+  const { data: seasonTeam } = await supabase
+    .from("season_teams")
+    .select("id, registration_status, season_id")
+    .eq("id", seasonTeamId)
+    .eq("organization_id", organizationId)
+    .eq("season_id", seasonId)
+    .maybeSingle();
+
+  if (!seasonTeam) {
+    return { ok: false, message: "No encontramos al equipo en esta temporada." };
+  }
+
+  const [{ count: activeCount }, { data: rules }] = await Promise.all([
+    supabase
+      .from("season_team_players")
+      .select("*", { count: "exact", head: true })
+      .eq("season_team_id", seasonTeamId)
+      .eq("organization_id", organizationId)
+      .eq("registration_status", "active"),
+    supabase
+      .from("season_rules")
+      .select("max_roster_size")
+      .eq("season_id", seasonId)
+      .eq("organization_id", organizationId)
+      .maybeSingle(),
+  ]);
+
+  const validation = canConfirmTeamRegistration({
+    registrationStatus: seasonTeam.registration_status,
+    activePlayerCount: activeCount ?? 0,
+    maxRosterSize: rules?.max_roster_size ?? null,
+  });
+
+  if (!validation.ok) {
+    return { ok: false, message: validation.message };
+  }
+
+  const { error: statusError } = await supabase
+    .from("season_teams")
+    .update({ registration_status: "confirmed" })
+    .eq("id", seasonTeamId)
+    .eq("organization_id", organizationId)
+    .eq("registration_status", "registered");
+
+  if (statusError) {
+    return { ok: false, message: statusError.message };
+  }
+
+  const { error: lockError } = await supabase.rpc("set_roster_lock", {
+    p_season_team_id: seasonTeamId,
+    p_locked: true,
+  });
+
+  if (lockError) {
+    return {
+      ok: false,
+      message:
+        "El equipo quedó confirmado, pero no pudimos bloquear el plantel del capitán. Revisa el estado del equipo.",
+    };
+  }
+
+  await revalidateTeamPaths(organizationId, {
+    competitionId,
+    seasonId,
+    seasonTeamId,
+  });
+
+  return {
+    ok: true,
+    message:
+      "Equipo confirmado. El plantel del capitán quedó bloqueado para altas y cambios de dorsal.",
   };
 }
 

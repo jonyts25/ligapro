@@ -28,3 +28,25 @@ export function humanizeCaptainRosterAddError(message: string): string {
 
   return "No pudimos agregar al jugador. Revisa los datos e inténtalo de nuevo.";
 }
+
+export function humanizeCaptainJerseyUpdateError(message: string): string {
+  const lower = message.toLowerCase();
+
+  if (lower.includes("jersey edits by the captain are locked")) {
+    return "El plantel está bloqueado. Contacta al administrador para cualquier cambio.";
+  }
+
+  if (lower.includes("not authorized")) {
+    return "No tienes permiso para editar este plantel.";
+  }
+
+  if (lower.includes("only active roster players")) {
+    return "Solo puedes editar dorsales de jugadores activos.";
+  }
+
+  if (lower.includes("positive integer")) {
+    return "El dorsal debe ser un número entero positivo.";
+  }
+
+  return "No pudimos guardar el dorsal. Inténtalo de nuevo.";
+}

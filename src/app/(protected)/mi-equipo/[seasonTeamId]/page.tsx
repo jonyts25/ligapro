@@ -38,6 +38,7 @@ export default async function CaptainTeamPage({ params }: PageProps) {
         seasonTeamId={seasonTeamId}
         roster={rosterData.roster}
         requirePlayerVerification={rosterData.requirePlayerVerification}
+        rosterLockedByCaptain={rosterData.rosterLockedByCaptain}
       />
     </div>
   );

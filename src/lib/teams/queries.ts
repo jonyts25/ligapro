@@ -245,7 +245,7 @@ export async function getSeasonTeamRoster(
   const { data: seasonTeam } = await supabase
     .from("season_teams")
     .select(
-      "id, season_id, team_id, organization_id, display_name, group_name, registration_status, teams(name), seasons(id, name, competition_id, competitions(id, name))"
+      "id, season_id, team_id, organization_id, display_name, group_name, registration_status, roster_locked_by_captain, teams(name), seasons(id, name, competition_id, competitions(id, name))"
     )
     .eq("id", seasonTeamId)
     .eq("season_id", seasonId)
@@ -323,6 +323,13 @@ export async function getSeasonTeamRoster(
   const active = roster.filter((r) => r.registration_status === "active");
   const captain = roster.find((r) => r.is_captain);
 
+  const { data: rules } = await supabase
+    .from("season_rules")
+    .select("max_roster_size")
+    .eq("season_id", seasonId)
+    .eq("organization_id", organizationId)
+    .maybeSingle();
+
   return {
     id: seasonTeam.id,
     season_id: seasonTeam.season_id,
@@ -339,6 +346,8 @@ export async function getSeasonTeamRoster(
     roster,
     activePlayerCount: active.length,
     captainName: captain?.full_name ?? null,
+    rosterLockedByCaptain: seasonTeam.roster_locked_by_captain,
+    maxRosterSize: rules?.max_roster_size ?? null,
   };
 }
 

@@ -92,6 +92,8 @@ export type SeasonTeamDetail = SeasonTeamRecord & {
   roster: RosterListItem[];
   activePlayerCount: number;
   captainName: string | null;
+  rosterLockedByCaptain: boolean;
+  maxRosterSize: number | null;
 };
 
 export type SeasonRosterStats = {

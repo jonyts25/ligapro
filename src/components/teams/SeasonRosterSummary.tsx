@@ -36,6 +36,9 @@ export function SeasonRosterSummary({ seasonTeam }: SeasonRosterSummaryProps) {
       label: "Capitán",
       value: seasonTeam.captainName ?? "Sin asignar",
     },
+    ...(seasonTeam.rosterLockedByCaptain
+      ? [{ label: "Plantel del capitán", value: "Bloqueado" }]
+      : []),
     ...(seasonTeam.group_name?.trim()
       ? [{ label: "Grupo", value: seasonTeam.group_name }]
       : []),
