@@ -11,7 +11,11 @@ import {
   initialCompetitionActionState,
   type SeasonDetail,
 } from "@/lib/competitions/types";
-import { SEASON_VISIBILITY_EDITABLE_OPTIONS } from "@/lib/competitions/season-visibility";
+import {
+  SEASON_FORM_VISIBILITY_OPTIONS,
+  formVisibilityHiddenValue,
+  isSeasonPubliclyVisible,
+} from "@/lib/competitions/season-visibility";
 import { SubmitButton } from "@/components/auth/SubmitButton";
 import { Card } from "@/components/ui/Card";
 import { SectionHeader } from "@/components/ui/SectionHeader";
@@ -50,6 +54,8 @@ export function SeasonForm({
   const [formatType, setFormatType] = useState<string>(
     String(v?.formatType ?? season?.format_type ?? "round_robin")
   );
+  const hiddenVisibility = formVisibilityHiddenValue(season);
+  const isPublicEdit = mode === "edit" && season && isSeasonPubliclyVisible(season.visibility);
 
   return (
     <form action={formAction} className="space-y-6">
@@ -58,6 +64,7 @@ export function SeasonForm({
       {mode === "edit" && season && (
         <input type="hidden" name="seasonId" value={season.id} />
       )}
+      <input type="hidden" name="visibility" value={hiddenVisibility} />
 
       {state.message && (
         <p
@@ -149,24 +156,32 @@ export function SeasonForm({
             <label htmlFor="visibility" className="block text-sm font-medium">
               Estado
             </label>
-            <select
-              id="visibility"
-              name="visibility"
-              disabled={pending}
-              defaultValue={String(
-                v?.visibility ?? season?.visibility ?? "draft"
-              )}
-              className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
-            >
-              {SEASON_VISIBILITY_EDITABLE_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+            {isPublicEdit ? (
+              <p
+                id="visibility"
+                className="min-h-11 rounded-xl border border-border bg-surface px-3 py-2.5 text-sm"
+              >
+                Pública — usa «Archivar» o la página de la temporada para retirarla del público.
+              </p>
+            ) : (
+              <select
+                id="visibility"
+                disabled
+                value={SEASON_FORM_VISIBILITY_OPTIONS[0]?.value ?? "draft"}
+                className="min-h-11 w-full rounded-xl border border-border bg-surface px-3 text-sm text-text-secondary"
+              >
+                {SEASON_FORM_VISIBILITY_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            )}
             <FieldError message={state.fieldErrors?.visibility} />
             <p className="text-xs text-text-secondary">
-              Para archivar usa la acción dedicada en la página de la temporada.
+              {mode === "create"
+                ? "Se crea en borrador. Publica cuando el checklist de preparación esté completo."
+                : "Para hacerla pública usa el botón «Publicar» en la página de la temporada."}
             </p>
           </div>
         </div>

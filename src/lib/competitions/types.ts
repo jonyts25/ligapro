@@ -118,7 +118,9 @@ export function visibilityBadgeVariant(
 ): "default" | "success" | "warning" | "info" {
   if (value === "public") return "success";
   if (value === "archived") return "warning";
-  if (value === "draft") return "default";
+  if (value === "draft" || value === "private" || value === "unlisted") {
+    return "default";
+  }
   return "info";
 }
 

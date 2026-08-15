@@ -15,8 +15,14 @@ import {
 } from "@/lib/competitions/types";
 import { getSeasonDetails } from "@/lib/competitions/queries";
 import {
+  getSeasonReadinessStatus,
+  seasonReadinessBlockedMessage,
+} from "@/lib/competitions/season-readiness";
+import {
+  canPublishSeasonVisibility,
   isEditableVisibility,
   isSeasonArchived,
+  isSeasonPubliclyVisible,
 } from "@/lib/competitions/season-visibility";
 
 function validateName(name: string, label: string): string | null {
@@ -587,4 +593,201 @@ export async function reactivateSeasonAction(
     ok: true,
     message: `Temporada reactivada como «${targetVisibility}».`,
   };
+}
+
+export async function publishSeasonAction(
+  _prev: CompetitionActionState,
+  formData: FormData
+): Promise<CompetitionActionState> {
+  const user = await requireUser();
+  const organizationId = String(formData.get("organizationId") ?? "");
+  const competitionId = String(formData.get("competitionId") ?? "");
+  const seasonId = String(formData.get("seasonId") ?? "");
+  await requireOrganizationAdmin(user.id, organizationId);
+
+  if (String(formData.get("confirmed") ?? "") !== "1") {
+    return {
+      ok: false,
+      message: "Confirma que deseas publicar la temporada.",
+    };
+  }
+
+  const season = await getSeasonDetails(
+    organizationId,
+    competitionId,
+    seasonId
+  );
+  if (!season) {
+    return { ok: false, message: "No encontramos la temporada." };
+  }
+
+  if (isSeasonArchived(season.visibility)) {
+    return {
+      ok: false,
+      message: "No se puede publicar una temporada archivada. Reactívala primero.",
+    };
+  }
+
+  if (isSeasonPubliclyVisible(season.visibility)) {
+    return { ok: false, message: "Esta temporada ya es pública." };
+  }
+
+  if (!canPublishSeasonVisibility(season.visibility)) {
+    return {
+      ok: false,
+      message: "Esta temporada no puede publicarse desde su estado actual.",
+    };
+  }
+
+  const readiness = getSeasonReadinessStatus(season);
+  if (!readiness.complete) {
+    return {
+      ok: false,
+      message: seasonReadinessBlockedMessage(readiness.pendingLabels),
+    };
+  }
+
+  const result = await updateSeasonVisibilityFromDetail(season, "public");
+  if (!result.ok) {
+    return { ok: false, message: result.message };
+  }
+
+  await revalidateCompetitionPaths(organizationId, competitionId, seasonId);
+  return {
+    ok: true,
+    message:
+      "Temporada publicada. La página pública ya está disponible para cualquiera con el enlace.",
+  };
+}
+
+export async function deleteSeasonAction(
+  _prev: CompetitionActionState,
+  formData: FormData
+): Promise<CompetitionActionState> {
+  const user = await requireUser();
+  const organizationId = String(formData.get("organizationId") ?? "");
+  const competitionId = String(formData.get("competitionId") ?? "");
+  const seasonId = String(formData.get("seasonId") ?? "");
+  await requireOrganizationAdmin(user.id, organizationId);
+
+  if (String(formData.get("confirmed") ?? "") !== "1") {
+    return {
+      ok: false,
+      message: "Confirma que deseas eliminar la temporada.",
+    };
+  }
+
+  const season = await getSeasonDetails(
+    organizationId,
+    competitionId,
+    seasonId
+  );
+  if (!season) {
+    return { ok: false, message: "No encontramos la temporada." };
+  }
+
+  if (season.visibility !== "draft") {
+    return {
+      ok: false,
+      message:
+        "Solo se pueden eliminar temporadas en borrador. Si ya no la usas, archívala en su lugar.",
+    };
+  }
+
+  const supabase = await createClient();
+  const { count: teamCount, error: countError } = await supabase
+    .from("season_teams")
+    .select("*", { count: "exact", head: true })
+    .eq("season_id", seasonId)
+    .eq("organization_id", organizationId);
+
+  if (countError) {
+    return { ok: false, message: countError.message };
+  }
+
+  if ((teamCount ?? 0) > 0) {
+    return {
+      ok: false,
+      message:
+        "No se puede eliminar: hay equipos inscritos en esta temporada.",
+    };
+  }
+
+  const { error } = await supabase
+    .from("seasons")
+    .delete()
+    .eq("id", seasonId)
+    .eq("organization_id", organizationId)
+    .eq("competition_id", competitionId)
+    .eq("visibility", "draft");
+
+  if (error) {
+    return { ok: false, message: error.message };
+  }
+
+  await revalidateCompetitionPaths(organizationId, competitionId);
+  redirect(
+    `/organizaciones/${organizationId}/torneos/${competitionId}`
+  );
+}
+
+export async function deleteCompetitionAction(
+  _prev: CompetitionActionState,
+  formData: FormData
+): Promise<CompetitionActionState> {
+  const user = await requireUser();
+  const organizationId = String(formData.get("organizationId") ?? "");
+  const competitionId = String(formData.get("competitionId") ?? "");
+  await requireOrganizationAdmin(user.id, organizationId);
+
+  if (String(formData.get("confirmed") ?? "") !== "1") {
+    return {
+      ok: false,
+      message: "Confirma que deseas eliminar el torneo.",
+    };
+  }
+
+  const supabase = await createClient();
+
+  const { data: competition } = await supabase
+    .from("competitions")
+    .select("id")
+    .eq("id", competitionId)
+    .eq("organization_id", organizationId)
+    .maybeSingle();
+
+  if (!competition) {
+    return { ok: false, message: "No encontramos el torneo." };
+  }
+
+  const { count: seasonCount, error: countError } = await supabase
+    .from("seasons")
+    .select("*", { count: "exact", head: true })
+    .eq("competition_id", competitionId)
+    .eq("organization_id", organizationId);
+
+  if (countError) {
+    return { ok: false, message: countError.message };
+  }
+
+  if ((seasonCount ?? 0) > 0) {
+    return {
+      ok: false,
+      message:
+        "No se puede eliminar: el torneo tiene temporadas. Elimínalas primero (solo borrador sin equipos).",
+    };
+  }
+
+  const { error } = await supabase
+    .from("competitions")
+    .delete()
+    .eq("id", competitionId)
+    .eq("organization_id", organizationId);
+
+  if (error) {
+    return { ok: false, message: error.message };
+  }
+
+  await revalidateCompetitionPaths(organizationId);
+  redirect(`/organizaciones/${organizationId}/torneos`);
 }
