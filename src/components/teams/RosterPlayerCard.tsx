@@ -19,6 +19,7 @@ import {
   type RosterListItem,
   type RosterRegistrationStatus,
 } from "@/lib/teams/types";
+import { cn } from "@/lib/utils/cn";
 import {
   buildAdminRosterContactMessage,
   buildCaptainWhatsAppLink,
