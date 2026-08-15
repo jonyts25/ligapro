@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { buildChroniclePrompt } from "@/lib/chronicles/build-prompt";
+import { buildChronicleTimelineForPrompt } from "@/lib/chronicles/timeline-for-prompt";
 import type { MatchTimelineEvent } from "@/lib/matches/types";
 
 const baseEvent = {
@@ -93,5 +94,64 @@ describe("buildChroniclePrompt", () => {
     });
 
     assert.match(prompt, /Sin goles registrados/);
+  });
+});
+
+describe("buildChronicleTimelineForPrompt", () => {
+  const youthTimeline: MatchTimelineEvent[] = [
+    {
+      ...baseEvent,
+      id: "1",
+      eventType: "goal",
+      minute: 12,
+      playerName: "Juan Pérez García",
+      teamName: "Halcones",
+      seasonTeamId: "home-st",
+      seasonTeamPlayerId: "stp-1",
+    },
+    {
+      ...baseEvent,
+      id: "2",
+      eventType: "yellow_card",
+      minute: 40,
+      playerName: "María José López",
+      teamName: "Titanes",
+      seasonTeamId: "away-st",
+      seasonTeamPlayerId: "stp-2",
+    },
+  ];
+
+  it("uses redacted player names in the prompt for youth competitions", () => {
+    const events = buildChronicleTimelineForPrompt(youthTimeline, true);
+    const prompt = buildChroniclePrompt({
+      homeTeamName: "Halcones",
+      awayTeamName: "Titanes",
+      homeSeasonTeamId: "home-st",
+      awaySeasonTeamId: "away-st",
+      homeScore: 1,
+      awayScore: 0,
+      events,
+    });
+
+    assert.match(prompt, /Juan P\./);
+    assert.match(prompt, /María J\./);
+    assert.doesNotMatch(prompt, /Juan Pérez García/);
+    assert.doesNotMatch(prompt, /María José López/);
+  });
+
+  it("keeps full player names in the prompt for non-youth competitions", () => {
+    const events = buildChronicleTimelineForPrompt(youthTimeline, false);
+    const prompt = buildChroniclePrompt({
+      homeTeamName: "Halcones",
+      awayTeamName: "Titanes",
+      homeSeasonTeamId: "home-st",
+      awaySeasonTeamId: "away-st",
+      homeScore: 1,
+      awayScore: 0,
+      events,
+    });
+
+    assert.match(prompt, /Juan Pérez García/);
+    assert.match(prompt, /María José López/);
   });
 });

@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth/require-user";
 import { requireOrganizationAdmin } from "@/lib/auth/require-organization-admin";
 import { buildChroniclePrompt } from "@/lib/chronicles/build-prompt";
+import { buildChronicleTimelineForPrompt } from "@/lib/chronicles/timeline-for-prompt";
 import {
   getLatestChronicleJobForMatch,
   getMatchChronicle,
@@ -106,6 +107,17 @@ export async function enqueueChronicleAction(
     };
   }
 
+  const supabase = await createClient();
+  const { data: competition } = await supabase
+    .from("competitions")
+    .select("is_youth")
+    .eq("id", competitionId)
+    .eq("organization_id", organizationId)
+    .maybeSingle();
+  const isYouth = competition?.is_youth ?? false;
+
+  const eventsForPrompt = buildChronicleTimelineForPrompt(ctx.timeline, isYouth);
+
   const prompt = buildChroniclePrompt({
     homeTeamName: match.homeName,
     awayTeamName: match.awayName,
@@ -113,10 +125,9 @@ export async function enqueueChronicleAction(
     awaySeasonTeamId: match.awaySeasonTeamId,
     homeScore: match.homeScore,
     awayScore: match.awayScore,
-    events: ctx.timeline.filter((event) => event.voidedAt == null),
+    events: eventsForPrompt,
   });
 
-  const supabase = await createClient();
   const { error } = await supabase.from("ai_jobs").insert({
     organization_id: organizationId,
     app: "ligera",
