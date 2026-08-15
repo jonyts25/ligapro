@@ -82,6 +82,7 @@ export type SeasonTeamListItem = SeasonTeamRecord & {
 export type RosterListItem = RosterEntryRecord & {
   full_name: string;
   profile_id: string | null;
+  phone: string | null;
 };
 
 export type SeasonTeamDetail = SeasonTeamRecord & {

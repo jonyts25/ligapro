@@ -293,7 +293,7 @@ export async function getSeasonTeamRoster(
   const { data: rosterRows } = await supabase
     .from("season_team_players")
     .select(
-      "id, season_team_id, player_id, organization_id, season_id, jersey_number, is_captain, is_vice_captain, registration_status, players(full_name, profile_id)"
+      "id, season_team_id, player_id, organization_id, season_id, jersey_number, is_captain, is_vice_captain, registration_status, players(full_name, profile_id, phone)"
     )
     .eq("season_team_id", seasonTeamId)
     .eq("organization_id", organizationId)
@@ -301,8 +301,8 @@ export async function getSeasonTeamRoster(
 
   const roster: RosterListItem[] = (rosterRows ?? []).map((row) => {
     const playerRel = row.players as
-      | { full_name: string; profile_id: string | null }
-      | { full_name: string; profile_id: string | null }[]
+      | { full_name: string; profile_id: string | null; phone: string | null }
+      | { full_name: string; profile_id: string | null; phone: string | null }[]
       | null;
     const player = Array.isArray(playerRel) ? playerRel[0] : playerRel;
     return {
@@ -317,6 +317,7 @@ export async function getSeasonTeamRoster(
       registration_status: row.registration_status as RosterRegistrationStatus,
       full_name: player?.full_name ?? "Jugador",
       profile_id: player?.profile_id ?? null,
+      phone: player?.phone ?? null,
     };
   });
 

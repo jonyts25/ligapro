@@ -1744,6 +1744,7 @@ export type Database = {
           full_name: string
           id: string
           organization_id: string
+          phone: string | null
           photo_path: string | null
           profile_id: string | null
           updated_at: string
@@ -1754,6 +1755,7 @@ export type Database = {
           full_name: string
           id?: string
           organization_id: string
+          phone?: string | null
           photo_path?: string | null
           profile_id?: string | null
           updated_at?: string
@@ -1764,6 +1766,7 @@ export type Database = {
           full_name?: string
           id?: string
           organization_id?: string
+          phone?: string | null
           photo_path?: string | null
           profile_id?: string | null
           updated_at?: string
@@ -2982,6 +2985,7 @@ export type Database = {
         Args: {
           p_full_name: string
           p_jersey_number?: number
+          p_phone?: string
           p_registration_status?: string
           p_season_team_id: string
         }

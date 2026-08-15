@@ -794,6 +794,39 @@ async function fetchPendingInvitationToken(
   return data?.token ?? null;
 }
 
+async function savePlayerPhoneForRosterEntry(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  organizationId: string,
+  seasonTeamPlayerId: string,
+  phoneRaw: string
+): Promise<string | null> {
+  const phone = phoneRaw.trim();
+  if (!phone) return null;
+
+  const { data: rosterEntry } = await supabase
+    .from("season_team_players")
+    .select("player_id")
+    .eq("id", seasonTeamPlayerId)
+    .eq("organization_id", organizationId)
+    .maybeSingle();
+
+  if (!rosterEntry?.player_id) {
+    return "No se pudo guardar el teléfono del jugador.";
+  }
+
+  const { error } = await supabase
+    .from("players")
+    .update({ phone })
+    .eq("id", rosterEntry.player_id)
+    .eq("organization_id", organizationId);
+
+  if (error) {
+    return "No se pudo guardar el teléfono del jugador.";
+  }
+
+  return null;
+}
+
 export async function createCaptainPlayerWithInvitationAction(
   _prev: TeamsActionState,
   formData: FormData
@@ -860,6 +893,13 @@ export async function createCaptainPlayerWithInvitationAction(
     };
   }
 
+  const phoneSaveError = await savePlayerPhoneForRosterEntry(
+    supabase,
+    organizationId,
+    stpId,
+    phoneRaw
+  );
+
   const token = await fetchPendingInvitationToken(supabase, stpId);
   const inviteUrl = token
     ? `${getPublicSiteUrl()}/invitacion/${token}`
@@ -877,9 +917,11 @@ export async function createCaptainPlayerWithInvitationAction(
 
   return {
     ok: true,
-    message: inviteUrl
-      ? "Capitán creado. Comparte el enlace de invitación."
-      : "Capitán creado e invitación enviada.",
+    message: phoneSaveError
+      ? `${inviteUrl ? "Capitán creado. Comparte el enlace de invitación." : "Capitán creado e invitación enviada."} ${phoneSaveError}`
+      : inviteUrl
+        ? "Capitán creado. Comparte el enlace de invitación."
+        : "Capitán creado e invitación enviada.",
     inviteUrl,
     whatsAppHref,
     values: { fullName: "", email: "", phone: "", jerseyNumber: "" },
@@ -926,6 +968,13 @@ export async function inviteCaptainToRosterAction(
     };
   }
 
+  const phoneSaveError = await savePlayerPhoneForRosterEntry(
+    supabase,
+    organizationId,
+    rosterId,
+    phoneRaw
+  );
+
   const token = await fetchPendingInvitationToken(supabase, rosterId);
   const inviteUrl = token
     ? `${getPublicSiteUrl()}/invitacion/${token}`
@@ -943,9 +992,11 @@ export async function inviteCaptainToRosterAction(
 
   return {
     ok: true,
-    message: inviteUrl
-      ? "Invitación creada. Comparte el enlace con el capitán."
-      : "Invitación enviada.",
+    message: phoneSaveError
+      ? `${inviteUrl ? "Invitación creada. Comparte el enlace con el capitán." : "Invitación enviada."} ${phoneSaveError}`
+      : inviteUrl
+        ? "Invitación creada. Comparte el enlace con el capitán."
+        : "Invitación enviada.",
     inviteUrl,
     whatsAppHref,
     values: { email: "", phone: "" },

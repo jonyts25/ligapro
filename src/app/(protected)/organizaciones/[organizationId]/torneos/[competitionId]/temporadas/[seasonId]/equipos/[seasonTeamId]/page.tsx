@@ -98,6 +98,7 @@ export default async function SeasonTeamRosterPage({ params }: PageProps) {
         seasonId={seasonId}
         seasonTeamId={seasonTeamId}
         teamLabel={title}
+        competitionName={detail.competitionName}
         roster={detail.roster}
         canManage={canManage}
       />

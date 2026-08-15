@@ -242,6 +242,7 @@ export async function createPlayerAndAddCaptainAction(
   const seasonTeamId = String(formData.get("seasonTeamId") ?? "");
   const fullName = String(formData.get("fullName") ?? "").trim();
   const jerseyRaw = String(formData.get("jerseyNumber") ?? "");
+  const phoneRaw = String(formData.get("phone") ?? "").trim();
 
   const allowed = await hasCaptainTeamAccess(user.id, seasonTeamId);
   if (!allowed) {
@@ -271,6 +272,7 @@ export async function createPlayerAndAddCaptainAction(
     p_full_name: fullName,
     p_jersey_number: jersey.value ?? undefined,
     p_registration_status: "active",
+    p_phone: phoneRaw || undefined,
   });
 
   if (error) {

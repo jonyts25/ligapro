@@ -19,8 +19,11 @@ import {
   type RosterListItem,
   type RosterRegistrationStatus,
 } from "@/lib/teams/types";
+import {
+  buildAdminRosterContactMessage,
+  buildCaptainWhatsAppLink,
+} from "@/lib/captain/whatsapp";
 import { InviteCaptainToRosterForm } from "@/components/teams/InviteCaptainToRosterForm";
-import { cn } from "@/lib/utils/cn";
 
 type RosterPlayerCardProps = {
   organizationId: string;
@@ -28,6 +31,7 @@ type RosterPlayerCardProps = {
   seasonId: string;
   seasonTeamId: string;
   teamLabel: string;
+  competitionName: string;
   player: RosterListItem;
   canManage: boolean;
   hasCaptain: boolean;
@@ -70,6 +74,7 @@ export function RosterPlayerCard({
   seasonId,
   seasonTeamId,
   teamLabel,
+  competitionName,
   player,
   canManage,
   hasCaptain,
@@ -126,6 +131,12 @@ export function RosterPlayerCard({
     (player.is_captain || player.is_vice_captain) &&
     player.registration_status === "active" &&
     !player.profile_id;
+  const whatsAppContactHref = player.phone
+    ? buildCaptainWhatsAppLink(
+        player.phone,
+        buildAdminRosterContactMessage(competitionName)
+      )
+    : null;
 
   return (
     <Card className="space-y-4">
@@ -289,6 +300,16 @@ export function RosterPlayerCard({
               Guardar estado
             </SubmitButton>
           </form>
+          {whatsAppContactHref && (
+            <a
+              href={whatsAppContactHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-10 items-center rounded-xl bg-[#25D366] px-3 text-sm font-semibold text-white"
+            >
+              Contactar por WhatsApp
+            </a>
+          )}
         </div>
       )}
 
