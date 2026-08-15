@@ -6,7 +6,6 @@ import { getSeasonDetails } from "@/lib/competitions/queries";
 import {
   formatLabel,
   visibilityBadgeVariant,
-  visibilityLabel,
 } from "@/lib/competitions/types";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StatusBadge } from "@/components/ui/StatusBadge";
@@ -14,9 +13,13 @@ import { Card } from "@/components/ui/Card";
 import { SeasonRulesSummary } from "@/components/competitions/SeasonRulesSummary";
 import { SeasonReadinessCard } from "@/components/competitions/SeasonReadinessCard";
 import { SeasonArchivePanel } from "@/components/competitions/SeasonArchivePanel";
+import { SeasonDeletePanel } from "@/components/competitions/SeasonDeletePanel";
+import { SeasonPublishPanel } from "@/components/competitions/SeasonPublishPanel";
 import { SeasonStandingsNav } from "@/components/standings/SeasonStandingsNav";
 import {
+  canDeleteSeason,
   canManageActiveSeason,
+  displaySeasonVisibilityLabel,
   isSeasonArchived,
 } from "@/lib/competitions/season-visibility";
 
@@ -48,8 +51,8 @@ export default async function SeasonDetailPage({ params }: PageProps) {
 
   const canManageActive = canManageActiveSeason(season, canManage);
   const archived = isSeasonArchived(season.visibility);
+  const deletable = canManage && canDeleteSeason(season);
   const publicHref = `/publico/${organizationId}/${season.slug}`;
-  const isPublic = season.visibility === "public";
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -96,7 +99,7 @@ export default async function SeasonDetailPage({ params }: PageProps) {
 
       <Card className="flex flex-wrap items-center gap-3">
         <StatusBadge
-          label={visibilityLabel(season.visibility)}
+          label={displaySeasonVisibilityLabel(season.visibility)}
           variant={visibilityBadgeVariant(season.visibility)}
         />
         <span className="text-sm text-text-secondary">
@@ -113,41 +116,13 @@ export default async function SeasonDetailPage({ params }: PageProps) {
       </Card>
 
       {canManageActive && !archived && (
-        <Card className="space-y-3">
-          <h2 className="text-sm font-semibold text-text-primary">
-            Página pública
-          </h2>
-          {isPublic ? (
-            <>
-              <p className="text-sm text-text-secondary">
-                Esta temporada es pública. Cualquiera con el enlace puede
-                consultar calendario, posiciones, goleadores y disciplina.
-              </p>
-              <Link
-                href={publicHref}
-                className="inline-flex min-h-11 items-center rounded-xl border border-border px-4 text-sm font-medium text-organization-accent"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Abrir página pública
-              </Link>
-            </>
-          ) : (
-            <>
-              <p className="text-sm text-text-secondary">
-                La página pública solo está disponible cuando la visibilidad es
-                «Pública». Cambia la visibilidad en Editar temporada; no se
-                modifica sola.
-              </p>
-              <Link
-                href={`/organizaciones/${organizationId}/torneos/${competitionId}/temporadas/${seasonId}/editar`}
-                className="inline-flex min-h-11 items-center rounded-xl border border-border px-4 text-sm font-medium"
-              >
-                Cambiar visibilidad
-              </Link>
-            </>
-          )}
-        </Card>
+        <SeasonPublishPanel
+          organizationId={organizationId}
+          competitionId={competitionId}
+          seasonId={seasonId}
+          season={season}
+          publicHref={publicHref}
+        />
       )}
 
       {canManage && (
@@ -156,6 +131,15 @@ export default async function SeasonDetailPage({ params }: PageProps) {
           competitionId={competitionId}
           seasonId={seasonId}
           isArchived={archived}
+        />
+      )}
+
+      {deletable && (
+        <SeasonDeletePanel
+          organizationId={organizationId}
+          competitionId={competitionId}
+          seasonId={seasonId}
+          seasonName={season.name}
         />
       )}
 

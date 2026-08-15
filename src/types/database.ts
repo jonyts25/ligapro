@@ -673,6 +673,67 @@ export type Database = {
           },
         ]
       }
+      jornada_summaries: {
+        Row: {
+          ai_job_id: string | null
+          content: string
+          created_at: string
+          id: string
+          is_published: boolean
+          model_used: string | null
+          organization_id: string
+          round_number: number
+          season_id: string
+          updated_at: string
+        }
+        Insert: {
+          ai_job_id?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          is_published?: boolean
+          model_used?: string | null
+          organization_id: string
+          round_number: number
+          season_id: string
+          updated_at?: string
+        }
+        Update: {
+          ai_job_id?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          is_published?: boolean
+          model_used?: string | null
+          organization_id?: string
+          round_number?: number
+          season_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jornada_summaries_ai_job_id_fkey"
+            columns: ["ai_job_id"]
+            isOneToOne: false
+            referencedRelation: "ai_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jornada_summaries_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jornada_summaries_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       match_context: {
         Row: {
           attendance: number | null
@@ -1118,6 +1179,9 @@ export type Database = {
           sequence_in_round: number | null
           status: string
           updated_at: string
+          void_reason: string | null
+          voided_at: string | null
+          voided_by_profile_id: string | null
         }
         Insert: {
           away_score?: number | null
@@ -1139,6 +1203,9 @@ export type Database = {
           sequence_in_round?: number | null
           status?: string
           updated_at?: string
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by_profile_id?: string | null
         }
         Update: {
           away_score?: number | null
@@ -1160,6 +1227,9 @@ export type Database = {
           sequence_in_round?: number | null
           status?: string
           updated_at?: string
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by_profile_id?: string | null
         }
         Relationships: [
           {
@@ -1379,6 +1449,7 @@ export type Database = {
           id: string
           logo_path: string | null
           name: string
+          plan_tier: string
           slug: string
           sold_by_platform_staff_id: string | null
           updated_at: string
@@ -1390,6 +1461,7 @@ export type Database = {
           id?: string
           logo_path?: string | null
           name: string
+          plan_tier?: string
           slug: string
           sold_by_platform_staff_id?: string | null
           updated_at?: string
@@ -1401,6 +1473,7 @@ export type Database = {
           id?: string
           logo_path?: string | null
           name?: string
+          plan_tier?: string
           slug?: string
           sold_by_platform_staff_id?: string | null
           updated_at?: string
@@ -2342,6 +2415,8 @@ export type Database = {
           roster_locked_by_captain: boolean
           season_group_id: string | null
           season_id: string
+          status: string
+          status_effective_at: string
           team_id: string
           updated_at: string
         }
@@ -2355,6 +2430,8 @@ export type Database = {
           roster_locked_by_captain?: boolean
           season_group_id?: string | null
           season_id: string
+          status?: string
+          status_effective_at?: string
           team_id: string
           updated_at?: string
         }
@@ -2368,6 +2445,8 @@ export type Database = {
           roster_locked_by_captain?: boolean
           season_group_id?: string | null
           season_id?: string
+          status?: string
+          status_effective_at?: string
           team_id?: string
           updated_at?: string
         }
@@ -3543,6 +3622,10 @@ export type Database = {
       }
       set_player_photo: {
         Args: { p_photo_path: string; p_player_id: string }
+        Returns: undefined
+      }
+      update_captain_roster_jersey: {
+        Args: { p_jersey_number?: number | null; p_season_team_player_id: string }
         Returns: undefined
       }
       set_roster_lock: {

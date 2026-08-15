@@ -1,8 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
-import { setPlayerPaymentMarkCaptainAction } from "@/lib/captain/actions";
+import { useActionState, useState } from "react";
+import {
+  setPlayerPaymentMarkCaptainAction,
+  updateOwnRosterJerseyAction,
+} from "@/lib/captain/actions";
 import type { CaptainRosterPlayer } from "@/lib/captain/types";
 import { initialCaptainActionState } from "@/lib/captain/types";
 import { CaptainBadge } from "@/components/teams/CaptainBadge";
@@ -12,6 +15,7 @@ import { PlayerVerificationBadge } from "@/components/players/PlayerVerification
 import { Card } from "@/components/ui/Card";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { SubmitButton } from "@/components/auth/SubmitButton";
 import { CaptainAddPlayerForm } from "@/components/captain/CaptainAddPlayerForm";
 import { cn } from "@/lib/utils/cn";
 
@@ -19,16 +23,93 @@ type CaptainRosterPanelProps = {
   seasonTeamId: string;
   roster: CaptainRosterPlayer[];
   requirePlayerVerification: boolean;
+  rosterLockedByCaptain: boolean;
 };
+
+function JerseyEditor({
+  seasonTeamId,
+  player,
+  rosterLockedByCaptain,
+}: {
+  seasonTeamId: string;
+  player: CaptainRosterPlayer;
+  rosterLockedByCaptain: boolean;
+}) {
+  const [state, action, pending] = useActionState(
+    updateOwnRosterJerseyAction,
+    initialCaptainActionState
+  );
+  const [editing, setEditing] = useState(false);
+
+  if (rosterLockedByCaptain) {
+    return player.jerseyNumber != null ? (
+      <p className="text-sm text-text-secondary">Dorsal {player.jerseyNumber}</p>
+    ) : (
+      <p className="text-sm text-muted">Sin dorsal</p>
+    );
+  }
+
+  if (!editing) {
+    return (
+      <button
+        type="button"
+        onClick={() => setEditing(true)}
+        className="text-left text-sm font-medium text-brand hover:underline"
+      >
+        {player.jerseyNumber != null
+          ? `Dorsal ${player.jerseyNumber} · Editar`
+          : "Asignar dorsal"}
+      </button>
+    );
+  }
+
+  return (
+    <form action={action} className="space-y-2">
+      <input type="hidden" name="seasonTeamId" value={seasonTeamId} />
+      <input type="hidden" name="seasonTeamPlayerId" value={player.id} />
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          name="jerseyNumber"
+          type="number"
+          min={1}
+          defaultValue={player.jerseyNumber ?? ""}
+          placeholder="Dorsal"
+          disabled={pending}
+          className="h-10 w-24 rounded-xl border border-border bg-background px-3 text-sm"
+        />
+        <SubmitButton pending={pending} className="h-10 w-auto px-3 text-sm">
+          Guardar
+        </SubmitButton>
+        <button
+          type="button"
+          onClick={() => setEditing(false)}
+          className="text-sm text-text-secondary"
+        >
+          Cancelar
+        </button>
+      </div>
+      {state.message && (
+        <p
+          className={cn("text-xs", state.ok ? "text-success" : "text-danger")}
+          role={state.ok ? "status" : "alert"}
+        >
+          {state.message}
+        </p>
+      )}
+    </form>
+  );
+}
 
 function PaymentMarkRow({
   seasonTeamId,
   player,
   requirePlayerVerification,
+  rosterLockedByCaptain,
 }: {
   seasonTeamId: string;
   player: CaptainRosterPlayer;
   requirePlayerVerification: boolean;
+  rosterLockedByCaptain: boolean;
 }) {
   const [state, action, pending] = useActionState(
     setPlayerPaymentMarkCaptainAction,
@@ -64,11 +145,11 @@ function PaymentMarkRow({
                 }
               />
             </div>
-            {player.jerseyNumber != null && (
-              <p className="text-sm text-text-secondary">
-                Dorsal {player.jerseyNumber}
-              </p>
-            )}
+            <JerseyEditor
+              seasonTeamId={seasonTeamId}
+              player={player}
+              rosterLockedByCaptain={rosterLockedByCaptain}
+            />
             <Link
               href={`/mi-equipo/${seasonTeamId}/jugadores/${player.id}/credencial`}
               className="inline-flex text-sm font-medium text-accent"
@@ -126,6 +207,7 @@ export function CaptainRosterPanel({
   seasonTeamId,
   roster,
   requirePlayerVerification,
+  rosterLockedByCaptain,
 }: CaptainRosterPanelProps) {
   const active = roster.filter((p) => p.registrationStatus === "active");
 
@@ -135,6 +217,15 @@ export function CaptainRosterPanel({
         title="Plantel"
         description="Lista de jugadores activos. Puedes marcar pagos de forma informal y agregar jugadores nuevos."
       />
+      {rosterLockedByCaptain && (
+        <p
+          className="rounded-xl border border-warning/30 bg-warning/5 px-3 py-2 text-sm text-text-secondary"
+          title="El plantel está bloqueado. Contacta al administrador para cualquier cambio."
+        >
+          El plantel está bloqueado. Contacta al administrador para cualquier
+          cambio (dorsales y altas).
+        </p>
+      )}
       <p className="rounded-xl border border-warning/30 bg-warning/5 px-3 py-2 text-sm text-text-secondary">
         Las marcas de pago son un control interno del capitán. No reemplazan ni
         afectan el cobro oficial de la liga.
@@ -152,11 +243,14 @@ export function CaptainRosterPanel({
               seasonTeamId={seasonTeamId}
               player={player}
               requirePlayerVerification={requirePlayerVerification}
+              rosterLockedByCaptain={rosterLockedByCaptain}
             />
           ))}
         </ul>
       )}
-      <CaptainAddPlayerForm seasonTeamId={seasonTeamId} />
+      {!rosterLockedByCaptain && (
+        <CaptainAddPlayerForm seasonTeamId={seasonTeamId} />
+      )}
     </Card>
   );
 }

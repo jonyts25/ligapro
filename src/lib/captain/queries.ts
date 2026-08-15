@@ -326,12 +326,20 @@ export async function getCaptainRoster(
 ): Promise<{
   roster: CaptainRosterPlayer[];
   requirePlayerVerification: boolean;
+  rosterLockedByCaptain: boolean;
 }> {
   const allowed = await hasCaptainTeamAccess(profileId, team.seasonTeamId);
-  if (!allowed) return { roster: [], requirePlayerVerification: false };
+  if (!allowed) {
+    return {
+      roster: [],
+      requirePlayerVerification: false,
+      rosterLockedByCaptain: false,
+    };
+  }
 
   const supabase = await createClient();
-  const [{ data: rosterRows }, { data: rules }] = await Promise.all([
+  const [{ data: rosterRows }, { data: rules }, { data: seasonTeam }] =
+    await Promise.all([
     supabase
       .from("season_team_players")
       .select(
@@ -343,6 +351,11 @@ export async function getCaptainRoster(
       .from("season_rules")
       .select("require_player_verification")
       .eq("season_id", team.seasonId)
+      .maybeSingle(),
+    supabase
+      .from("season_teams")
+      .select("roster_locked_by_captain")
+      .eq("id", team.seasonTeamId)
       .maybeSingle(),
   ]);
 
@@ -403,6 +416,7 @@ export async function getCaptainRoster(
   return {
     roster,
     requirePlayerVerification: rules?.require_player_verification ?? false,
+    rosterLockedByCaptain: seasonTeam?.roster_locked_by_captain ?? false,
   };
 }
 

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { getSeasonReadinessItems } from "@/lib/competitions/season-readiness";
 import type { SeasonDetail } from "@/lib/competitions/types";
 
 type SeasonReadinessCardProps = {
@@ -37,57 +38,7 @@ export function SeasonReadinessCard({
   const isLeague =
     formatType === "round_robin" || formatType === "round_robin_double";
 
-  const items = [
-    {
-      label: "Sedes configuradas",
-      value: String(readiness.activeVenues),
-      ok: readiness.activeVenues > 0,
-    },
-    {
-      label: "Canchas activas",
-      value: String(readiness.effectiveActiveFields),
-      ok: readiness.effectiveActiveFields > 0,
-    },
-    {
-      label: "Equipos inscritos",
-      value: String(readiness.teamCount),
-      ok: readiness.teamCount > 0,
-    },
-    {
-      label: "Jugadores en planteles",
-      value: String(readiness.activePlayerCount),
-      ok: readiness.activePlayerCount > 0,
-    },
-    {
-      label: "Equipos con capitán",
-      value: String(readiness.teamsWithCaptain),
-      ok: readiness.teamsWithCaptain > 0,
-    },
-    ...(isLeague
-      ? [
-          {
-            label: "Fixture generado",
-            value: readiness.fixtureGenerated
-              ? `Sí (${readiness.totalMatches})`
-              : "No",
-            ok: readiness.fixtureGenerated,
-          },
-          {
-            label: "Partidos programados",
-            value: `${readiness.scheduledMatches}/${readiness.totalMatches || 0}`,
-            ok:
-              readiness.fixtureGenerated &&
-              readiness.pendingMatches === 0 &&
-              readiness.totalMatches > 0,
-          },
-          {
-            label: "Partidos pendientes",
-            value: String(readiness.pendingMatches),
-            ok: readiness.fixtureGenerated && readiness.pendingMatches === 0,
-          },
-        ]
-      : []),
-  ];
+  const items = getSeasonReadinessItems(season);
 
   return (
     <Card className="space-y-4">
