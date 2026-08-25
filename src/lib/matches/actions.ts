@@ -18,6 +18,7 @@ import {
   type SeasonRoleValue,
 } from "@/lib/matches/types";
 import { humanizeCaptureError } from "@/lib/matches/capture-errors";
+import { validateUpdateResultAuthorization } from "@/lib/matches/update-result-permissions";
 
 async function revalidateMatchPaths(
   organizationId: string,
@@ -252,6 +253,43 @@ export async function confirmMatchOfficialAction(
   return { ok: true, message: "Asignación confirmada." };
 }
 
+export async function confirmOwnMatchOfficialAction(
+  _prev: CaptureActionState,
+  formData: FormData
+): Promise<CaptureActionState> {
+  const user = await requireUser();
+  const organizationId = String(formData.get("organizationId") ?? "");
+  const competitionId = String(formData.get("competitionId") ?? "");
+  const seasonId = String(formData.get("seasonId") ?? "");
+  const matchId = String(formData.get("matchId") ?? "");
+  const matchOfficialId = String(formData.get("matchOfficialId") ?? "");
+
+  if (
+    !organizationId ||
+    !competitionId ||
+    !seasonId ||
+    !matchId ||
+    !matchOfficialId
+  ) {
+    return { ok: false, message: "Datos incompletos para confirmar asistencia." };
+  }
+
+  await requireOrganizationMembership(user.id, organizationId);
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("confirm_match_official", {
+    p_match_official_id: matchOfficialId,
+  });
+
+  if (error) {
+    return humanError(error.message);
+  }
+
+  await revalidateMatchPaths(organizationId, competitionId, seasonId, matchId);
+  revalidatePath(`/organizaciones/${organizationId}/mis-partidos`);
+  return { ok: true, message: "Asistencia confirmada." };
+}
+
 export async function removeMatchOfficialAction(
   _prev: CaptureActionState,
   formData: FormData
@@ -352,10 +390,12 @@ export async function updateMatchResultAction(
     };
   }
 
-  // Extra gate: tournament_admin/org admin only (RPC enforces too)
+  // Extra gate mirrors update_match_result RPC (org admin / tournament_admin / confirmed referee).
   const isOrgAdmin =
     membership.role === "organization_owner" ||
     membership.role === "organization_admin";
+
+  let isTournamentAdmin = false;
   if (!isOrgAdmin) {
     const { data: role } = await supabase
       .from("season_roles")
@@ -364,12 +404,31 @@ export async function updateMatchResultAction(
       .eq("profile_id", user.id)
       .eq("role", "tournament_admin")
       .maybeSingle();
-    if (!role) {
-      return {
-        ok: false,
-        message: "Solo owner/admin o admin de torneo pueden actualizar el marcador.",
-      };
-    }
+    isTournamentAdmin = Boolean(role);
+  }
+
+  let isConfirmedReferee = false;
+  if (!isOrgAdmin && !isTournamentAdmin) {
+    const { data: official } = await supabase
+      .from("match_officials")
+      .select("id")
+      .eq("match_id", matchId)
+      .eq("profile_id", user.id)
+      .eq("role", "referee")
+      .eq("status", "confirmed")
+      .maybeSingle();
+    isConfirmedReferee = Boolean(official);
+  }
+
+  const authCheck = validateUpdateResultAuthorization({
+    isOrgAdmin,
+    isTournamentAdmin,
+    isConfirmedReferee,
+    statusRaw,
+    currentStatus: current,
+  });
+  if (!authCheck.ok) {
+    return { ok: false, message: authCheck.message };
   }
 
   const { error } = await supabase.rpc("update_match_result", {

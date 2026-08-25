@@ -3041,6 +3041,19 @@ export type Database = {
         Args: { p_match_id: string }
         Returns: undefined
       }
+      confirm_match_official: {
+        Args: { p_match_official_id: string }
+        Returns: {
+          created_at: string
+          id: string
+          match_id: string
+          organization_id: string
+          profile_id: string
+          role: string
+          status: string
+          updated_at: string
+        }
+      }
       create_administrative_suspension: {
         Args: {
           p_matches_remaining: number

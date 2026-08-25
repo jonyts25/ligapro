@@ -104,6 +104,7 @@ export default async function MatchCapturePage({ params }: PageProps) {
         homeName={match.homeName}
         awayName={match.awayName}
         canUpdate={permissions.canUpdateResult}
+        closeOnlyResultUpdate={permissions.closeOnlyResultUpdate}
       />
 
       <MatchEventForm

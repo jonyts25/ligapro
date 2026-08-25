@@ -1,19 +1,21 @@
+import { callAI } from "@/lib/ai/call-ai";
+
+const CHRONICLE_SYSTEM_PROMPT =
+  "Sigues instrucciones exactamente y respondes solo con el JSON pedido, sin texto adicional.";
+
 /**
  * Punto único de swap de proveedor de generación de texto (ADR-0016 §3.4).
  *
- * Hoy la app encola trabajos en `ai_jobs` y un worker local (Ollama/qwen3)
- * procesa de forma asíncrona — este módulo documenta el contrato para una
- * invocación síncrona futura.
- *
- * Para migrar a Anthropic: sustituir SOLO el cuerpo de `generarTextoIA`
- * por una llamada HTTP al endpoint Messages — sin tocar prompt builders,
- * gates `is_published`, ni el pipeline de encolado existente.
+ * Invoca Anthropic Messages API vía `callAI`. Los llamadores esperan el texto
+ * crudo del modelo (JSON con clave `cronica` para crónicas de partido).
  */
 export async function generarTextoIA(prompt: string): Promise<string> {
-  void prompt;
-  throw new Error(
-    "generarTextoIA: la generación síncrona no está activa. " +
-      "Usar cola ai_jobs + worker local (Ollama). " +
-      "Para Anthropic, implementar fetch() aquí."
-  );
+  const { text, error } = await callAI(CHRONICLE_SYSTEM_PROMPT, prompt);
+  if (error) {
+    throw new Error(error);
+  }
+  if (!text) {
+    throw new Error("Anthropic API respondió sin contenido de texto.");
+  }
+  return text;
 }

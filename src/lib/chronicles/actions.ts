@@ -4,12 +4,14 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth/require-user";
 import { requireOrganizationAdmin } from "@/lib/auth/require-organization-admin";
+import { isAnthropicConfigured } from "@/lib/ai/call-ai";
 import { buildChroniclePrompt } from "@/lib/chronicles/build-prompt";
 import { buildChronicleTimelineForPrompt } from "@/lib/chronicles/timeline-for-prompt";
 import {
   getLatestChronicleJobForMatch,
   getMatchChronicle,
 } from "@/lib/chronicles/queries";
+import { runChronicleJob } from "@/lib/chronicles/run-chronicle-job";
 import type { ChronicleActionState } from "@/lib/chronicles/types";
 import { getMatchCaptureContext } from "@/lib/matches/queries";
 
@@ -118,6 +120,14 @@ export async function enqueueChronicleAction(
 
   const eventsForPrompt = buildChronicleTimelineForPrompt(ctx.timeline, isYouth);
 
+  if (!isAnthropicConfigured()) {
+    return {
+      ok: false,
+      message:
+        "ANTHROPIC_API_KEY no está configurada en el servidor. No se puede generar la crónica.",
+    };
+  }
+
   const prompt = buildChroniclePrompt({
     homeTeamName: match.homeName,
     awayTeamName: match.awayName,
@@ -128,22 +138,34 @@ export async function enqueueChronicleAction(
     events: eventsForPrompt,
   });
 
-  const { error } = await supabase.from("ai_jobs").insert({
-    organization_id: organizationId,
-    app: "ligera",
-    tipo: "cronica",
-    payload: {
-      prompt,
-      match_id: matchId,
-      tier: "basico",
-    },
-    status: "pending",
-    created_by: user.id,
-  });
+  const { data: job, error } = await supabase
+    .from("ai_jobs")
+    .insert({
+      organization_id: organizationId,
+      app: "ligera",
+      tipo: "cronica",
+      payload: {
+        prompt,
+        match_id: matchId,
+        tier: "basico",
+      },
+      status: "pending",
+      created_by: user.id,
+    })
+    .select("id")
+    .single();
 
-  if (error) {
-    return { ok: false, message: error.message };
+  if (error || !job) {
+    return { ok: false, message: error?.message ?? "No se pudo encolar el trabajo." };
   }
+
+  const result = await runChronicleJob(supabase, {
+    jobId: job.id,
+    organizationId,
+    matchId,
+    prompt,
+    tier: "basico",
+  });
 
   await revalidateChroniclePaths(
     organizationId,
@@ -152,10 +174,14 @@ export async function enqueueChronicleAction(
     matchId
   );
 
+  if (!result.ok) {
+    return { ok: false, message: result.errorMessage };
+  }
+
   return {
     ok: true,
     message:
-      "Crónica encolada. El worker local la procesará en unos minutos; usa «Actualizar estado» para revisar.",
+      "Crónica generada. Revísala y publícala cuando esté lista.",
   };
 }
 

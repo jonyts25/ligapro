@@ -3,8 +3,8 @@
 import { useActionState, useState } from "react";
 import { updateMatchResultAction } from "@/lib/matches/actions";
 import { captureErrorAlertClass } from "@/lib/matches/capture-errors";
+import { allowedStatusTransitionsForRole } from "@/lib/matches/update-result-permissions";
 import {
-  allowedStatusTransitions,
   initialCaptureActionState,
   matchStatusLabel,
   type MatchStatusValue,
@@ -24,6 +24,7 @@ type MatchScoreFormProps = {
   homeName: string;
   awayName: string;
   canUpdate: boolean;
+  closeOnlyResultUpdate?: boolean;
 };
 
 export function MatchScoreForm({
@@ -37,6 +38,7 @@ export function MatchScoreForm({
   homeName,
   awayName,
   canUpdate,
+  closeOnlyResultUpdate = false,
 }: MatchScoreFormProps) {
   const [state, action, pending] = useActionState(
     updateMatchResultAction,
@@ -49,7 +51,10 @@ export function MatchScoreForm({
 
   if (!canUpdate) return null;
 
-  const statuses = allowedStatusTransitions(currentStatus);
+  const statuses = allowedStatusTransitionsForRole(
+    currentStatus,
+    closeOnlyResultUpdate
+  );
   const reopening =
     currentStatus === "finished" && selectedStatus === "in_progress";
 

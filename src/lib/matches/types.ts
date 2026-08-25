@@ -115,6 +115,8 @@ export type MatchDisciplineItem = {
 export type MatchCapturePermissions = {
   canCaptureEvents: boolean;
   canUpdateResult: boolean;
+  /** Referee-only: may close match but not reopen/cancel. */
+  closeOnlyResultUpdate: boolean;
   canManageOfficials: boolean;
   canManageSeasonRoles: boolean;
   canVoidEvents: boolean;

@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import type { MatchSchedulingDetails } from "@/lib/fixtures/types";
 import { getMatchSchedulingDetails } from "@/lib/fixtures/queries";
+import { resolveUpdateResultPermissions } from "@/lib/matches/update-result-permissions";
 import type {
   MatchCapturePermissions,
   MatchDisciplineItem,
@@ -331,25 +332,40 @@ export async function getUserMatchCapturePermissions(
   windowContext?: {
     startsAt: string | null;
     calendarConfirmed: boolean;
-  }
+  },
+  currentMatchStatus: MatchStatusValue = "scheduled"
 ): Promise<MatchCapturePermissions> {
   const supabase = await createClient();
   const isOrgAdmin =
     orgRole === "organization_owner" || orgRole === "organization_admin";
 
-  const [{ data: canCapture }, { data: seasonRoles }] = await Promise.all([
-    supabase.rpc("can_capture_match", { p_match_id: matchId }),
-    supabase
-      .from("season_roles")
-      .select("role")
-      .eq("organization_id", organizationId)
-      .eq("season_id", seasonId)
-      .eq("profile_id", userId),
-  ]);
+  const [{ data: canCapture }, { data: seasonRoles }, { data: confirmedReferee }] =
+    await Promise.all([
+      supabase.rpc("can_capture_match", { p_match_id: matchId }),
+      supabase
+        .from("season_roles")
+        .select("role")
+        .eq("organization_id", organizationId)
+        .eq("season_id", seasonId)
+        .eq("profile_id", userId),
+      supabase
+        .from("match_officials")
+        .select("id")
+        .eq("match_id", matchId)
+        .eq("profile_id", userId)
+        .eq("role", "referee")
+        .eq("status", "confirmed")
+        .maybeSingle(),
+    ]);
 
   const roles = (seasonRoles ?? []).map((r) => r.role);
   const isTournamentAdmin = roles.includes("tournament_admin");
-  const canUpdateResult = isOrgAdmin || isTournamentAdmin;
+  const resultPermissions = resolveUpdateResultPermissions({
+    isOrgAdmin,
+    isTournamentAdmin,
+    isConfirmedReferee: Boolean(confirmedReferee),
+    currentMatchStatus,
+  });
   const captureWindowBypass = isOrgAdmin || isTournamentAdmin;
 
   const { isCaptureWindowOpen } = await import("@/lib/matches/capture-window");
@@ -364,10 +380,14 @@ export async function getUserMatchCapturePermissions(
   for (const role of roles) {
     actorBits.push(seasonRoleLabel(role));
   }
+  if (confirmedReferee && !isOrgAdmin && !isTournamentAdmin) {
+    actorBits.push("Árbitro confirmado");
+  }
 
   return {
     canCaptureEvents: Boolean(canCapture),
-    canUpdateResult,
+    canUpdateResult: resultPermissions.canUpdateResult,
+    closeOnlyResultUpdate: resultPermissions.closeOnlyResultUpdate,
     canManageOfficials: isOrgAdmin,
     canManageSeasonRoles: isOrgAdmin,
     canVoidEvents: isOrgAdmin,
@@ -411,7 +431,8 @@ export async function getMatchCaptureContext(
     {
       startsAt: details.match.schedule.startsAt,
       calendarConfirmed: details.match.calendarStatus === "confirmado",
-    }
+    },
+    details.match.status as MatchStatusValue
   );
 
   const [timeline, discipline, officials, roster, seasonRules] =

@@ -16,6 +16,14 @@ describe("getOrganizationNavItems", () => {
     assert.equal(disciplina.href, `/organizaciones/${ORG}/disciplina`);
   });
 
+  it("includes mis-partidos for all members", () => {
+    const items = getOrganizationNavItems(ORG, { canManageSettings: false });
+    const myMatches = items.find((item) => item.label === "Mis partidos");
+    assert.ok(myMatches);
+    assert.equal(myMatches.available, true);
+    assert.equal(myMatches.href, `/organizaciones/${ORG}/mis-partidos`);
+  });
+
   it("hides finanzas and configuracion for non-admin members", () => {
     const items = getOrganizationNavItems(ORG, { canManageSettings: false });
     assert.equal(
