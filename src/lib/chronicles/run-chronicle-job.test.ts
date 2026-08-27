@@ -62,7 +62,7 @@ function createMockSupabase() {
   const chronicles = new Map<string, MockRow>();
 
   const from = (table: string) => {
-    let filters: Array<(row: MockRow) => boolean> = [];
+    const filters: Array<(row: MockRow) => boolean> = [];
     let upsertPayload: MockRow | null = null;
     let updatePayload: MockRow | null = null;
 

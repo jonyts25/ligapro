@@ -99,9 +99,9 @@ export function MatchChroniclePanel({
           Crónica del partido
         </h2>
         <p className="mt-1 text-sm text-text-secondary">
-          La generación es asíncrona: el worker local procesa la cola cuando
-          está activo. Revisa el texto antes de publicar — el modelo puede
-          equivocarse aunque el marcador esté en el prompt.
+          La crónica se genera al momento al pulsar el botón. Revisa el texto
+          antes de publicar — el modelo puede equivocarse aunque el marcador
+          esté en el prompt.
         </p>
       </div>
 

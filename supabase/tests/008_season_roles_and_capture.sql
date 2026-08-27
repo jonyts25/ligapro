@@ -60,6 +60,8 @@ DECLARE
   v_home_st uuid;
   v_away_st uuid;
   v_res uuid;
+  v_venue uuid;
+  v_field uuid;
   v_round text;
   v_roles_before int;
   v_roles_after int;
@@ -707,7 +709,71 @@ BEGIN
     );
   END;
 
-  -- Test 18 referee cannot update_match_result
+  -- Test 18 confirmed referee may close (finished/walkover); cannot reopen or cancel
+  PERFORM set_config('request.jwt.claim.sub', uid_admin_a::text, true);
+  PERFORM set_config(
+    'request.jwt.claims',
+    json_build_object('sub', uid_admin_a::text, 'role', 'authenticated')::text,
+    true
+  );
+  EXECUTE 'SET LOCAL ROLE authenticated';
+  INSERT INTO public.venues (organization_id, name)
+  VALUES (org_a, 'Venue Mig008 Test 18')
+  RETURNING id INTO v_venue;
+  INSERT INTO public.fields (venue_id, organization_id, name)
+  VALUES (v_venue, org_a, 'Field Mig008 Test 18')
+  RETURNING id INTO v_field;
+  INSERT INTO public.field_reservations (
+    organization_id, field_id, match_id, reservation_type, status, starts_at, ends_at
+  ) VALUES (
+    org_a,
+    v_field,
+    match_a1,
+    'match',
+    'confirmed',
+    now() - interval '1 hour',
+    now() + interval '1 hour'
+  ) RETURNING id INTO v_res;
+  UPDATE public.matches
+  SET field_reservation_id = v_res
+  WHERE id = match_a1;
+  EXECUTE 'RESET ROLE';
+
+  PERFORM set_config('request.jwt.claim.sub', uid_tourn_a::text, true);
+  PERFORM set_config(
+    'request.jwt.claims',
+    json_build_object('sub', uid_tourn_a::text, 'role', 'authenticated')::text,
+    true
+  );
+  EXECUTE 'SET LOCAL ROLE authenticated';
+  PERFORM public.update_match_result(match_a1, 'in_progress', 1, 0);
+  EXECUTE 'RESET ROLE';
+
+  PERFORM set_config('request.jwt.claim.sub', uid_referee::text, true);
+  PERFORM set_config(
+    'request.jwt.claims',
+    json_build_object('sub', uid_referee::text, 'role', 'authenticated')::text,
+    true
+  );
+  BEGIN
+    EXECUTE 'SET LOCAL ROLE authenticated';
+    PERFORM public.update_match_result(match_a1, 'finished', 2, 1);
+    SELECT status, home_score, away_score
+    INTO v_status, v_home, v_away
+    FROM public.matches WHERE id = match_a1;
+    EXECUTE 'RESET ROLE';
+    INSERT INTO public.__mig008_test_results VALUES (
+      '18_referee_confirmed_can_close_match_result',
+      v_status = 'finished' AND v_home = 2 AND v_away = 1,
+      format('status=%s home=%s away=%s', v_status, v_home, v_away)
+    );
+  EXCEPTION WHEN OTHERS THEN
+    EXECUTE 'RESET ROLE';
+    INSERT INTO public.__mig008_test_results VALUES (
+      '18_referee_confirmed_can_close_match_result', false, SQLERRM
+    );
+  END;
+
   PERFORM set_config('request.jwt.claim.sub', uid_referee::text, true);
   PERFORM set_config(
     'request.jwt.claims',
@@ -719,15 +785,41 @@ BEGIN
     PERFORM public.update_match_result(match_a1, 'in_progress', 0, 0);
     EXECUTE 'RESET ROLE';
     INSERT INTO public.__mig008_test_results VALUES (
-      '18_referee_cannot_update_match_result',
+      '18_referee_cannot_reopen_match_result',
       false,
       'unexpected RPC success'
     );
   EXCEPTION WHEN OTHERS THEN
     EXECUTE 'RESET ROLE';
     INSERT INTO public.__mig008_test_results VALUES (
-      '18_referee_cannot_update_match_result',
-      SQLERRM ILIKE '%Not authorized%',
+      '18_referee_cannot_reopen_match_result',
+      SQLERRM ILIKE '%Confirmed referee cannot modify a closed match result%'
+        OR SQLERRM ILIKE '%can only set status to finished or walkover%',
+      SQLERRM
+    );
+  END;
+
+  PERFORM set_config('request.jwt.claim.sub', uid_referee::text, true);
+  PERFORM set_config(
+    'request.jwt.claims',
+    json_build_object('sub', uid_referee::text, 'role', 'authenticated')::text,
+    true
+  );
+  BEGIN
+    EXECUTE 'SET LOCAL ROLE authenticated';
+    PERFORM public.update_match_result(match_a1, 'cancelled', 0, 0);
+    EXECUTE 'RESET ROLE';
+    INSERT INTO public.__mig008_test_results VALUES (
+      '18_referee_cannot_cancel_match_result',
+      false,
+      'unexpected RPC success'
+    );
+  EXCEPTION WHEN OTHERS THEN
+    EXECUTE 'RESET ROLE';
+    INSERT INTO public.__mig008_test_results VALUES (
+      '18_referee_cannot_cancel_match_result',
+      SQLERRM ILIKE '%Confirmed referee cannot modify a closed match result%'
+        OR SQLERRM ILIKE '%can only set status to finished or walkover%',
       SQLERRM
     );
   END;
