@@ -1455,6 +1455,8 @@ export type Database = {
           plan_tier: string
           slug: string
           sold_by_platform_staff_id: string | null
+          subscription_tier: string
+          addon_overrides: Json
           updated_at: string
         }
         Insert: {
@@ -1467,6 +1469,8 @@ export type Database = {
           plan_tier?: string
           slug: string
           sold_by_platform_staff_id?: string | null
+          subscription_tier?: string
+          addon_overrides?: Json
           updated_at?: string
         }
         Update: {
@@ -1479,6 +1483,8 @@ export type Database = {
           plan_tier?: string
           slug?: string
           sold_by_platform_staff_id?: string | null
+          subscription_tier?: string
+          addon_overrides?: Json
           updated_at?: string
         }
         Relationships: [

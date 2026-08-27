@@ -2,7 +2,12 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth/require-user";
 import { requireOrganizationMembership } from "@/lib/auth/require-organization-membership";
 import { getOrganizationVenues } from "@/lib/venues/queries";
+import {
+  formatLimitReachedMessage,
+  getOrganizationTierLimitStatus,
+} from "@/lib/billing/tier-limits";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { TierLimitLink } from "@/components/billing/TierLimitControls";
 import { VenueList } from "@/components/venues/VenueList";
 
 type PageProps = {
@@ -21,6 +26,13 @@ export default async function VenuesPage({ params }: PageProps) {
     membership.role === "organization_admin";
 
   const { venues, totalFields } = await getOrganizationVenues(organizationId);
+  const tierStatus = canManage
+    ? await getOrganizationTierLimitStatus(organizationId)
+    : null;
+  const sedesAtLimit = tierStatus?.atLimit.sedes ?? false;
+  const sedesLimitMessage = sedesAtLimit
+    ? formatLimitReachedMessage("sedes", tierStatus?.limits.sedes ?? null)
+    : null;
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -36,12 +48,14 @@ export default async function VenuesPage({ params }: PageProps) {
               >
                 Disponibilidad
               </Link>
-              <Link
+              <TierLimitLink
                 href={`/organizaciones/${organizationId}/sedes/nueva`}
+                disabled={sedesAtLimit}
+                disabledReason={sedesLimitMessage}
                 className="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand px-4 text-sm font-semibold text-brand-foreground"
               >
                 Nueva sede
-              </Link>
+              </TierLimitLink>
             </div>
           ) : undefined
         }

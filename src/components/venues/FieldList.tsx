@@ -5,6 +5,7 @@ import { StatusBadge } from "@/components/ui/StatusBadge";
 import { Card } from "@/components/ui/Card";
 import { FieldForm } from "@/components/venues/FieldForm";
 import { FieldAvailabilityEditor } from "@/components/venues/FieldAvailabilityEditor";
+import { TierLimitButton, TierLimitNotice } from "@/components/billing/TierLimitControls";
 import { DAY_LABELS_ES, type FieldWithAvailability } from "@/lib/venues/types";
 import { EmptyState } from "@/components/ui/EmptyState";
 
@@ -14,6 +15,8 @@ type FieldListProps = {
   venueActive: boolean;
   fields: FieldWithAvailability[];
   canManage: boolean;
+  canchasAtLimit?: boolean;
+  canchasLimitMessage?: string | null;
 };
 
 export function FieldList({
@@ -22,6 +25,8 @@ export function FieldList({
   venueActive,
   fields,
   canManage,
+  canchasAtLimit = false,
+  canchasLimitMessage = null,
 }: FieldListProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
@@ -31,18 +36,22 @@ export function FieldList({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-lg font-semibold text-text-primary">Canchas</h2>
         {canManage && (
-          <button
-            type="button"
+          <TierLimitButton
+            disabled={canchasAtLimit}
+            disabledReason={canchasLimitMessage}
             onClick={() => {
+              if (canchasAtLimit) return;
               setShowCreate((v) => !v);
               setEditingId(null);
             }}
             className="inline-flex min-h-11 items-center rounded-xl bg-brand px-4 text-sm font-semibold text-brand-foreground"
           >
             {showCreate ? "Cerrar formulario" : "Agregar cancha"}
-          </button>
+          </TierLimitButton>
         )}
       </div>
+
+      <TierLimitNotice message={canchasAtLimit ? canchasLimitMessage : null} />
 
       {canManage && showCreate && (
         <FieldForm
@@ -58,13 +67,14 @@ export function FieldList({
           description="Registra las canchas o campos de esta sede."
           action={
             canManage ? (
-              <button
-                type="button"
+              <TierLimitButton
+                disabled={canchasAtLimit}
+                disabledReason={canchasLimitMessage}
                 onClick={() => setShowCreate(true)}
                 className="inline-flex min-h-11 items-center rounded-xl bg-brand px-4 text-sm font-semibold text-brand-foreground"
               >
                 Agregar cancha
-              </button>
+              </TierLimitButton>
             ) : undefined
           }
         />

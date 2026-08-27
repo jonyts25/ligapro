@@ -3,6 +3,10 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth/require-user";
 import { requireOrganizationMembership } from "@/lib/auth/require-organization-membership";
 import { getVenueWithFields } from "@/lib/venues/queries";
+import {
+  formatLimitReachedMessage,
+  getOrganizationTierLimitStatus,
+} from "@/lib/billing/tier-limits";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { Card } from "@/components/ui/Card";
@@ -25,6 +29,17 @@ export default async function VenueDetailPage({ params }: PageProps) {
 
   const venue = await getVenueWithFields(organizationId, venueId);
   if (!venue) notFound();
+
+  const tierStatus = canManage
+    ? await getOrganizationTierLimitStatus(organizationId)
+    : null;
+  const canchasAtLimit = tierStatus?.atLimit.canchas_total ?? false;
+  const canchasLimitMessage = canchasAtLimit
+    ? formatLimitReachedMessage(
+        "canchas_total",
+        tierStatus?.limits.canchas_total ?? null
+      )
+    : null;
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -68,6 +83,8 @@ export default async function VenueDetailPage({ params }: PageProps) {
         venueActive={venue.is_active}
         fields={venue.fields}
         canManage={canManage}
+        canchasAtLimit={canchasAtLimit}
+        canchasLimitMessage={canchasLimitMessage}
       />
     </div>
   );
