@@ -60,10 +60,10 @@ const targets = {
   configure_knockout_round: ["p_round_id"],
   set_knockout_tie_penalty_winner: ["p_round_id"],
   advance_knockout_round: ["p_season_id"],
-  invite_captain_to_roster: ["p_season_team_id"],
+  invite_captain_to_roster: ["p_season_team_player_id"],
   create_captain_player_with_invitation: ["p_season_team_id"],
   accept_captain_invitation: ["p_token"],
-  set_player_payment_mark: ["p_season_team_id"],
+  set_player_payment_mark: ["p_season_team_player_id"],
   __schedule_match_core: ["p_match_id"],
 };
 
