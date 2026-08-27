@@ -1,17 +1,8 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth/require-user";
 import { requireOrganizationMembership } from "@/lib/auth/require-organization-membership";
 import { getMatchCaptureContext } from "@/lib/matches/queries";
-import { MatchCaptureHeader } from "@/components/matches/MatchCaptureHeader";
-import { CapturePermissionBadge } from "@/components/matches/CapturePermissionBadge";
-import { CaptureWindowStatus } from "@/components/matches/CaptureWindowStatus";
-import { MatchScoreForm } from "@/components/matches/MatchScoreForm";
-import { MatchEventForm } from "@/components/matches/MatchEventForm";
-import { MatchTimeline } from "@/components/matches/MatchTimeline";
-import { MatchDisciplineSummary } from "@/components/matches/MatchDisciplineSummary";
-import { MatchRosterCredentials } from "@/components/matches/MatchRosterCredentials";
-import type { MatchStatusValue } from "@/lib/matches/types";
+import { MatchCaptureWithDemoView } from "@/components/demo-view/MatchCaptureWithDemoView";
 
 type PageProps = {
   params: Promise<{
@@ -42,108 +33,24 @@ export default async function MatchCapturePage({ params }: PageProps) {
 
   const { details, permissions, timeline, discipline, roster, scoreMismatch, requirePlayerVerification } =
     ctx;
-  const match = details.match;
   const base = `/organizaciones/${organizationId}/torneos/${competitionId}/temporadas/${seasonId}`;
-  const matchClosed =
-    match.status === "finished" ||
-    match.status === "cancelled" ||
-    match.status === "walkover";
 
   return (
     <div className="mx-auto max-w-xl space-y-5 pb-10">
-      <div className="flex flex-wrap gap-2">
-        <Link
-          href={`${base}/partidos/${matchId}`}
-          className="inline-flex min-h-11 items-center rounded-xl border border-border px-4 text-sm font-medium"
-        >
-          Detalle
-        </Link>
-        <Link
-          href={`${base}/calendario`}
-          className="inline-flex min-h-11 items-center rounded-xl border border-border px-4 text-sm font-medium"
-        >
-          Calendario
-        </Link>
-        <Link
-          href={`${base}/partidos/${matchId}/captura/estadisticas`}
-          className="inline-flex min-h-11 items-center rounded-xl border border-border px-4 text-sm font-medium"
-        >
-          Estadísticas
-        </Link>
-      </div>
-
-      <MatchCaptureHeader details={details} permissions={permissions} />
-      <CapturePermissionBadge
-        canCaptureEvents={permissions.canCaptureEvents}
-        canUpdateResult={permissions.canUpdateResult}
-      />
-      <CaptureWindowStatus
-        canCaptureEvents={permissions.canCaptureEvents}
-        captureWindowOpen={permissions.captureWindowOpen}
-        captureWindowBypass={permissions.captureWindowBypass}
-      />
-
-      {scoreMismatch && (
-        <p
-          className="rounded-xl border border-warning/40 bg-warning/10 px-3 py-2 text-sm"
-          role="status"
-        >
-          Revisa el marcador oficial: los eventos registrados no coinciden con
-          el resultado.
-        </p>
-      )}
-
-      <MatchScoreForm
+      <MatchCaptureWithDemoView
         organizationId={organizationId}
         competitionId={competitionId}
         seasonId={seasonId}
         matchId={matchId}
-        currentStatus={match.status as MatchStatusValue}
-        homeScore={match.homeScore}
-        awayScore={match.awayScore}
-        homeName={match.homeName}
-        awayName={match.awayName}
-        canUpdate={permissions.canUpdateResult}
-        closeOnlyResultUpdate={permissions.closeOnlyResultUpdate}
-      />
-
-      <MatchEventForm
-        organizationId={organizationId}
-        competitionId={competitionId}
-        seasonId={seasonId}
-        matchId={matchId}
-        homeSeasonTeamId={match.homeSeasonTeamId}
-        awaySeasonTeamId={match.awaySeasonTeamId}
-        homeName={match.homeName}
-        awayName={match.awayName}
+        base={base}
+        details={details}
+        realPermissions={permissions}
+        timeline={timeline}
+        discipline={discipline}
         roster={roster}
-        canCapture={permissions.canCaptureEvents}
-        matchClosed={matchClosed}
-        matchStartsAt={match.schedule.startsAt}
-      />
-
-      <MatchRosterCredentials
-        organizationId={organizationId}
-        competitionId={competitionId}
-        seasonId={seasonId}
-        matchId={matchId}
-        homeName={match.homeName}
-        awayName={match.awayName}
-        homeSeasonTeamId={match.homeSeasonTeamId}
-        awaySeasonTeamId={match.awaySeasonTeamId}
-        roster={roster}
+        scoreMismatch={scoreMismatch}
         requirePlayerVerification={requirePlayerVerification}
       />
-
-      <MatchTimeline
-        organizationId={organizationId}
-        competitionId={competitionId}
-        seasonId={seasonId}
-        matchId={matchId}
-        events={timeline}
-        canVoidEvents={permissions.canVoidEvents}
-      />
-      <MatchDisciplineSummary items={discipline} />
     </div>
   );
 }

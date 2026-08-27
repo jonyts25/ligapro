@@ -14,20 +14,25 @@ import {
 import { formatMatchDateTime } from "@/lib/fixtures/format";
 import { getMatchRescheduleRequest } from "@/lib/fixtures/queries";
 import { MatchStatusBadge } from "@/components/fixtures/MatchStatusBadge";
-import { MatchRescheduleAdminPanel } from "@/components/fixtures/MatchRescheduleAdminPanel";
-import { MatchOfficialsManager } from "@/components/matches/MatchOfficialsManager";
-import { MatchTimeline } from "@/components/matches/MatchTimeline";
+import {
+  MatchDetailCaptureActions,
+  MatchDetailCapturePermissionBadge,
+  MatchDetailChroniclePanel,
+  MatchDetailOfficialsManager,
+  MatchDetailProgramLink,
+  MatchDetailReschedulePanel,
+  MatchDetailTimeline,
+} from "@/components/demo-view/MatchDetailDemoSections";
 import { MatchDisciplineSummary } from "@/components/matches/MatchDisciplineSummary";
-import { MatchChroniclePanel } from "@/components/matches/MatchChroniclePanel";
 import {
   getLatestChronicleJobForMatch,
   getMatchChronicle,
 } from "@/lib/chronicles/queries";
-import { CapturePermissionBadge } from "@/components/matches/CapturePermissionBadge";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { matchStatusLabel } from "@/lib/matches/types";
 import { isOrganizationAdminRole } from "@/lib/auth/is-organization-admin";
+import type { MatchStatusValue } from "@/lib/matches/types";
 
 type PageProps = {
   params: Promise<{
@@ -102,15 +107,12 @@ export default async function MatchDetailPage({ params }: PageProps) {
             >
               Calendario
             </Link>
-            {seasonActive &&
-              (permissions.canCaptureEvents || permissions.canUpdateResult) && (
-              <Link
-                href={`${base}/partidos/${match.id}/captura`}
-                className="inline-flex min-h-11 items-center rounded-xl bg-brand px-4 text-sm font-semibold text-brand-foreground"
-              >
-                Capturar
-              </Link>
-            )}
+            <MatchDetailCaptureActions
+              base={base}
+              matchId={match.id}
+              seasonActive={seasonActive}
+              realPermissions={permissions}
+            />
           </div>
         }
       />
@@ -125,9 +127,9 @@ export default async function MatchDetailPage({ params }: PageProps) {
               : ""}
           </span>
         </div>
-        <CapturePermissionBadge
-          canCaptureEvents={permissions.canCaptureEvents}
-          canUpdateResult={permissions.canUpdateResult}
+        <MatchDetailCapturePermissionBadge
+          realPermissions={permissions}
+          matchStatus={match.status as MatchStatusValue}
         />
         <dl className="space-y-2 text-sm">
           <div className="flex justify-between gap-3">
@@ -165,28 +167,26 @@ export default async function MatchDetailPage({ params }: PageProps) {
         )}
       </Card>
 
-      {canManageActive && match.status === "scheduled" && (
-        <Link
-          href={`${base}/partidos/${match.id}/programar`}
-          className="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-border px-4 text-sm font-medium"
-        >
-          {match.isProgrammed ? "Reprogramar" : "Programar"}
-        </Link>
-      )}
+      <MatchDetailProgramLink
+        base={base}
+        matchId={match.id}
+        isProgrammed={match.isProgrammed}
+        realCanManageActive={canManageActive}
+        matchStatus={match.status}
+      />
 
-      {canManageActive && (
-        <MatchRescheduleAdminPanel
-          organizationId={organizationId}
-          competitionId={competitionId}
-          seasonId={seasonId}
-          matchId={matchId}
-          isProgrammed={match.isProgrammed}
-          calendarStatus={match.calendarStatus}
-          rescheduleRequest={rescheduleRequest}
-        />
-      )}
+      <MatchDetailReschedulePanel
+        organizationId={organizationId}
+        competitionId={competitionId}
+        seasonId={seasonId}
+        matchId={matchId}
+        isProgrammed={match.isProgrammed}
+        calendarStatus={match.calendarStatus}
+        rescheduleRequest={rescheduleRequest}
+        realCanManageActive={canManageActive}
+      />
 
-      <MatchOfficialsManager
+      <MatchDetailOfficialsManager
         organizationId={organizationId}
         competitionId={competitionId}
         seasonId={seasonId}
@@ -194,27 +194,28 @@ export default async function MatchDetailPage({ params }: PageProps) {
         matchStatus={match.status}
         members={members}
         officials={officials}
-        canManage={canManageActive}
+        realCanManageActive={canManageActive}
       />
 
-      <MatchTimeline
+      <MatchDetailTimeline
         organizationId={organizationId}
         competitionId={competitionId}
         seasonId={seasonId}
         matchId={matchId}
         events={timeline}
-        canVoidEvents={canManageActive}
+        realPermissions={permissions}
+        matchStatus={match.status as MatchStatusValue}
       />
       <MatchDisciplineSummary items={discipline} />
 
       {matchFinished && (
-        <MatchChroniclePanel
+        <MatchDetailChroniclePanel
           organizationId={organizationId}
           competitionId={competitionId}
           seasonId={seasonId}
           matchId={matchId}
           matchFinished={matchFinished}
-          canManage={canManageActive}
+          realCanManageActive={canManageActive}
           chronicle={chronicleForView}
           job={chronicleJob}
         />

@@ -8,6 +8,7 @@ import type { CurrentUser } from "@/lib/auth/types";
 import { cn } from "@/lib/utils/cn";
 import { MobileMoreDrawer } from "@/components/layout/MobileMoreDrawer";
 import { SignOutButton } from "@/components/layout/SignOutButton";
+import { useDemoView } from "@/lib/demo-view/DemoViewContext";
 
 type TopBarProps = {
   branding: OrganizationBranding;
@@ -32,6 +33,8 @@ export function TopBar({
 }: TopBarProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const drawerId = useId();
+  const { getDisplayRoleLabel } = useDemoView();
+  const displayRoleLabel = getDisplayRoleLabel(roleLabel);
 
   return (
     <>
@@ -50,7 +53,7 @@ export function TopBar({
           )}
           <p className="truncate text-xs text-text-secondary">
             {user.displayName ?? user.email}
-            {roleLabel ? ` · ${roleLabel}` : ""}
+            {displayRoleLabel ? ` · ${displayRoleLabel}` : ""}
           </p>
         </div>
         <div className="flex items-center gap-2">

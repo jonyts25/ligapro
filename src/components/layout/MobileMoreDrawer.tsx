@@ -3,8 +3,9 @@
 import { useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
-import { getMobileMoreNavItems } from "@/components/layout/nav-items";
 import { NavItemLink } from "@/components/layout/NavItemLink";
+import { DemoViewMobileMoreNav } from "@/components/demo-view/DemoViewNavItems";
+import { useDemoView } from "@/lib/demo-view/DemoViewContext";
 import { usePathname } from "next/navigation";
 import { platformInternalSectionLabel } from "@/lib/platform/config";
 
@@ -26,9 +27,9 @@ export function MobileMoreDrawer({
   platformStaffNav,
 }: MobileMoreDrawerProps) {
   const pathname = usePathname();
+  const { showPlatformStaffNav } = useDemoView();
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
-  const items = getMobileMoreNavItems(organizationId, { canManageSettings });
 
   useEffect(() => {
     if (!open) return;
@@ -102,20 +103,27 @@ export function MobileMoreDrawer({
           </button>
         </div>
         <nav aria-label="Módulos adicionales" className="px-3 py-3">
-          <ul className="space-y-1">
-            {items.map((item) => (
-              <li key={item.href}>
-                <NavItemLink
-                  {...item}
-                  pathname={pathname}
-                  layout="drawer"
-                  onNavigate={() => onOpenChange(false)}
-                />
-              </li>
-            ))}
-          </ul>
+          <DemoViewMobileMoreNav
+            organizationId={organizationId}
+            realCanManageSettings={canManageSettings}
+          >
+            {(items) => (
+              <ul className="space-y-1">
+                {items.map((item) => (
+                  <li key={item.href}>
+                    <NavItemLink
+                      {...item}
+                      pathname={pathname}
+                      layout="drawer"
+                      onNavigate={() => onOpenChange(false)}
+                    />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </DemoViewMobileMoreNav>
         </nav>
-        {platformStaffNav && (
+        {showPlatformStaffNav && platformStaffNav && (
           <div className="border-t border-border px-3 py-3">
             <p className="mb-1 px-3 text-[10px] font-medium uppercase tracking-wide text-muted">
               {platformInternalSectionLabel()}
