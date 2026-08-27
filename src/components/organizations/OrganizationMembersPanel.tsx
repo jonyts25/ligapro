@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import {
   assignOrganizationMemberSeasonScopeAction,
   initialOrganizationMembersActionState,
@@ -13,6 +13,7 @@ import type {
 } from "@/lib/organization-members/types";
 import { roleLabel } from "@/lib/auth/validation";
 import { SubmitButton } from "@/components/auth/SubmitButton";
+import { TierLimitNotice } from "@/components/billing/TierLimitControls";
 import { Card } from "@/components/ui/Card";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { StatusBadge } from "@/components/ui/StatusBadge";
@@ -24,6 +25,8 @@ type OrganizationMembersPanelProps = {
   seasonOptions: OrganizationSeasonScopeOption[];
   canManageScopes: boolean;
   canManageInvites: boolean;
+  staffAtLimit?: boolean;
+  staffLimitMessage?: string | null;
 };
 
 function scopeAccessLabel(member: OrganizationMemberListItem): string {
@@ -44,7 +47,10 @@ export function OrganizationMembersPanel({
   seasonOptions,
   canManageScopes,
   canManageInvites,
+  staffAtLimit = false,
+  staffLimitMessage = null,
 }: OrganizationMembersPanelProps) {
+  const [inviteRole, setInviteRole] = useState("organization_member");
   const [assignState, assignAction, assignPending] = useActionState(
     assignOrganizationMemberSeasonScopeAction,
     initialOrganizationMembersActionState
@@ -61,6 +67,8 @@ export function OrganizationMembersPanel({
   const actionMessage =
     assignState.message || removeState.message || inviteState.message;
   const actionOk = assignState.ok || removeState.ok || inviteState.ok;
+  const inviteAdminBlocked =
+    staffAtLimit && inviteRole === "organization_admin";
 
   return (
     <div className="space-y-6">
@@ -95,7 +103,8 @@ export function OrganizationMembersPanel({
                   id="invite-role"
                   name="role"
                   disabled={invitePending}
-                  defaultValue="organization_member"
+                  value={inviteRole}
+                  onChange={(event) => setInviteRole(event.target.value)}
                   className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
                 >
                   <option value="organization_member">Miembro</option>
@@ -103,7 +112,14 @@ export function OrganizationMembersPanel({
                 </select>
               </div>
             </div>
-            <SubmitButton pending={invitePending} className="w-auto px-4">
+            <TierLimitNotice
+              message={inviteAdminBlocked ? staffLimitMessage : null}
+            />
+            <SubmitButton
+              pending={invitePending}
+              disabled={inviteAdminBlocked}
+              className="w-auto px-4"
+            >
               Crear invitación
             </SubmitButton>
           </form>

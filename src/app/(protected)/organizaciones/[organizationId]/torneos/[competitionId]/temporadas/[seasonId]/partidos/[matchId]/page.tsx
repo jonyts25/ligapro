@@ -23,6 +23,10 @@ import {
   getLatestChronicleJobForMatch,
   getMatchChronicle,
 } from "@/lib/chronicles/queries";
+import {
+  formatLimitReachedMessage,
+  getOrganizationTierLimitStatus,
+} from "@/lib/billing/tier-limits";
 import { CapturePermissionBadge } from "@/components/matches/CapturePermissionBadge";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
@@ -83,6 +87,18 @@ export default async function MatchDetailPage({ params }: PageProps) {
     : [null, null];
   const chronicleForView =
     canManageActive || chronicle?.isPublished ? chronicle : null;
+
+  const tierStatus =
+    canManageActive && matchFinished
+      ? await getOrganizationTierLimitStatus(organizationId)
+      : null;
+  const chroniclesAtLimit = tierStatus?.atLimit.cronicas_mes ?? false;
+  const chroniclesLimitMessage = chroniclesAtLimit
+    ? formatLimitReachedMessage(
+        "cronicas_mes",
+        tierStatus?.limits.cronicas_mes ?? null
+      )
+    : null;
 
   const inactiveInfra =
     match.isProgrammed &&
@@ -217,6 +233,8 @@ export default async function MatchDetailPage({ params }: PageProps) {
           canManage={canManageActive}
           chronicle={chronicleForView}
           job={chronicleJob}
+          chroniclesAtLimit={chroniclesAtLimit}
+          chroniclesLimitMessage={chroniclesLimitMessage}
         />
       )}
     </div>

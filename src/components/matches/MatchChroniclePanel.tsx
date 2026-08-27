@@ -13,6 +13,7 @@ import {
   type MatchChronicleRow,
 } from "@/lib/chronicles/types";
 import { SubmitButton } from "@/components/auth/SubmitButton";
+import { TierLimitNotice } from "@/components/billing/TierLimitControls";
 import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/utils/cn";
 
@@ -25,6 +26,8 @@ type MatchChroniclePanelProps = {
   canManage: boolean;
   chronicle: MatchChronicleRow | null;
   job: MatchChronicleJobRow | null;
+  chroniclesAtLimit?: boolean;
+  chroniclesLimitMessage?: string | null;
 };
 
 const JOB_STATUS_LABEL: Record<MatchChronicleJobRow["status"], string> = {
@@ -59,6 +62,8 @@ export function MatchChroniclePanel({
   canManage,
   chronicle,
   job,
+  chroniclesAtLimit = false,
+  chroniclesLimitMessage = null,
 }: MatchChroniclePanelProps) {
   const router = useRouter();
   const [confirmRegenerate, setConfirmRegenerate] = useState(false);
@@ -117,8 +122,13 @@ export function MatchChroniclePanel({
           {chronicle?.isPublished && !confirmRegenerate ? (
             <button
               type="button"
-              className="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-brand px-4 text-sm font-semibold text-brand-foreground hover:opacity-90 sm:w-auto"
-              onClick={() => setConfirmRegenerate(true)}
+              disabled={chroniclesAtLimit}
+              title={chroniclesAtLimit ? (chroniclesLimitMessage ?? undefined) : undefined}
+              className="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-brand px-4 text-sm font-semibold text-brand-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+              onClick={() => {
+                if (chroniclesAtLimit) return;
+                setConfirmRegenerate(true);
+              }}
             >
               Generar crónica
             </button>
@@ -128,7 +138,12 @@ export function MatchChroniclePanel({
               {confirmRegenerate && (
                 <input type="hidden" name="confirmRegenerate" value="true" />
               )}
-              <SubmitButton pending={enqueuePending} className="w-full sm:w-auto">
+              <TierLimitNotice message={chroniclesAtLimit ? chroniclesLimitMessage : null} />
+              <SubmitButton
+                pending={enqueuePending}
+                disabled={chroniclesAtLimit}
+                className="w-full sm:w-auto"
+              >
                 {confirmRegenerate
                   ? "Confirmar y generar crónica"
                   : "Generar crónica"}

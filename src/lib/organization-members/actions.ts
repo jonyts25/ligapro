@@ -6,6 +6,7 @@ import { requireUser } from "@/lib/auth/require-user";
 import { requireOrganizationAdmin } from "@/lib/auth/require-organization-admin";
 import { isValidEmail, normalizeEmail } from "@/lib/auth/validation";
 import { getPublicSiteUrl } from "@/lib/site-url";
+import { assertCanInviteStaffMember } from "@/lib/billing/tier-limits";
 import { canManageOrganizationMemberScopes } from "@/lib/organization-members/queries";
 import type { OrganizationMembersActionState } from "@/lib/organization-members/types";
 
@@ -117,6 +118,11 @@ export async function inviteOrganizationMemberAction(
 
   const user = await requireUser();
   await requireOrganizationAdmin(user.id, organizationId);
+
+  const tierCheck = await assertCanInviteStaffMember(organizationId, role);
+  if (!tierCheck.ok) {
+    return { ok: false, message: tierCheck.message };
+  }
 
   const supabase = await createClient();
   const { data: token, error } = await supabase.rpc(

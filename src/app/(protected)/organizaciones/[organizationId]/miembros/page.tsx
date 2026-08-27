@@ -6,6 +6,10 @@ import {
   getOrganizationMembersWithScopes,
   getOrganizationSeasonScopeOptions,
 } from "@/lib/organization-members/queries";
+import {
+  formatLimitReachedMessage,
+  getOrganizationTierLimitStatus,
+} from "@/lib/billing/tier-limits";
 import { OrganizationMembersPanel } from "@/components/organizations/OrganizationMembersPanel";
 import { PageHeader } from "@/components/ui/PageHeader";
 
@@ -18,11 +22,19 @@ export default async function OrganizationMembersPage({ params }: PageProps) {
   const user = await requireUser();
   await requireOrganizationAdmin(user.id, organizationId);
 
-  const [members, seasonOptions, canManageScopes] = await Promise.all([
+  const [members, seasonOptions, canManageScopes, tierStatus] = await Promise.all([
     getOrganizationMembersWithScopes(organizationId),
     getOrganizationSeasonScopeOptions(organizationId),
     canManageOrganizationMemberScopes(user.id, organizationId),
+    getOrganizationTierLimitStatus(organizationId),
   ]);
+  const staffAtLimit = tierStatus?.atLimit.usuarios_staff ?? false;
+  const staffLimitMessage = staffAtLimit
+    ? formatLimitReachedMessage(
+        "usuarios_staff",
+        tierStatus?.limits.usuarios_staff ?? null
+      )
+    : null;
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -44,6 +56,8 @@ export default async function OrganizationMembersPage({ params }: PageProps) {
         seasonOptions={seasonOptions}
         canManageScopes={canManageScopes}
         canManageInvites
+        staffAtLimit={staffAtLimit}
+        staffLimitMessage={staffLimitMessage}
       />
     </div>
   );

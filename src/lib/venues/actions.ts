@@ -5,6 +5,10 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth/require-user";
 import { requireOrganizationAdmin } from "@/lib/auth/require-organization-admin";
+import {
+  assertCanCreateField,
+  assertCanCreateVenue,
+} from "@/lib/billing/tier-limits";
 import type { VenueActionState } from "@/lib/venues/types";
 import { intervalsOverlap } from "@/lib/venues/availability-validation";
 
@@ -44,6 +48,15 @@ export async function createVenueAction(
       ok: false,
       message: nameError,
       fieldErrors: { name: nameError },
+      values: { name, address, isActive },
+    };
+  }
+
+  const tierCheck = await assertCanCreateVenue(organizationId);
+  if (!tierCheck.ok) {
+    return {
+      ok: false,
+      message: tierCheck.message,
       values: { name, address, isActive },
     };
   }
@@ -168,6 +181,15 @@ export async function createFieldAction(
 
   if (!venue) {
     return { ok: false, message: "No encontramos la sede." };
+  }
+
+  const tierCheck = await assertCanCreateField(organizationId);
+  if (!tierCheck.ok) {
+    return {
+      ok: false,
+      message: tierCheck.message,
+      values: { name, surfaceType, isActive },
+    };
   }
 
   const { error } = await supabase.from("fields").insert({

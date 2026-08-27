@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth/require-user";
 import { requireOrganizationAdmin } from "@/lib/auth/require-organization-admin";
+import { assertCanCreateCompetition } from "@/lib/billing/tier-limits";
 import {
   SEASON_FORMAT_OPTIONS,
   SEASON_VISIBILITY_OPTIONS,
@@ -117,6 +118,15 @@ export async function createCompetitionAction(
       ok: false,
       message: nameError,
       fieldErrors: { name: nameError },
+      values: { name, isYouth },
+    };
+  }
+
+  const tierCheck = await assertCanCreateCompetition(organizationId);
+  if (!tierCheck.ok) {
+    return {
+      ok: false,
+      message: tierCheck.message,
       values: { name, isYouth },
     };
   }

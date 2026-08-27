@@ -1,18 +1,22 @@
-import Link from "next/link";
 import { CompetitionCard } from "@/components/competitions/CompetitionCard";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { TierLimitLink } from "@/components/billing/TierLimitControls";
 import type { CompetitionListItem } from "@/lib/competitions/types";
 
 type CompetitionListProps = {
   organizationId: string;
   competitions: CompetitionListItem[];
   canManage: boolean;
+  torneosAtLimit?: boolean;
+  torneosLimitMessage?: string | null;
 };
 
 export function CompetitionList({
   organizationId,
   competitions,
   canManage,
+  torneosAtLimit = false,
+  torneosLimitMessage = null,
 }: CompetitionListProps) {
   if (competitions.length === 0) {
     return (
@@ -21,12 +25,14 @@ export function CompetitionList({
         description="Crea tu primera competencia para configurar una temporada."
         action={
           canManage ? (
-            <Link
+            <TierLimitLink
               href={`/organizaciones/${organizationId}/torneos/nuevo`}
+              disabled={torneosAtLimit}
+              disabledReason={torneosLimitMessage}
               className="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand px-4 text-sm font-semibold text-brand-foreground"
             >
               Nuevo torneo
-            </Link>
+            </TierLimitLink>
           ) : undefined
         }
       />

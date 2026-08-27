@@ -1,8 +1,12 @@
-import Link from "next/link";
 import { requireUser } from "@/lib/auth/require-user";
 import { requireOrganizationMembership } from "@/lib/auth/require-organization-membership";
 import { getOrganizationCompetitions } from "@/lib/competitions/queries";
+import {
+  formatLimitReachedMessage,
+  getOrganizationTierLimitStatus,
+} from "@/lib/billing/tier-limits";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { TierLimitLink } from "@/components/billing/TierLimitControls";
 import { CompetitionList } from "@/components/competitions/CompetitionList";
 
 type PageProps = {
@@ -22,6 +26,16 @@ export default async function CompetitionsPage({ params }: PageProps) {
 
   const { competitions, totalSeasons } =
     await getOrganizationCompetitions(organizationId);
+  const tierStatus = canManage
+    ? await getOrganizationTierLimitStatus(organizationId)
+    : null;
+  const torneosAtLimit = tierStatus?.atLimit.torneos_activos ?? false;
+  const torneosLimitMessage = torneosAtLimit
+    ? formatLimitReachedMessage(
+        "torneos_activos",
+        tierStatus?.limits.torneos_activos ?? null
+      )
+    : null;
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -30,12 +44,14 @@ export default async function CompetitionsPage({ params }: PageProps) {
         description={`${competitions.length} torneo${competitions.length === 1 ? "" : "s"} · ${totalSeasons} temporada${totalSeasons === 1 ? "" : "s"}`}
         actions={
           canManage ? (
-            <Link
+            <TierLimitLink
               href={`/organizaciones/${organizationId}/torneos/nuevo`}
+              disabled={torneosAtLimit}
+              disabledReason={torneosLimitMessage}
               className="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand px-4 text-sm font-semibold text-brand-foreground"
             >
               Nuevo torneo
-            </Link>
+            </TierLimitLink>
           ) : undefined
         }
       />
@@ -43,6 +59,8 @@ export default async function CompetitionsPage({ params }: PageProps) {
         organizationId={organizationId}
         competitions={competitions}
         canManage={canManage}
+        torneosAtLimit={torneosAtLimit}
+        torneosLimitMessage={torneosLimitMessage}
       />
     </div>
   );
