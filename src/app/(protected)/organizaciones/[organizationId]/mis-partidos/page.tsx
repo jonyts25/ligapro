@@ -9,9 +9,9 @@ import {
   officialRoleLabel,
 } from "@/lib/matches/types";
 import { MyMatchConfirmAttendanceButton } from "@/components/matches/MyMatchConfirmAttendanceButton";
+import { MyMatchesEmptySection } from "@/components/demo-view/MyMatchesEmptySection";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
-import { EmptyState } from "@/components/ui/EmptyState";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 
 type PageProps = {
@@ -51,10 +51,7 @@ export default async function MyMatchesPage({ params }: PageProps) {
       />
 
       {!assignments.length ? (
-        <EmptyState
-          title="Sin partidos asignados"
-          description="Cuando te designen árbitro, delegado u otro rol en un partido de temporadas activas, aparecerán aquí con enlace a captura."
-        />
+        <MyMatchesEmptySection hasAssignments={false} />
       ) : (
         <ul className="space-y-3">
           {assignments.map((assignment) => (
