@@ -6,7 +6,7 @@ import { requireUser } from "@/lib/auth/require-user";
 import { requireOrganizationAdmin } from "@/lib/auth/require-organization-admin";
 import { isValidEmail, normalizeEmail } from "@/lib/auth/validation";
 import { getPublicSiteUrl } from "@/lib/site-url";
-import { assertCanInviteStaffMember } from "@/lib/billing/tier-limits";
+import { assertCanInviteStaffMember } from "@/lib/billing/tier-limits-queries";
 import { canManageOrganizationMemberScopes } from "@/lib/organization-members/queries";
 import type { OrganizationMembersActionState } from "@/lib/organization-members/types";
 

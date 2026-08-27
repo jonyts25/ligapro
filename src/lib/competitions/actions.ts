@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth/require-user";
 import { requireOrganizationAdmin } from "@/lib/auth/require-organization-admin";
-import { assertCanCreateCompetition } from "@/lib/billing/tier-limits";
+import { assertCanCreateCompetition } from "@/lib/billing/tier-limits-queries";
 import {
   SEASON_FORMAT_OPTIONS,
   SEASON_VISIBILITY_OPTIONS,

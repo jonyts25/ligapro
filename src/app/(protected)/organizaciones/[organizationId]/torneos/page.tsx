@@ -1,10 +1,8 @@
 import { requireUser } from "@/lib/auth/require-user";
 import { requireOrganizationMembership } from "@/lib/auth/require-organization-membership";
 import { getOrganizationCompetitions } from "@/lib/competitions/queries";
-import {
-  formatLimitReachedMessage,
-  getOrganizationTierLimitStatus,
-} from "@/lib/billing/tier-limits";
+import { formatLimitReachedMessage } from "@/lib/billing/tier-limits";
+import { getOrganizationTierLimitStatus } from "@/lib/billing/tier-limits-queries";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { TierLimitLink } from "@/components/billing/TierLimitControls";
 import { CompetitionList } from "@/components/competitions/CompetitionList";

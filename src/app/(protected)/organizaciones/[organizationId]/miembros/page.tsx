@@ -6,10 +6,8 @@ import {
   getOrganizationMembersWithScopes,
   getOrganizationSeasonScopeOptions,
 } from "@/lib/organization-members/queries";
-import {
-  formatLimitReachedMessage,
-  getOrganizationTierLimitStatus,
-} from "@/lib/billing/tier-limits";
+import { formatLimitReachedMessage } from "@/lib/billing/tier-limits";
+import { getOrganizationTierLimitStatus } from "@/lib/billing/tier-limits-queries";
 import { OrganizationMembersPanel } from "@/components/organizations/OrganizationMembersPanel";
 import { PageHeader } from "@/components/ui/PageHeader";
 

@@ -8,7 +8,7 @@ import { requireOrganizationAdmin } from "@/lib/auth/require-organization-admin"
 import {
   assertCanCreateField,
   assertCanCreateVenue,
-} from "@/lib/billing/tier-limits";
+} from "@/lib/billing/tier-limits-queries";
 import type { VenueActionState } from "@/lib/venues/types";
 import { intervalsOverlap } from "@/lib/venues/availability-validation";
 

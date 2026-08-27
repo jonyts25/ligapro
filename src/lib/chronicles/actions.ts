@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth/require-user";
 import { requireOrganizationAdmin } from "@/lib/auth/require-organization-admin";
-import { assertCanGenerateChronicle } from "@/lib/billing/tier-limits";
+import { assertCanGenerateChronicle } from "@/lib/billing/tier-limits-queries";
 import { isAnthropicConfigured } from "@/lib/ai/call-ai";
 import { buildChroniclePrompt } from "@/lib/chronicles/build-prompt";
 import { buildChronicleTimelineForPrompt } from "@/lib/chronicles/timeline-for-prompt";

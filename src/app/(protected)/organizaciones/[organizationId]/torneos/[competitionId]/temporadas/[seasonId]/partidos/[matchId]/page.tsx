@@ -23,10 +23,8 @@ import {
   getLatestChronicleJobForMatch,
   getMatchChronicle,
 } from "@/lib/chronicles/queries";
-import {
-  formatLimitReachedMessage,
-  getOrganizationTierLimitStatus,
-} from "@/lib/billing/tier-limits";
+import { formatLimitReachedMessage } from "@/lib/billing/tier-limits";
+import { getOrganizationTierLimitStatus } from "@/lib/billing/tier-limits-queries";
 import { CapturePermissionBadge } from "@/components/matches/CapturePermissionBadge";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
