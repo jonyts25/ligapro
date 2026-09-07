@@ -4,29 +4,13 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth/require-user";
 import { isPlatformStaff } from "@/lib/platform-billing/queries";
-import type { PlatformBillingStatus, PlatformPlanTier } from "@/lib/platform-billing/types";
+import type {
+  PlatformBillingActionState,
+  PlatformBillingStatus,
+  PlatformPlanTier,
+  PlatformPricingDefaultsActionState,
+} from "@/lib/platform-billing/types";
 import type { CotizadorParams } from "@/lib/platform-billing/cotizador";
-
-export type PlatformBillingActionState = {
-  ok: boolean;
-  message: string | null;
-};
-
-export const initialPlatformBillingActionState: PlatformBillingActionState = {
-  ok: false,
-  message: null,
-};
-
-export type PlatformPricingDefaultsActionState = {
-  ok: boolean;
-  message: string | null;
-};
-
-export const initialPlatformPricingDefaultsActionState: PlatformPricingDefaultsActionState =
-  {
-    ok: false,
-    message: null,
-  };
 
 const ALLOWED: PlatformBillingStatus[] = [
   "pendiente",

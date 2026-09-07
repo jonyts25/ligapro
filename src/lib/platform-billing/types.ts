@@ -42,3 +42,24 @@ export function billingStatusLabel(status: string): string {
     PLATFORM_BILLING_STATUSES.find((s) => s.value === status)?.label ?? status
   );
 }
+
+export type PlatformBillingActionState = {
+  ok: boolean;
+  message: string | null;
+};
+
+export const initialPlatformBillingActionState: PlatformBillingActionState = {
+  ok: false,
+  message: null,
+};
+
+export type PlatformPricingDefaultsActionState = {
+  ok: boolean;
+  message: string | null;
+};
+
+export const initialPlatformPricingDefaultsActionState: PlatformPricingDefaultsActionState =
+  {
+    ok: false,
+    message: null,
+  };

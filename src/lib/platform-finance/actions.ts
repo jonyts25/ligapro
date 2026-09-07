@@ -4,17 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth/require-user";
 import { isPlatformStaff } from "@/lib/platform-billing/queries";
-import type { PlatformExpenseCategory } from "@/lib/platform-finance/types";
-
-export type PlatformFinanceActionState = {
-  ok: boolean;
-  message: string | null;
-};
-
-export const initialPlatformFinanceActionState: PlatformFinanceActionState = {
-  ok: false,
-  message: null,
-};
+import type { PlatformExpenseCategory, PlatformFinanceActionState } from "@/lib/platform-finance/types";
 
 const EXPENSE_CATEGORIES: PlatformExpenseCategory[] = [
   "hosting",

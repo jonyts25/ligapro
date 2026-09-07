@@ -10,12 +10,6 @@ import { assertCanInviteStaffMember } from "@/lib/billing/tier-limits-queries";
 import { canManageOrganizationMemberScopes } from "@/lib/organization-members/queries";
 import type { OrganizationMembersActionState } from "@/lib/organization-members/types";
 
-export const initialOrganizationMembersActionState: OrganizationMembersActionState =
-  {
-    ok: false,
-    message: null,
-  };
-
 function membersPagePath(organizationId: string): string {
   return `/organizaciones/${organizationId}/miembros`;
 }

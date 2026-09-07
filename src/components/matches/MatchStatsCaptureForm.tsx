@@ -2,10 +2,12 @@
 
 import { useActionState } from "react";
 import {
-  initialMatchStatsActionState,
   saveMatchStatsAction,
 } from "@/lib/match-stats/actions";
-import type { MatchStatsCaptureContext } from "@/lib/match-stats/types";
+import {
+  initialMatchStatsActionState,
+  type MatchStatsCaptureContext,
+} from "@/lib/match-stats/types";
 import { SubmitButton } from "@/components/auth/SubmitButton";
 import { Card } from "@/components/ui/Card";
 import { SectionHeader } from "@/components/ui/SectionHeader";

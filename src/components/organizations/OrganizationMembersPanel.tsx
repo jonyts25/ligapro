@@ -3,13 +3,13 @@
 import { useActionState, useState } from "react";
 import {
   assignOrganizationMemberSeasonScopeAction,
-  initialOrganizationMembersActionState,
   inviteOrganizationMemberAction,
   removeOrganizationMemberSeasonScopeAction,
 } from "@/lib/organization-members/actions";
-import type {
-  OrganizationMemberListItem,
-  OrganizationSeasonScopeOption,
+import {
+  initialOrganizationMembersActionState,
+  type OrganizationMemberListItem,
+  type OrganizationSeasonScopeOption,
 } from "@/lib/organization-members/types";
 import { roleLabel } from "@/lib/auth/validation";
 import { SubmitButton } from "@/components/auth/SubmitButton";

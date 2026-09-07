@@ -6,11 +6,6 @@ import { requireUser } from "@/lib/auth/require-user";
 import { requireOrganizationMembership } from "@/lib/auth/require-organization-membership";
 import type { MatchStatsActionState } from "@/lib/match-stats/types";
 
-export const initialMatchStatsActionState: MatchStatsActionState = {
-  ok: false,
-  message: null,
-};
-
 function parseOptionalInt(value: FormDataEntryValue | null): number | null {
   const raw = String(value ?? "").trim();
   if (!raw) return null;

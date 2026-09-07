@@ -4,9 +4,11 @@ import { useActionState } from "react";
 import Link from "next/link";
 import {
   acceptOrganizationInvitationAction,
-  initialOrganizationMembersActionState,
 } from "@/lib/organization-members/actions";
-import type { OrganizationInvitationPreview } from "@/lib/organization-members/types";
+import {
+  initialOrganizationMembersActionState,
+  type OrganizationInvitationPreview,
+} from "@/lib/organization-members/types";
 import { roleLabel } from "@/lib/auth/validation";
 import { maskEmail } from "@/lib/auth/validation";
 import { AuthCard } from "@/components/auth/AuthCard";

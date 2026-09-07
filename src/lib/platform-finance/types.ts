@@ -60,3 +60,13 @@ export function formatPlatformMoney(amount: number): string {
     currency: "MXN",
   }).format(amount);
 }
+
+export type PlatformFinanceActionState = {
+  ok: boolean;
+  message: string | null;
+};
+
+export const initialPlatformFinanceActionState: PlatformFinanceActionState = {
+  ok: false,
+  message: null,
+};
