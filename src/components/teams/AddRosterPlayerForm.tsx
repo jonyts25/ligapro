@@ -10,6 +10,11 @@ import {
   initialTeamsActionState,
   type AvailablePlayerOption,
 } from "@/lib/teams/types";
+import { BulkPlayersPasteField } from "@/components/teams/BulkPlayersPasteField";
+import {
+  hasDuplicateJerseyNumbers,
+  parseBulkPlayerLines,
+} from "@/lib/teams/parse-bulk-players";
 import { SubmitButton } from "@/components/auth/SubmitButton";
 import { Card } from "@/components/ui/Card";
 import { SectionHeader } from "@/components/ui/SectionHeader";
@@ -70,6 +75,12 @@ export function AddRosterPlayerForm({
     initialTeamsActionState
   );
   const [bulkMode, setBulkMode] = useState(false);
+  const [bulkList, setBulkList] = useState("");
+  const bulkPreview = useMemo(() => parseBulkPlayerLines(bulkList), [bulkList]);
+  const bulkHasDuplicates = useMemo(
+    () => hasDuplicateJerseyNumbers(bulkPreview),
+    [bulkPreview]
+  );
   const [existingState, existingAction, existingPending] = useActionState(
     addExistingPlayerAction,
     initialTeamsActionState
@@ -125,21 +136,20 @@ export function AddRosterPlayerForm({
             <input type="hidden" name="competitionId" value={competitionId} />
             <input type="hidden" name="seasonId" value={seasonId} />
             <input type="hidden" name="seasonTeamId" value={seasonTeamId} />
-            <div className="space-y-1.5">
-              <label htmlFor="bulkPlayers" className="block text-sm font-medium">
-                Jugadores (uno por línea; opcional: nombre,dorsal)
-              </label>
-              <textarea
-                id="bulkPlayers"
-                name="bulkList"
-                required
-                rows={8}
-                disabled={bulkPending}
-                placeholder={"Juan Pérez,10\nMaría López\n..."}
-                className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
-              />
-            </div>
-            <SubmitButton pending={bulkPending} className="w-auto">
+            <BulkPlayersPasteField
+              id="bulkPlayers"
+              name="bulkList"
+              value={bulkList}
+              onValueChange={setBulkList}
+              required
+              rows={8}
+              disabled={bulkPending}
+            />
+            <SubmitButton
+              pending={bulkPending}
+              className="w-auto"
+              disabled={bulkHasDuplicates || bulkPreview.length === 0}
+            >
               Crear jugadores en lote
             </SubmitButton>
           </form>

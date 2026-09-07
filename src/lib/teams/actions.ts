@@ -21,6 +21,11 @@ import { buildCaptainWhatsAppLink } from "@/lib/captain/whatsapp";
 import { humanizeCaptainInvitationAdminError } from "@/lib/captain/errors";
 import { PLATFORM_NAME } from "@/lib/platform/config";
 import { canConfirmTeamRegistration } from "@/lib/teams/confirm-registration";
+import {
+  bulkPlayerEntriesForRpc,
+  hasDuplicateJerseyNumbers,
+  parseBulkPlayerLines,
+} from "@/lib/teams/parse-bulk-players";
 
 function validateName(name: string, label: string): string | null {
   const trimmed = name.trim();
@@ -1239,26 +1244,23 @@ export async function createPlayersBulkAction(
 
   await requireOrganizationAdmin(user.id, organizationId);
 
-  const entries = bulkList
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => {
-      const parts = line.split(/[,;\t]/).map((p) => p.trim());
-      const fullName = parts[0] ?? "";
-      const jerseyRaw = parts[1];
-      const jerseyNumber =
-        jerseyRaw && /^\d+$/.test(jerseyRaw) ? Number.parseInt(jerseyRaw, 10) : null;
-      return { full_name: fullName, jersey_number: jerseyNumber };
-    })
-    .filter((e) => e.full_name.length >= 2);
-
-  if (entries.length === 0) {
+  const preview = parseBulkPlayerLines(bulkList);
+  if (preview.length === 0) {
     return {
       ok: false,
       message: "Pega al menos un jugador por línea (nombre o nombre,dorsal).",
     };
   }
+
+  if (hasDuplicateJerseyNumbers(preview)) {
+    return {
+      ok: false,
+      message:
+        "Hay dorsales duplicados en la lista. Corrígelos antes de continuar.",
+    };
+  }
+
+  const entries = bulkPlayerEntriesForRpc(bulkList);
 
   const supabase = await createClient();
   const { data, error } = await (supabase as unknown as {

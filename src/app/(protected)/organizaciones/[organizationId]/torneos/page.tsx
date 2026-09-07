@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireUser } from "@/lib/auth/require-user";
 import { requireOrganizationMembership } from "@/lib/auth/require-organization-membership";
 import { getOrganizationCompetitions } from "@/lib/competitions/queries";
@@ -42,14 +43,22 @@ export default async function CompetitionsPage({ params }: PageProps) {
         description={`${competitions.length} torneo${competitions.length === 1 ? "" : "s"} · ${totalSeasons} temporada${totalSeasons === 1 ? "" : "s"}`}
         actions={
           canManage ? (
-            <TierLimitLink
-              href={`/organizaciones/${organizationId}/torneos/nuevo`}
-              disabled={torneosAtLimit}
-              disabledReason={torneosLimitMessage}
-              className="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand px-4 text-sm font-semibold text-brand-foreground"
-            >
-              Nuevo torneo
-            </TierLimitLink>
+            <div className="flex flex-wrap gap-2">
+              <Link
+                href={`/organizaciones/${organizationId}/torneos/asistente`}
+                className="inline-flex min-h-11 items-center justify-center rounded-xl border border-brand px-4 text-sm font-semibold text-brand"
+              >
+                Asistente rápido
+              </Link>
+              <TierLimitLink
+                href={`/organizaciones/${organizationId}/torneos/nuevo`}
+                disabled={torneosAtLimit}
+                disabledReason={torneosLimitMessage}
+                className="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand px-4 text-sm font-semibold text-brand-foreground"
+              >
+                Nuevo torneo
+              </TierLimitLink>
+            </div>
           ) : undefined
         }
       />
