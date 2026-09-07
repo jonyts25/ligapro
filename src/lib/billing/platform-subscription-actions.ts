@@ -8,17 +8,7 @@ import {
   parseAddonOverrides,
   type SubscriptionTier,
 } from "@/lib/billing/tier-limits";
-
-export type PlatformSubscriptionActionState = {
-  ok: boolean;
-  message: string | null;
-};
-
-export const initialPlatformSubscriptionActionState: PlatformSubscriptionActionState =
-  {
-    ok: false,
-    message: null,
-  };
+import type { PlatformSubscriptionActionState } from "@/lib/billing/platform-subscription-types";
 
 type UntypedRpc = {
   rpc: (

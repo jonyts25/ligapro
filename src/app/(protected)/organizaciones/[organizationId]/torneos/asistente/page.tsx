@@ -25,10 +25,19 @@ export default async function TournamentWizardStartPage({ params }: PageProps) {
   const canchasAtLimit = tierStatus
     ? !evaluateTierLimit(tierStatus, "canchas_total").ok
     : false;
+  const torneosAtLimit = tierStatus
+    ? !evaluateTierLimit(tierStatus, "torneos_activos").ok
+    : false;
   const canchasLimitMessage = canchasAtLimit
     ? formatLimitReachedMessage(
         "canchas_total",
         tierStatus?.limits.canchas_total ?? null
+      )
+    : null;
+  const torneosLimitMessage = torneosAtLimit
+    ? formatLimitReachedMessage(
+        "torneos_activos",
+        tierStatus?.limits.torneos_activos ?? null
       )
     : null;
 
@@ -50,6 +59,8 @@ export default async function TournamentWizardStartPage({ params }: PageProps) {
       <TournamentWizardStep1Form
         organizationId={organizationId}
         defaultFieldCount={defaultFieldCount}
+        torneosAtLimit={torneosAtLimit}
+        torneosLimitMessage={torneosLimitMessage}
         canchasAtLimit={canchasAtLimit}
         canchasLimitMessage={canchasLimitMessage}
       />

@@ -96,8 +96,8 @@ export async function startTournamentWizardAction(
   }
 
   const requestedFieldCount = Number.parseInt(fieldCountRaw, 10);
-  if (!Number.isInteger(requestedFieldCount) || requestedFieldCount < 1) {
-    fieldErrors.fieldCount = "Indica al menos 1 cancha.";
+  if (!Number.isInteger(requestedFieldCount) || requestedFieldCount < 0) {
+    fieldErrors.fieldCount = "Indica un número válido de canchas.";
   }
 
   if (Object.keys(fieldErrors).length > 0) {
@@ -112,6 +112,22 @@ export async function startTournamentWizardAction(
   const tierCheck = await assertCanCreateCompetition(organizationId);
   if (!tierCheck.ok) {
     return { ok: false, message: tierCheck.message, values };
+  }
+
+  if (requestedFieldCount === 0) {
+    const fieldTierCheck = await assertCanCreateField(organizationId);
+    if (!fieldTierCheck.ok) {
+      const supabase = await createClient();
+      const { count } = await supabase
+        .from("fields")
+        .select("id", { count: "exact", head: true })
+        .eq("organization_id", organizationId)
+        .eq("is_active", true);
+
+      if (!count || count === 0) {
+        return { ok: false, message: fieldTierCheck.message, values };
+      }
+    }
   }
 
   const supabase = await createClient();

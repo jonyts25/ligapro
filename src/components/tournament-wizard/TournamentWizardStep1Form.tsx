@@ -11,6 +11,8 @@ import { cn } from "@/lib/utils/cn";
 type TournamentWizardStep1FormProps = {
   organizationId: string;
   defaultFieldCount: number;
+  torneosAtLimit: boolean;
+  torneosLimitMessage: string | null;
   canchasAtLimit: boolean;
   canchasLimitMessage: string | null;
 };
@@ -18,6 +20,8 @@ type TournamentWizardStep1FormProps = {
 export function TournamentWizardStep1Form({
   organizationId,
   defaultFieldCount,
+  torneosAtLimit,
+  torneosLimitMessage,
   canchasAtLimit,
   canchasLimitMessage,
 }: TournamentWizardStep1FormProps) {
@@ -27,26 +31,25 @@ export function TournamentWizardStep1Form({
   );
 
   const values = state.values ?? {};
+  const fieldCountValue = canchasAtLimit
+    ? "0"
+    : String(values.fieldCount ?? defaultFieldCount);
+  const showFormError = !state.ok && Boolean(state.message);
 
   return (
     <Card>
-      {state.message && (
+      {torneosAtLimit && torneosLimitMessage && (
         <p
-          className={cn(
-            "mb-4 rounded-xl border px-3 py-2 text-sm",
-            state.ok
-              ? "border-success/40 bg-success/10 text-success"
-              : "border-danger/40 bg-danger/10 text-danger"
-          )}
-          role={state.ok ? "status" : "alert"}
+          className="mb-4 rounded-xl border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger"
+          role="alert"
         >
-          {state.message}
+          {torneosLimitMessage}
         </p>
       )}
 
       {canchasAtLimit && canchasLimitMessage && (
         <p className="mb-4 rounded-xl border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-warning">
-          {canchasLimitMessage}
+          {canchasLimitMessage} Usaremos las canchas que ya tienes configuradas.
         </p>
       )}
 
@@ -102,28 +105,32 @@ export function TournamentWizardStep1Form({
           )}
         </div>
 
-        <div className="space-y-1.5">
-          <label htmlFor="fieldCount" className="block text-sm font-medium">
-            ¿Cuántas canchas vas a usar?
-          </label>
-          <input
-            id="fieldCount"
-            name="fieldCount"
-            type="number"
-            min={1}
-            max={16}
-            required
-            disabled={pending || canchasAtLimit}
-            defaultValue={String(values.fieldCount ?? defaultFieldCount)}
-            className={cn(
-              "min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm",
-              state.fieldErrors?.fieldCount && "border-danger"
+        {canchasAtLimit ? (
+          <input type="hidden" name="fieldCount" value="0" />
+        ) : (
+          <div className="space-y-1.5">
+            <label htmlFor="fieldCount" className="block text-sm font-medium">
+              ¿Cuántas canchas vas a usar?
+            </label>
+            <input
+              id="fieldCount"
+              name="fieldCount"
+              type="number"
+              min={1}
+              max={16}
+              required
+              disabled={pending}
+              defaultValue={fieldCountValue}
+              className={cn(
+                "min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm",
+                state.fieldErrors?.fieldCount && "border-danger"
+              )}
+            />
+            {state.fieldErrors?.fieldCount && (
+              <p className="text-xs text-danger">{state.fieldErrors.fieldCount}</p>
             )}
-          />
-          {state.fieldErrors?.fieldCount && (
-            <p className="text-xs text-danger">{state.fieldErrors.fieldCount}</p>
-          )}
-        </div>
+          </div>
+        )}
 
         <div className="flex flex-wrap gap-3">
           <SubmitButton pending={pending} className="w-auto">
@@ -136,6 +143,15 @@ export function TournamentWizardStep1Form({
             Cancelar
           </Link>
         </div>
+
+        {showFormError && (
+          <p
+            className="rounded-xl border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger"
+            role="alert"
+          >
+            {state.message}
+          </p>
+        )}
       </form>
     </Card>
   );

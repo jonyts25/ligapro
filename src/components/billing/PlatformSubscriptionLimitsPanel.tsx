@@ -13,8 +13,8 @@ import {
 import type { PlatformOrganizationSubscriptionRow } from "@/lib/billing/platform-subscription-queries";
 import {
   initialPlatformSubscriptionActionState,
-  setOrganizationSubscriptionLimitsAction,
-} from "@/lib/billing/platform-subscription-actions";
+} from "@/lib/billing/platform-subscription-types";
+import { setOrganizationSubscriptionLimitsAction } from "@/lib/billing/platform-subscription-actions";
 import { cn } from "@/lib/utils/cn";
 
 const RESOURCE_ROWS: Array<{ key: TierLimitKey; label: string }> = [
