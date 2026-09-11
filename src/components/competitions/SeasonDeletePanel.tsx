@@ -29,7 +29,7 @@ export function SeasonDeletePanel({
     <Card className="space-y-4 border-danger/30 p-4">
       <div>
         <h2 className="text-sm font-semibold text-text-primary">
-          Eliminar temporada
+          Eliminar torneo
         </h2>
         <p className="mt-1 text-sm text-text-secondary">
           Borra permanentemente «{seasonName}» y su configuración. Solo disponible
@@ -62,7 +62,7 @@ export function SeasonDeletePanel({
             onClick={() => setConfirmDelete(true)}
             className="inline-flex min-h-11 items-center rounded-xl border border-danger/40 bg-danger/10 px-4 text-sm font-medium text-danger hover:bg-danger/15"
           >
-            Eliminar temporada…
+            Eliminar torneo…
           </button>
         ) : (
           <div className="space-y-2">

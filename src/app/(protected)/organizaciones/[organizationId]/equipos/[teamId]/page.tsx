@@ -60,12 +60,12 @@ export default async function TeamDetailPage({ params }: PageProps) {
       <Card>
         <SectionHeader
           title="Temporadas"
-          description="Inscripciones de este equipo. El plantel vive en cada temporada."
+          description="Inscripciones de este equipo. El plantel vive en cada torneo."
         />
         {team.enrollments.length === 0 ? (
           <EmptyState
             title="Sin inscripciones"
-            description="Inscribe este equipo desde el detalle de una temporada."
+            description="Inscribe este equipo desde el detalle de un torneo."
           />
         ) : (
           <ul className="mt-4 space-y-3">

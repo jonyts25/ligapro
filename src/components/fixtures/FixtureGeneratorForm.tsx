@@ -71,7 +71,7 @@ export function FixtureGeneratorForm({ context }: FixtureGeneratorFormProps) {
     return (
       <Card>
         <p className="text-sm text-text-secondary">
-          Esta temporada ya tiene fixture ({context.existingMatchCount}{" "}
+          Este torneo ya tiene fixture ({context.existingMatchCount}{" "}
           partidos). En F6 no se permite regenerar.
         </p>
       </Card>

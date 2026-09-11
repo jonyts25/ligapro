@@ -17,7 +17,7 @@ export default async function NewTeamPage({ params }: PageProps) {
     <div className="mx-auto max-w-2xl">
       <PageHeader
         title="Nuevo equipo"
-        description="Crea un equipo persistente para inscribirlo en temporadas."
+        description="Crea un equipo persistente para inscribirlo en tus torneos."
         actions={
           <Link
             href={`/organizaciones/${organizationId}/equipos`}

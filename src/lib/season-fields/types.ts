@@ -29,7 +29,7 @@ export const initialSeasonFieldBlocksActionState: SeasonFieldBlocksActionState =
 export function humanizeSeasonFieldBlocksError(message: string): string {
   const lower = message.toLowerCase();
   if (lower.includes("another season") || lower.includes("another tournament")) {
-    return "Ese horario ya está reservado para otra temporada en la misma cancha. Elige otra franja o cancha.";
+    return "Ese horario ya está reservado para otro torneo en la misma cancha. Elige otra franja o cancha.";
   }
   if (lower.includes("overlap")) {
     return "Hay bloqueos que se solapan en la misma cancha y día. Revisa los horarios.";

@@ -53,7 +53,7 @@ export default async function MyMatchesPage({ params }: PageProps) {
       {!assignments.length ? (
         <EmptyState
           title="Sin partidos asignados"
-          description="Cuando te designen árbitro, delegado u otro rol en un partido de temporadas activas, aparecerán aquí con enlace a captura."
+          description="Cuando te designen árbitro, delegado u otro rol en un partido de torneos activos, aparecerán aquí con enlace a captura."
         />
       ) : (
         <ul className="space-y-3">

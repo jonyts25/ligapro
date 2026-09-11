@@ -80,7 +80,7 @@ function humanizeScheduleError(message: string): string {
     return "La sede de esta cancha está inactiva.";
   }
   if (lower.includes("already has matches")) {
-    return "Esta temporada ya tiene fixture. En F6 no se puede regenerar.";
+    return "Este torneo ya tiene fixture. En F6 no se puede regenerar.";
   }
   return message || "No se pudo completar la operación.";
 }
@@ -114,13 +114,13 @@ export async function createSeasonFixtureAction(
   );
 
   if (!ctx) {
-    return { ok: false, message: "Temporada no encontrada." };
+    return { ok: false, message: "Torneo no encontrado." };
   }
   if (!ctx.canGenerate) {
     return {
       ok: false,
       message: ctx.existingMatchCount
-        ? "Esta temporada ya tiene fixture."
+        ? "Este torneo ya tiene fixture."
         : "No se puede generar el fixture con los equipos actuales.",
     };
   }

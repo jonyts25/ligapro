@@ -30,7 +30,7 @@ export function DisciplineTable({
         description={
           publicMode
             ? "No hay suspensiones activas publicadas."
-            : "Aquí aparecen tarjetas y suspensiones capturadas en la temporada."
+            : "Aquí aparecen tarjetas y suspensiones capturadas en el torneo."
         }
       />
     );

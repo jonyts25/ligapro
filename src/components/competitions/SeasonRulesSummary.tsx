@@ -37,7 +37,7 @@ export function SeasonRulesSummary({ rules }: SeasonRulesSummaryProps) {
     <Card className="space-y-4">
       <SectionHeader
         title="Reglas deportivas"
-        description="Configuración vigente de la temporada."
+        description="Configuración vigente del torneo."
       />
       <dl className="grid gap-3 sm:grid-cols-2">
         {rows.map((row) => (

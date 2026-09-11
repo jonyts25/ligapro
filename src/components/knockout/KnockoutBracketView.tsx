@@ -31,7 +31,7 @@ export function KnockoutBracketView({
   if (!data.rounds.length) {
     return (
       <Card className="p-4 text-sm text-text-secondary">
-        Aún no hay eliminatoria configurada para esta temporada.
+        Aún no hay eliminatoria configurada para este torneo.
       </Card>
     );
   }

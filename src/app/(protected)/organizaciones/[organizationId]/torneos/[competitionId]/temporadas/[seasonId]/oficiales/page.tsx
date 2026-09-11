@@ -46,7 +46,7 @@ export default async function SeasonOfficialsPage({ params }: PageProps) {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <PageHeader
-        title="Oficiales de temporada"
+        title="Oficiales del torneo"
         description={season.name}
         actions={
           <Link

@@ -52,7 +52,7 @@ export function TournamentWizardScheduleStep({
         {fieldNames.length === 1
           ? "tu cancha"
           : `tus ${fieldNames.length} canchas`}{" "}
-        y el bloqueo de cancha de la temporada con el mismo horario.
+        y el bloqueo de cancha del torneo con el mismo horario.
       </p>
 
       {fieldNames.length > 0 && (

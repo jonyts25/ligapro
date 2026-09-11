@@ -21,8 +21,8 @@ export function SeasonTeamList({
   if (seasonTeams.length === 0) {
     return (
       <EmptyState
-        title="Esta temporada aún no tiene equipos inscritos."
-        description="Inscribe equipos de la organización para armar planteles y operar la temporada."
+        title="Este torneo aún no tiene equipos inscritos."
+        description="Inscribe equipos de la organización para armar planteles y operar el torneo."
         action={
           canManage ? (
             <Link

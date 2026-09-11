@@ -139,7 +139,7 @@ export function SeasonFieldBlocksEditor({
   return (
     <Card className="space-y-4">
       <SectionHeader
-        title="Bloqueos de cancha para esta temporada"
+        title="Bloqueos de cancha para este torneo"
         description="Reserva franjas semanales a favor de este torneo. Otros torneos no podrán programar en el mismo horario."
       />
       {message && (

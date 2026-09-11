@@ -107,7 +107,7 @@ export function OrganizationDashboardDemo({
         <div className="mb-3 flex flex-wrap items-center gap-2">
           <SectionHeader
             title="Datos reales"
-            description="Sedes, torneos, temporadas, equipos y partidos."
+            description="Canchas, torneos, equipos y partidos."
           />
           <StatusBadge label="Datos reales" variant="success" />
         </div>
@@ -122,15 +122,15 @@ export function OrganizationDashboardDemo({
             icon={Trophy}
           />
           <StatCard
-            label="Temporadas"
+            label="Ediciones de torneo"
             value={String(stats.seasons)}
-            hint="Ediciones registradas"
+            hint="Instancias registradas"
             icon={Trophy}
           />
           <StatCard
             label="Equipos"
             value={String(stats.teams)}
-            hint={`${stats.seasonEnrollments} inscripción${stats.seasonEnrollments === 1 ? "" : "es"} en temporadas`}
+            hint={`${stats.seasonEnrollments} inscripción${stats.seasonEnrollments === 1 ? "" : "es"} en torneos`}
             icon={Users}
           />
           <StatCard
@@ -166,7 +166,7 @@ export function OrganizationDashboardDemo({
           <div className="mt-4">
             <EmptyState
               title="Crea tu primer torneo"
-              description="Define la competencia y una temporada antes de registrar equipos."
+              description="Crea un torneo antes de registrar equipos."
               action={
                 <Link
                   href={`/organizaciones/${organizationId}/torneos/nuevo`}
@@ -182,7 +182,7 @@ export function OrganizationDashboardDemo({
           <div className="mt-4">
             <EmptyState
               title="Registra tu primer equipo"
-              description="Crea equipos persistentes para inscribirlos en temporadas."
+              description="Crea equipos persistentes para inscribirlos en tus torneos."
               action={
                 <Link
                   href={`/organizaciones/${organizationId}/equipos/nuevo`}
@@ -349,7 +349,7 @@ export function OrganizationDashboardDemo({
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <SectionHeader
               title="Tabla y página pública"
-              description="Líder de la temporada reciente y temporadas visibles al público."
+              description="Líder del torneo reciente y torneos visibles al público."
             />
             <StatusBadge label="Datos reales" variant="success" />
           </div>
@@ -389,7 +389,7 @@ export function OrganizationDashboardDemo({
 
             <Card className="space-y-3">
               <p className="text-xs font-medium uppercase tracking-wide text-muted">
-                Temporadas públicas
+                Torneos públicos
               </p>
               <p className="text-2xl font-semibold text-text-primary">
                 {publicSeasonsCount}
@@ -415,8 +415,8 @@ export function OrganizationDashboardDemo({
               ) : (
                 <p className="text-sm text-text-secondary">
                   {canManage
-                    ? "Marca una temporada como pública para compartir el enlace."
-                    : "Aún no hay temporadas públicas."}
+                    ? "Marca un torneo como público para compartir el enlace."
+                    : "Aún no hay torneos públicos."}
                 </p>
               )}
               {canManage && publicSeasonsCount === 0 && (

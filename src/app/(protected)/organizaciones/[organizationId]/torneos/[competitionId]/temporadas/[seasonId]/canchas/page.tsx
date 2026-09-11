@@ -48,7 +48,7 @@ export default async function SeasonFieldBlocksPage({ params }: PageProps) {
     <div className="mx-auto max-w-4xl space-y-6">
       <PageHeader
         title="Canchas del torneo"
-        description={`${season.name} · Bloqueos semanales a favor de esta temporada`}
+        description={`${season.name} · Bloqueos semanales a favor de este torneo`}
       />
       <SeasonStandingsNav
         organizationId={organizationId}

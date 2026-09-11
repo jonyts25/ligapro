@@ -49,7 +49,7 @@ export function SeasonRoleManager({
     <div className="space-y-6">
       <Card className="space-y-4">
         <SectionHeader
-          title="Roles de temporada"
+          title="Roles del torneo"
           description="tournament_admin, referee y delegate para captura controlada."
         />
         {!roles.length ? (

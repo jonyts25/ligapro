@@ -441,7 +441,7 @@ export function SeasonFinanceTable({
     return (
       <Card>
         <p className="text-sm text-text-secondary">
-          No hay equipos inscritos en esta temporada.
+          No hay equipos inscritos en este torneo.
         </p>
       </Card>
     );

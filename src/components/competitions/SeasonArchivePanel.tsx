@@ -135,7 +135,7 @@ export function SeasonArchivePanel({
               onClick={() => setConfirmArchive(true)}
               className="inline-flex min-h-11 items-center rounded-xl border border-warning/40 bg-warning/10 px-4 text-sm font-medium text-text-primary hover:bg-warning/15"
             >
-              Archivar temporada…
+              Archivar torneo…
             </button>
           ) : (
             <div className="space-y-2">

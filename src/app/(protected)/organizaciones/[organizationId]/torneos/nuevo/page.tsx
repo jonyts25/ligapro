@@ -17,7 +17,7 @@ export default async function NewCompetitionPage({ params }: PageProps) {
     <div className="mx-auto max-w-2xl">
       <PageHeader
         title="Nuevo torneo"
-        description="Crea la competencia sobre la que configurarás temporadas."
+        description="Crea el torneo con formato, duración y reglas desde el inicio."
         actions={
           <Link
             href={`/organizaciones/${organizationId}/torneos`}

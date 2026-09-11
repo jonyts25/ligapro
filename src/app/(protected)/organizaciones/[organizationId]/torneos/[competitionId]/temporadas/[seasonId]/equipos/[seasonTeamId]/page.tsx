@@ -82,7 +82,7 @@ export default async function SeasonTeamRosterPage({
             href={`/organizaciones/${organizationId}/torneos/${competitionId}/temporadas/${seasonId}/equipos`}
             className="inline-flex min-h-11 items-center rounded-xl border border-border px-4 text-sm font-medium text-text-secondary"
           >
-            Equipos de la temporada
+            Equipos del torneo
           </Link>
         }
       />
