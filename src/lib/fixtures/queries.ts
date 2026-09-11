@@ -1,5 +1,14 @@
 import { createClient } from "@/lib/supabase/server";
 import {
+  computeFieldOpenSlots,
+  addDaysIso,
+  todayMexicoCityIso,
+  DEFAULT_OPEN_SLOTS_MAX,
+  DEFAULT_OPEN_SLOTS_RANGE_DAYS,
+  type FieldOpenSlotsResult,
+} from "@/lib/fixtures/open-slots";
+import { localMexicoCityToTimestamptz } from "@/lib/fixtures/timezone";
+import {
   supportsAutoRoundRobin,
   FIXTURE_TIMEZONE,
   type ActiveFieldOption,
@@ -13,6 +22,8 @@ import {
   type SeasonFixtureContext,
   type SeasonFixtureStats,
 } from "@/lib/fixtures/types";
+
+export type { FieldOpenSlot, FieldOpenSlotsResult } from "@/lib/fixtures/open-slots";
 
 function seasonTeamName(row: {
   display_name: string | null;
@@ -485,6 +496,106 @@ export async function getFieldAvailabilityForDate(
     startsAt: String(r.starts_at).slice(0, 5),
     endsAt: String(r.ends_at).slice(0, 5),
   }));
+}
+
+export async function getFieldOpenSlots(
+  organizationId: string,
+  fieldId: string,
+  seasonId: string,
+  options?: {
+    fromDate?: string;
+    toDate?: string;
+    excludeMatchId?: string;
+    excludeReservationId?: string | null;
+    maxSlots?: number;
+    slotMinutes?: number;
+  }
+): Promise<FieldOpenSlotsResult | null> {
+  const supabase = await createClient();
+
+  const { data: field } = await supabase
+    .from("fields")
+    .select("id")
+    .eq("id", fieldId)
+    .eq("organization_id", organizationId)
+    .maybeSingle();
+
+  if (!field) return null;
+
+  let slotMinutes = options?.slotMinutes;
+  if (slotMinutes == null) {
+    const { data: rules } = await supabase
+      .from("season_rules")
+      .select("match_duration_minutes, minimum_rest_minutes")
+      .eq("season_id", seasonId)
+      .eq("organization_id", organizationId)
+      .maybeSingle();
+
+    slotMinutes =
+      (rules?.match_duration_minutes ?? 0) +
+      (rules?.minimum_rest_minutes ?? 0);
+  }
+
+  if (!slotMinutes || slotMinutes <= 0) {
+    return { slots: [], hasWeeklyAvailability: false };
+  }
+
+  const fromDate = options?.fromDate ?? todayMexicoCityIso();
+  const toDate =
+    options?.toDate ??
+    addDaysIso(fromDate, DEFAULT_OPEN_SLOTS_RANGE_DAYS - 1);
+
+  const rangeStartIso =
+    localMexicoCityToTimestamptz(fromDate, "00:00") ?? `${fromDate}T06:00:00.000Z`;
+  const rangeEndIso =
+    localMexicoCityToTimestamptz(toDate, "23:59") ??
+    `${toDate}T05:59:00.000Z`;
+
+  const [{ data: availabilityRules }, { data: blocks }, { data: reservations }] =
+    await Promise.all([
+      supabase
+        .from("field_availability_rules")
+        .select("day_of_week, starts_at, ends_at")
+        .eq("organization_id", organizationId)
+        .eq("field_id", fieldId)
+        .order("day_of_week")
+        .order("starts_at"),
+      supabase
+        .from("season_field_blocks")
+        .select("season_id, day_of_week, starts_at, ends_at")
+        .eq("organization_id", organizationId)
+        .eq("field_id", fieldId)
+        .neq("season_id", seasonId)
+        .order("day_of_week")
+        .order("starts_at"),
+      supabase
+        .from("field_reservations")
+        .select("id, match_id, starts_at, ends_at")
+        .eq("organization_id", organizationId)
+        .eq("field_id", fieldId)
+        .eq("status", "confirmed")
+        .lt("starts_at", rangeEndIso)
+        .gt("ends_at", rangeStartIso)
+        .order("starts_at"),
+    ]);
+
+  const filteredReservations = (reservations ?? []).filter(
+    (reservation) =>
+      reservation.match_id == null ||
+      reservation.match_id !== options?.excludeMatchId
+  );
+
+  return computeFieldOpenSlots({
+    fromDate,
+    toDate,
+    slotMinutes,
+    seasonId,
+    availabilityRules: availabilityRules ?? [],
+    foreignSeasonBlocks: blocks ?? [],
+    reservations: filteredReservations,
+    excludeReservationId: options?.excludeReservationId,
+    maxSlots: options?.maxSlots ?? DEFAULT_OPEN_SLOTS_MAX,
+  });
 }
 
 export async function getOrganizationMatchStats(

@@ -83,6 +83,8 @@ export type FieldAvailabilityInterval = {
   endsAt: string;
 };
 
+export type { FieldOpenSlot } from "@/lib/fixtures/open-slots";
+
 export type ActiveFieldOption = {
   id: string;
   name: string;

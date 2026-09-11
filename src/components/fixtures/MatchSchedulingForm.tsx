@@ -1,17 +1,22 @@
 "use client";
 
-import { useActionState, useState, useTransition } from "react";
+import { useActionState, useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import {
   scheduleMatchAction,
   unscheduleMatchAction,
 } from "@/lib/fixtures/actions";
-import { loadFieldAvailabilityAction } from "@/lib/fixtures/availability-action";
+import {
+  loadFieldAvailabilityAction,
+  loadFieldOpenSlotsAction,
+} from "@/lib/fixtures/availability-action";
 import { addMinutesToLocalPreview } from "@/lib/fixtures/format";
+import { formatOpenSlotLabel } from "@/lib/fixtures/open-slots";
 import {
   fieldSchedulingLabel,
   initialFixtureActionState,
   type ActiveFieldOption,
+  type FieldOpenSlot,
   type MatchSchedulingDetails,
 } from "@/lib/fixtures/types";
 import { FieldAvailabilitySummary } from "@/components/fixtures/FieldAvailabilitySummary";
@@ -24,6 +29,16 @@ type MatchSchedulingFormProps = {
   fields: ActiveFieldOption[];
   organizationId: string;
   canManage: boolean;
+};
+
+type OpenSlotsState = {
+  slots: FieldOpenSlot[];
+  hasWeeklyAvailability: boolean;
+};
+
+const emptyOpenSlots: OpenSlotsState = {
+  slots: [],
+  hasWeeklyAvailability: false,
 };
 
 export function MatchSchedulingForm({
@@ -50,8 +65,11 @@ export function MatchSchedulingForm({
   const [intervals, setIntervals] = useState<
     Array<{ startsAt: string; endsAt: string }>
   >([]);
+  const [openSlots, setOpenSlots] = useState<OpenSlotsState>(emptyOpenSlots);
   const [availPending, startAvail] = useTransition();
+  const [openSlotsPending, startOpenSlots] = useTransition();
   const [availKey, setAvailKey] = useState("");
+  const [openSlotsKey, setOpenSlotsKey] = useState("");
 
   const effectiveFieldId = fields.some((f) => f.id === fieldId)
     ? fieldId
@@ -75,6 +93,44 @@ export function MatchSchedulingForm({
     });
   }
 
+  function refreshOpenSlots(nextFieldId: string) {
+    const key = `${nextFieldId}|${match.seasonId}|${match.id}`;
+    if (!nextFieldId) {
+      setOpenSlots(emptyOpenSlots);
+      setOpenSlotsKey("");
+      return;
+    }
+    setOpenSlotsKey(key);
+    startOpenSlots(async () => {
+      const next = await loadFieldOpenSlotsAction({
+        organizationId,
+        fieldId: nextFieldId,
+        seasonId: match.seasonId,
+        excludeMatchId: match.id,
+        excludeReservationId: match.schedule.reservationId,
+        slotMinutes: details.slotMinutes,
+      });
+      setOpenSlots(next);
+    });
+  }
+
+  useEffect(() => {
+    if (effectiveFieldId) {
+      refreshOpenSlots(effectiveFieldId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [effectiveFieldId, match.id, match.seasonId, details.slotMinutes]);
+
+  useEffect(() => {
+    if (scheduleState.ok === false && scheduleState.message) {
+      refreshOpenSlots(effectiveFieldId);
+      if (date) {
+        refreshAvailability(effectiveFieldId, date);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scheduleState.message, scheduleState.ok]);
+
   const endPreview = addMinutesToLocalPreview(
     date,
     time,
@@ -82,6 +138,18 @@ export function MatchSchedulingForm({
   );
 
   const detailHref = `/organizaciones/${organizationId}/torneos/${details.competitionId}/temporadas/${match.seasonId}/partidos/${match.id}`;
+  const fieldConfigHref = effectiveFieldId
+    ? `/organizaciones/${organizationId}/canchas/${effectiveFieldId}`
+    : `/organizaciones/${organizationId}/canchas`;
+
+  const showSuggestedSlots =
+    openSlotsKey === `${effectiveFieldId}|${match.seasonId}|${match.id}`;
+
+  function applySuggestedSlot(slot: FieldOpenSlot) {
+    setDate(slot.date);
+    setTime(slot.startsAt);
+    refreshAvailability(effectiveFieldId, slot.date);
+  }
 
   if (!canManage) {
     return (
@@ -134,6 +202,7 @@ export function MatchSchedulingForm({
               onChange={(e) => {
                 const next = e.target.value;
                 setFieldId(next);
+                refreshOpenSlots(next);
                 refreshAvailability(next, date);
               }}
               disabled={schedulePending || fields.length === 0}
@@ -148,6 +217,62 @@ export function MatchSchedulingForm({
                 </option>
               ))}
             </select>
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-text-primary">
+              Horarios sugeridos
+            </p>
+            {!effectiveFieldId ? (
+              <p className="text-sm text-text-secondary">
+                Elige una cancha para ver horarios libres.
+              </p>
+            ) : openSlotsPending || !showSuggestedSlots ? (
+              <p className="text-sm text-text-secondary">
+                Buscando horarios libres…
+              </p>
+            ) : !openSlots.hasWeeklyAvailability ? (
+              <div className="rounded-xl border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-text-secondary">
+                <p>
+                  Esta cancha no tiene horarios disponibles configurados.
+                </p>
+                <Link
+                  href={fieldConfigHref}
+                  className="mt-2 inline-flex font-medium text-organization-accent underline-offset-2 hover:underline"
+                >
+                  Configurar disponibilidad de la cancha
+                </Link>
+              </div>
+            ) : openSlots.slots.length === 0 ? (
+              <p className="rounded-xl border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-text-secondary">
+                No hay horarios libres en las próximas semanas con la duración
+                de este torneo ({details.slotMinutes} min). Prueba otra cancha o
+                escribe fecha y hora manualmente.
+              </p>
+            ) : (
+              <ul className="grid gap-2 sm:grid-cols-2">
+                {openSlots.slots.map((slot) => {
+                  const selected =
+                    date === slot.date && time === slot.startsAt;
+                  return (
+                    <li key={`${slot.date}-${slot.startsAt}`}>
+                      <button
+                        type="button"
+                        onClick={() => applySuggestedSlot(slot)}
+                        className={cn(
+                          "min-h-11 w-full rounded-xl border px-3 py-2 text-left text-sm transition-colors",
+                          selected
+                            ? "border-organization-accent bg-organization-accent/10 text-text-primary"
+                            : "border-border bg-surface text-text-secondary hover:border-organization-accent/50 hover:bg-surface-elevated"
+                        )}
+                      >
+                        {formatOpenSlotLabel(slot)}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -193,10 +318,10 @@ export function MatchSchedulingForm({
             }
             emptyMessage={
               !effectiveFieldId || !date
-                ? "Elige cancha y fecha para ver disponibilidad."
+                ? "Elige cancha y fecha para ver disponibilidad del día."
                 : availPending
                   ? "Cargando disponibilidad…"
-                  : "Configura primero la disponibilidad habitual de esta cancha."
+                  : "Sin horario habitual configurado para este día."
             }
           />
 
@@ -212,13 +337,7 @@ export function MatchSchedulingForm({
 
           <SubmitButton
             pending={schedulePending}
-            disabled={
-              !effectiveFieldId ||
-              !date ||
-              !time ||
-              (availKey === `${effectiveFieldId}|${date}` &&
-                intervals.length === 0)
-            }
+            disabled={!effectiveFieldId || !date || !time}
           >
             {match.isProgrammed ? "Reprogramar partido" : "Programar partido"}
           </SubmitButton>

@@ -65,7 +65,10 @@ function humanizeScheduleError(message: string): string {
     lower.includes("conflicting") ||
     lower.includes("exclusion")
   ) {
-    return "La cancha ya está ocupada en ese horario. Elige otra hora o una cancha diferente.";
+    return "Ese horario ya no está disponible. Elige otro de la lista o escribe otro horario.";
+  }
+  if (lower.includes("another tournament season")) {
+    return "Ese horario está reservado para otro torneo. Elige otro de la lista.";
   }
   if (lower.includes("no availability") || lower.includes("no availability rules")) {
     return "Configura primero la disponibilidad habitual de esta cancha.";
