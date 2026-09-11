@@ -1,33 +1,38 @@
-# Sedes, canchas y disponibilidad — LigaPro
+# Canchas y disponibilidad — LigaPro
 
-## Organization vs venue vs field
+## Organization vs field (modelo actual)
 
 | Concepto | Tabla | Significado |
 | --- | --- | --- |
-| **Organization** | `organizations` | Cliente que opera LigaPro (empresa, liga, organizador, complejo). |
-| **Venue** | `venues` | Sede física (Complejo Miura, Unidad Norte, Sucursal Centro). |
-| **Field** | `fields` | Cancha o superficie dentro de una sede (Cancha 1, Fútbol 7). |
+| **Organization** | `organizations` | Cliente que opera LigaPro (empresa, liga, organizador). |
+| **Field** | `fields` | Cancha o superficie registrada directamente bajo la organización (nombre, dirección opcional, superficie, activa/inactiva). |
 
-Una organization puede tener muchas venues. Una venue puede tener muchos fields. No se crean fields sin venue.
+Las canchas nuevas se crean con `organization_id` y `venue_id = null`. No hace falta crear una sede intermedia.
+
+### Tabla `venues` (legacy)
+
+| Concepto | Tabla | Estado |
+| --- | --- | --- |
+| **Venue** | `venues` | **Legacy.** Conservada para datos históricos y migración futura. **No se usa en altas nuevas** ni en rutas activas de la UI (`/canchas/*`). |
+
+Campos legacy pueden tener `venue_id` apuntando a una fila en `venues`; el backfill copió `venues.address` → `fields.address` donde aplicaba.
 
 ## `is_active`
 
-- `venues.is_active` y `fields.is_active` (boolean, default `true`) — Migration 012.
-- Owner/admin pueden activar/desactivar. Members ven ambos estados.
+- `fields.is_active` (boolean, default `true`).
+- Owner/admin pueden activar/desactivar. Members ven el estado.
 - **No hay DELETE físico** en la UI.
-- Desactivar una venue **no** cambia automáticamente `fields.is_active`.
-- Se puede editar y reactivar registros inactivos.
+- Se puede editar y reactivar canchas inactivas.
 
-### Disponibilidad operativa efectiva (fases posteriores)
+### Disponibilidad operativa efectiva
 
 Un field no debe considerarse disponible para reservas/partidos si:
 
-- `field.is_active = false`, o
-- su venue tiene `is_active = false`.
+- `field.is_active = false`.
 
-En F3 aún no existen reservas ni partidos; la regla queda documentada para F4+.
+Ya **no** se exige que una venue padre esté activa para canchas nuevas (`venue_id` null).
 
-**F6:** `schedule_match` exige `field.is_active` y `venue.is_active`. Canchas inactivas no aceptan nuevas programaciones; reservas históricas se conservan. Sin reglas de `field_availability_rules` para el día = no se programa (no se asume 24/7). Ver `docs/FIXTURE_AND_SCHEDULING.md`.
+**F6 (actualizado):** `schedule_match` exige `field.is_active`. Canchas inactivas no aceptan nuevas programaciones; reservas históricas se conservan. Sin reglas de `field_availability_rules` para el día = no se programa (no se asume 24/7). Ver `docs/FIXTURE_AND_SCHEDULING.md`.
 
 ## Disponibilidad habitual
 
@@ -44,7 +49,7 @@ Tabla: `field_availability_rules`.
 RPC `replace_field_availability(p_field_id, p_intervals jsonb)`:
 
 1. Autoriza owner/admin vía `auth.uid()`.
-2. Resuelve organization desde el field.
+2. Resuelve organization desde el field (sin join a `venues`).
 3. Valida JSON, horas, solapes.
 4. Borra reglas del field e inserta las nuevas en una sola transacción.
 5. Array vacío = sin disponibilidad.
@@ -52,7 +57,7 @@ RPC `replace_field_availability(p_field_id, p_intervals jsonb)`:
 
 La UI guarda la semana únicamente mediante esta RPC.
 
-## Bloqueos por torneo (Migration 021)
+## Bloqueos por torneo
 
 Tabla separada: `season_field_blocks` — **no** es `field_reservations` ni bloqueo de partido individual.
 
@@ -70,33 +75,34 @@ Reglas:
 
 `schedule_match` y `apply_recurring_slot_to_season` rechazan slots ocupados por bloqueo de **otra** season; bloqueo de la **misma** season no impide programar.
 
-**Pendiente frontend:** vista de disponibilidad cruzada (`field_availability_rules` + `season_field_blocks` + reservas) — 2–3 queries desde cliente o RPC de lectura en prompt siguiente.
+Vista org-wide de disponibilidad (solo lectura): `/organizaciones/{orgId}/canchas/disponibilidad`.
 
 ## Permisos
 
-| Rol | Ver | Crear/editar venues/fields | Disponibilidad |
+| Rol | Ver | Crear/editar canchas | Disponibilidad |
 | --- | --- | --- | --- |
 | owner | sí | sí | sí |
 | admin | sí | sí | sí |
 | member | sí | no | no |
 | externo / anon | no | no | no |
 
-## Rutas
+## Rutas activas
 
 ```text
-/organizaciones/{orgId}/sedes
-/organizaciones/{orgId}/sedes/nueva
-/organizaciones/{orgId}/sedes/{venueId}
-/organizaciones/{orgId}/sedes/{venueId}/editar
+/organizaciones/{orgId}/canchas
+/organizaciones/{orgId}/canchas/nueva
+/organizaciones/{orgId}/canchas/{fieldId}
+/organizaciones/{orgId}/canchas/{fieldId}/editar
+/organizaciones/{orgId}/canchas/disponibilidad
 ```
 
-## Limitaciones F3
+Rutas `/sedes/*` redirigen a `/canchas/*` (bookmarks legacy).
 
-- Sin reservas (`field_reservations` no se usa en UI).
-- Sin partidos ni asignación de horarios.
-- Sin precios ni mapas.
-- Sin páginas públicas de sedes.
+## Limitaciones actuales
+
+- Sin precios ni mapas en canchas.
+- Sin páginas públicas de canchas (solo uso interno de la org).
 
 ## Siguiente paso
 
-Calendario / reservas sobre estas reglas y el estado activo efectivo.
+Deprecar por completo `venues` cuando no queden fields con `venue_id` en producción.
