@@ -14,6 +14,7 @@ import {
   initialFixtureActionState,
   type FixtureActionState,
 } from "@/lib/fixtures/types";
+import { generateCatchUpFixture } from "@/lib/fixtures/catch-up-queries";
 import { getSeasonFixtureContext } from "@/lib/fixtures/queries";
 import type { Json } from "@/types/database";
 import { localMexicoCityToTimestamptz } from "@/lib/fixtures/timezone";
@@ -86,6 +87,52 @@ function humanizeScheduleError(message: string): string {
     return "Este torneo ya tiene fixture. En F6 no se puede regenerar.";
   }
   return message || "No se pudo completar la operación.";
+}
+
+export async function addTeamCatchUpFixtureAction(
+  _prev: FixtureActionState,
+  formData: FormData
+): Promise<FixtureActionState> {
+  const user = await requireUser();
+  const organizationId = String(formData.get("organizationId") ?? "");
+  const competitionId = String(formData.get("competitionId") ?? "");
+  const seasonId = String(formData.get("seasonId") ?? "");
+  const seasonTeamId = String(formData.get("seasonTeamId") ?? "");
+  const confirmed = String(formData.get("confirmed") ?? "") === "1";
+
+  await requireOrganizationAdmin(user.id, organizationId);
+
+  if (!confirmed) {
+    return {
+      ok: false,
+      message: "Confirma antes de generar los partidos de alcance.",
+    };
+  }
+
+  const result = await generateCatchUpFixture(
+    organizationId,
+    competitionId,
+    seasonId,
+    seasonTeamId
+  );
+
+  if (!result.ok) {
+    return { ok: false, message: result.message };
+  }
+
+  await revalidateFixturePaths(organizationId, competitionId, seasonId);
+  revalidatePath(
+    `/organizaciones/${organizationId}/torneos/${competitionId}/temporadas/${seasonId}/equipos/${seasonTeamId}`
+  );
+
+  return {
+    ok: true,
+    message: `Se generaron ${result.matchIds.length} partido(s) de alcance. Programa cada uno cuando quieras.`,
+    values: {
+      generatedMatchIds: result.matchIds.join(","),
+      catchUpRound: String(result.roundNumbers.firstLeg),
+    },
+  };
 }
 
 export async function createSeasonFixtureAction(

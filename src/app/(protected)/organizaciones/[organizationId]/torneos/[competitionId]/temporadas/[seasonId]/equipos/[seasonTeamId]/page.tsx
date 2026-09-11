@@ -23,6 +23,8 @@ import { AddRosterPlayerForm } from "@/components/teams/AddRosterPlayerForm";
 import { CreateCaptainPlayerForm } from "@/components/teams/CreateCaptainPlayerForm";
 import { SeasonTeamOperationalStatusForm } from "@/components/teams/SeasonTeamOperationalStatusForm";
 import { RosterExportButtons } from "@/components/export/ExportButtons";
+import { CatchUpFixturePanel } from "@/components/fixtures/CatchUpFixturePanel";
+import { getCatchUpFixtureContext } from "@/lib/fixtures/catch-up-queries";
 
 type PageProps = {
   params: Promise<{
@@ -31,7 +33,7 @@ type PageProps = {
     seasonId: string;
     seasonTeamId: string;
   }>;
-  searchParams: Promise<{ aviso?: string }>;
+  searchParams: Promise<{ aviso?: string; alcance?: string }>;
 };
 
 export default async function SeasonTeamRosterPage({
@@ -40,7 +42,7 @@ export default async function SeasonTeamRosterPage({
 }: PageProps) {
   const { organizationId, competitionId, seasonId, seasonTeamId } =
     await params;
-  const { aviso } = await searchParams;
+  const { aviso, alcance } = await searchParams;
   const user = await requireUser();
   const membership = await requireOrganizationMembership(
     user.id,
@@ -61,6 +63,15 @@ export default async function SeasonTeamRosterPage({
   const availablePlayers = canManage
     ? await getAvailablePlayersForRoster(organizationId, seasonTeamId)
     : [];
+
+  const catchUpContext = canManage
+    ? await getCatchUpFixtureContext(
+        organizationId,
+        competitionId,
+        seasonId,
+        seasonTeamId
+      )
+    : null;
 
   const title = displaySeasonTeamName(detail.display_name, detail.teamName);
 
@@ -105,6 +116,32 @@ export default async function SeasonTeamRosterPage({
       </Card>
 
       <SeasonRosterSummary seasonTeam={detail} />
+
+      {canManage &&
+        catchUpContext &&
+        (alcance === "1" ||
+          catchUpContext.pendingCatchUpMatchIds.length > 0) && (
+          <CatchUpFixturePanel
+            organizationId={organizationId}
+            competitionId={competitionId}
+            seasonId={seasonId}
+            seasonTeamId={seasonTeamId}
+            teamLabel={title}
+            eligible={catchUpContext.eligibility.eligible}
+            message={
+              catchUpContext.eligibility.eligible
+                ? null
+                : catchUpContext.eligibility.message ?? null
+            }
+            opponentCount={catchUpContext.opponentSeasonTeamIds.length}
+            pendingProgramMatchIds={catchUpContext.pendingCatchUpMatchIds}
+            showOffer={
+              alcance === "1" &&
+              catchUpContext.eligibility.eligible &&
+              catchUpContext.pendingCatchUpMatchIds.length === 0
+            }
+          />
+        )}
 
       {canManage && (
         <ConfirmSeasonTeamPanel

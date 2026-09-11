@@ -22,6 +22,7 @@ import { humanizeCaptainInvitationAdminError } from "@/lib/captain/errors";
 import { PLATFORM_NAME } from "@/lib/platform/config";
 import { canConfirmTeamRegistration } from "@/lib/teams/confirm-registration";
 import { importRosterToSeasonTeam } from "@/lib/teams/import-roster";
+import { getCatchUpFixtureContext } from "@/lib/fixtures/catch-up-queries";
 import { getSeasonMaxRosterSize } from "@/lib/teams/queries";
 import {
   bulkPlayerEntriesForRpc,
@@ -401,11 +402,24 @@ export async function enrollTeamAction(
     seasonTeamId,
   });
 
+  const catchUpContext = await getCatchUpFixtureContext(
+    organizationId,
+    competitionId,
+    seasonId,
+    seasonTeamId
+  );
+  const offerCatchUp = catchUpContext?.eligibility.eligible ?? false;
+
   const destination = `/organizaciones/${organizationId}/torneos/${competitionId}/temporadas/${seasonId}/equipos/${seasonTeamId}`;
+  const params = new URLSearchParams();
   if (rosterImportWarning) {
-    redirect(`${destination}?aviso=${encodeURIComponent(rosterImportWarning)}`);
+    params.set("aviso", rosterImportWarning);
   }
-  redirect(destination);
+  if (offerCatchUp) {
+    params.set("alcance", "1");
+  }
+  const query = params.toString();
+  redirect(query ? `${destination}?${query}` : destination);
 }
 
 export async function createPlayerAndAddAction(

@@ -19,6 +19,8 @@ type SeasonEnrollmentFormProps = {
   competitionId: string;
   seasonId: string;
   availableTeams: TeamRecord[];
+  enrollmentBlocked?: boolean;
+  enrollmentBlockedMessage?: string | null;
 };
 
 function FieldError({ message }: { message?: string }) {
@@ -35,6 +37,8 @@ export function SeasonEnrollmentForm({
   competitionId,
   seasonId,
   availableTeams,
+  enrollmentBlocked = false,
+  enrollmentBlockedMessage,
 }: SeasonEnrollmentFormProps) {
   const [state, formAction, pending] = useActionState(
     enrollTeamAction,
@@ -55,6 +59,15 @@ export function SeasonEnrollmentForm({
         title="Inscribir equipo"
         description="Selecciona un equipo existente o crea uno nuevo en este paso."
       />
+
+      {enrollmentBlocked && enrollmentBlockedMessage && (
+        <p
+          className="rounded-xl border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-text-secondary"
+          role="alert"
+        >
+          {enrollmentBlockedMessage}
+        </p>
+      )}
 
       {state.message && (
         <p
@@ -210,7 +223,11 @@ export function SeasonEnrollmentForm({
         </div>
 
         <div className="flex flex-wrap gap-3">
-          <SubmitButton pending={pending} className="w-auto">
+          <SubmitButton
+            pending={pending}
+            disabled={enrollmentBlocked}
+            className="w-auto"
+          >
             Inscribir equipo
           </SubmitButton>
           <Link

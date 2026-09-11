@@ -110,7 +110,7 @@ export type FixtureActionState = {
   ok: boolean;
   message: string | null;
   fieldErrors?: Record<string, string>;
-  values?: Record<string, string | null>;
+  values?: Record<string, string | null | undefined>;
 };
 
 export const initialFixtureActionState: FixtureActionState = {

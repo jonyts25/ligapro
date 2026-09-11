@@ -7,6 +7,7 @@ import {
   isSeasonArchived,
   seasonDetailPath,
 } from "@/lib/competitions/season-visibility";
+import { getSeasonEnrollmentCatchUpGate } from "@/lib/fixtures/catch-up-queries";
 import { getAvailableTeamsForSeason } from "@/lib/teams/queries";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SeasonEnrollmentForm } from "@/components/teams/SeasonEnrollmentForm";
@@ -38,6 +39,11 @@ export default async function EnrollTeamPage({ params }: PageProps) {
     organizationId,
     seasonId
   );
+  const enrollmentGate = await getSeasonEnrollmentCatchUpGate(
+    organizationId,
+    competitionId,
+    seasonId
+  );
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -58,6 +64,8 @@ export default async function EnrollTeamPage({ params }: PageProps) {
         competitionId={competitionId}
         seasonId={seasonId}
         availableTeams={availableTeams}
+        enrollmentBlocked={enrollmentGate.blocked}
+        enrollmentBlockedMessage={enrollmentGate.message}
       />
     </div>
   );
