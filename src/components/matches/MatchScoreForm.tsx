@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { updateMatchResultAction } from "@/lib/matches/actions";
+import { guestUpdateMatchResultAction } from "@/lib/matches/guest-actions";
 import { captureErrorAlertClass } from "@/lib/matches/capture-errors";
 import { allowedStatusTransitionsForRole } from "@/lib/matches/update-result-permissions";
 import {
@@ -25,6 +26,7 @@ type MatchScoreFormProps = {
   awayName: string;
   canUpdate: boolean;
   closeOnlyResultUpdate?: boolean;
+  guestInviteToken?: string;
 };
 
 export function MatchScoreForm({
@@ -39,9 +41,10 @@ export function MatchScoreForm({
   awayName,
   canUpdate,
   closeOnlyResultUpdate = false,
+  guestInviteToken,
 }: MatchScoreFormProps) {
   const [state, action, pending] = useActionState(
-    updateMatchResultAction,
+    guestInviteToken ? guestUpdateMatchResultAction : updateMatchResultAction,
     initialCaptureActionState
   );
   const [selectedStatus, setSelectedStatus] = useState<MatchStatusValue>(
@@ -74,9 +77,15 @@ export function MatchScoreForm({
         </p>
       )}
       <form action={action} className="space-y-4">
-        <input type="hidden" name="organizationId" value={organizationId} />
-        <input type="hidden" name="competitionId" value={competitionId} />
-        <input type="hidden" name="seasonId" value={seasonId} />
+        {guestInviteToken ? (
+          <input type="hidden" name="inviteToken" value={guestInviteToken} />
+        ) : (
+          <>
+            <input type="hidden" name="organizationId" value={organizationId} />
+            <input type="hidden" name="competitionId" value={competitionId} />
+            <input type="hidden" name="seasonId" value={seasonId} />
+          </>
+        )}
         <input type="hidden" name="matchId" value={matchId} />
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">

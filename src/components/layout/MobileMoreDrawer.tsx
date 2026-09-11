@@ -5,6 +5,7 @@ import { X } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { getMobileMoreNavItems } from "@/components/layout/nav-items";
 import { NavItemLink } from "@/components/layout/NavItemLink";
+import { parseSeasonContextFromPathname } from "@/lib/organizations/season-picker";
 import { usePathname } from "next/navigation";
 import { platformInternalSectionLabel } from "@/lib/platform/config";
 
@@ -28,7 +29,16 @@ export function MobileMoreDrawer({
   const pathname = usePathname();
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
-  const items = getMobileMoreNavItems(organizationId, { canManageSettings });
+  const seasonContext = parseSeasonContextFromPathname(pathname);
+  const items = getMobileMoreNavItems(organizationId, {
+    canManageSettings,
+    activeSeasonContext: seasonContext
+      ? {
+          seasonId: seasonContext.seasonId,
+          competitionId: seasonContext.competitionId,
+        }
+      : null,
+  });
 
   useEffect(() => {
     if (!open) return;

@@ -1,4 +1,5 @@
 import type { LucideIcon } from "lucide-react";
+import { buildOrganizationEquiposHref } from "@/lib/organizations/season-picker";
 import {
   CalendarDays,
   ClipboardList,
@@ -33,7 +34,7 @@ const MODULES: Array<{
     icon: ClipboardList,
     available: true,
   },
-  { slug: "sedes", label: "Sedes", icon: MapPin, available: true },
+  { slug: "sedes", label: "Canchas", icon: MapPin, available: true },
   { slug: "torneos", label: "Torneos", icon: Trophy, available: true },
   { slug: "equipos", label: "Equipos", icon: Users, available: true },
   { slug: "partidos", label: "Partidos", icon: Swords, available: true },
@@ -55,13 +56,17 @@ const MODULES: Array<{
 
 export type OrganizationNavOptions = {
   canManageSettings?: boolean;
+  activeSeasonContext?: {
+    seasonId: string;
+    competitionId: string;
+  } | null;
 };
 
 export function getOrganizationNavItems(
   organizationId: string,
   options: OrganizationNavOptions = {}
 ): NavItem[] {
-  const { canManageSettings = false } = options;
+  const { canManageSettings = false, activeSeasonContext = null } = options;
 
   return MODULES.flatMap((module) => {
     if (module.slug === "configuracion") {
@@ -80,9 +85,14 @@ export function getOrganizationNavItems(
       if (!canManageSettings) return [];
     }
 
+    const href =
+      module.slug === "equipos"
+        ? buildOrganizationEquiposHref(organizationId, activeSeasonContext)
+        : `/organizaciones/${organizationId}/${module.slug}`;
+
     return [
       {
-        href: `/organizaciones/${organizationId}/${module.slug}`,
+        href,
         label: module.label,
         icon: module.icon,
         available: module.available,

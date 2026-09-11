@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useMemo, useState } from "react";
 import { recordMatchEventAction } from "@/lib/matches/actions";
+import { guestRecordMatchEventAction } from "@/lib/matches/guest-actions";
 import { captureErrorAlertClass } from "@/lib/matches/capture-errors";
 import {
   initialCaptureActionState,
@@ -25,6 +26,7 @@ type MatchEventFormProps = {
   canCapture: boolean;
   matchClosed: boolean;
   matchStartsAt?: string | null;
+  guestInviteToken?: string;
 };
 
 function suggestMatchMinute(startsAt: string | null | undefined): number {
@@ -140,9 +142,10 @@ export function MatchEventForm({
   canCapture,
   matchClosed,
   matchStartsAt,
+  guestInviteToken,
 }: MatchEventFormProps) {
   const [state, action, pending] = useActionState(
-    recordMatchEventAction,
+    guestInviteToken ? guestRecordMatchEventAction : recordMatchEventAction,
     initialCaptureActionState
   );
   const [selected, setSelected] = useState<MatchRosterPlayer | null>(null);
@@ -220,9 +223,15 @@ export function MatchEventForm({
       />
 
       <form action={action} className="space-y-4 border-t border-border pt-4">
-        <input type="hidden" name="organizationId" value={organizationId} />
-        <input type="hidden" name="competitionId" value={competitionId} />
-        <input type="hidden" name="seasonId" value={seasonId} />
+        {guestInviteToken ? (
+          <input type="hidden" name="inviteToken" value={guestInviteToken} />
+        ) : (
+          <>
+            <input type="hidden" name="organizationId" value={organizationId} />
+            <input type="hidden" name="competitionId" value={competitionId} />
+            <input type="hidden" name="seasonId" value={seasonId} />
+          </>
+        )}
         <input type="hidden" name="matchId" value={matchId} />
         <input
           type="hidden"

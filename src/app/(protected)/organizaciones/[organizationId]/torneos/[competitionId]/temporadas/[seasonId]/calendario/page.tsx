@@ -1,6 +1,12 @@
+export const dynamic = "force-dynamic";
+
 import Link from "next/link";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
+import {
+  filterFixtureRoundsByJornada,
+  parseSelectedRound,
+} from "@/lib/fixtures/calendar-filter";
 import { requireUser } from "@/lib/auth/require-user";
 import { requireOrganizationMembership } from "@/lib/auth/require-organization-membership";
 import { getSeasonDetails } from "@/lib/competitions/queries";
@@ -53,8 +59,7 @@ export default async function SeasonCalendarPage({
   const canManageActive = canManageActiveSeason(season, canManage);
   const canCapture = canManageActive;
 
-  const selectedRound =
-    jornada && /^\d+$/.test(jornada) ? Number(jornada) : ("all" as const);
+  const selectedRound = parseSelectedRound(jornada);
 
   const jornadaSummaryData =
     selectedRound !== "all" && hasPremium
@@ -66,19 +71,7 @@ export default async function SeasonCalendarPage({
   const filter =
     filtro === "pendientes" || filtro === "programadas" ? filtro : "todas";
 
-  let rounds = data.rounds;
-  if (selectedRound !== "all") {
-    rounds = rounds.filter((r) => r.roundNumber === selectedRound);
-  }
-
-  rounds = rounds.map((round) => ({
-    ...round,
-    matches: round.matches.filter((m) => {
-      if (filter === "pendientes") return !m.isProgrammed;
-      if (filter === "programadas") return m.isProgrammed;
-      return true;
-    }),
-  }));
+  const rounds = filterFixtureRoundsByJornada(data.rounds, selectedRound, filter);
 
   const base = `/organizaciones/${organizationId}/torneos/${competitionId}/temporadas/${seasonId}`;
 
@@ -121,6 +114,7 @@ export default async function SeasonCalendarPage({
             <MatchdayTabs
               rounds={data.rounds.map((r) => r.roundNumber)}
               selectedRound={selectedRound}
+              basePath={`${base}/calendario`}
             />
           </Suspense>
 

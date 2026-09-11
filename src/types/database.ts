@@ -875,30 +875,39 @@ export type Database = {
       match_officials: {
         Row: {
           created_at: string
+          guest_name: string | null
           id: string
+          invite_expires_at: string | null
+          invite_token: string | null
           match_id: string
           organization_id: string
-          profile_id: string
+          profile_id: string | null
           role: string
           status: string
           updated_at: string
         }
         Insert: {
           created_at?: string
+          guest_name?: string | null
           id?: string
+          invite_expires_at?: string | null
+          invite_token?: string | null
           match_id: string
           organization_id: string
-          profile_id: string
+          profile_id?: string | null
           role: string
           status?: string
           updated_at?: string
         }
         Update: {
           created_at?: string
+          guest_name?: string | null
           id?: string
+          invite_expires_at?: string | null
+          invite_token?: string | null
           match_id?: string
           organization_id?: string
-          profile_id?: string
+          profile_id?: string | null
           role?: string
           status?: string
           updated_at?: string
@@ -3051,10 +3060,117 @@ export type Database = {
         Args: { p_match_official_id: string }
         Returns: {
           created_at: string
+          guest_name: string | null
           id: string
+          invite_expires_at: string | null
+          invite_token: string | null
           match_id: string
           organization_id: string
-          profile_id: string
+          profile_id: string | null
+          role: string
+          status: string
+          updated_at: string
+        }
+      }
+      get_guest_match_roster: {
+        Args: { p_token: string }
+        Returns: {
+          jersey_number: number | null
+          photo_path: string | null
+          player_id: string
+          player_name: string
+          registration_status: string
+          season_team_id: string
+          season_team_player_id: string
+          verification_status: string
+        }[]
+      }
+      get_guest_match_snapshot: {
+        Args: { p_token: string }
+        Returns: {
+          away_name: string
+          away_score: number | null
+          away_season_team_id: string
+          calendar_status: string
+          home_name: string
+          home_score: number | null
+          home_season_team_id: string
+          match_id: string
+          starts_at: string | null
+          status: string
+        }[]
+      }
+      get_guest_match_timeline: {
+        Args: { p_token: string }
+        Returns: {
+          created_at: string
+          event_id: string
+          event_type: string
+          minute: number
+          notes: string | null
+          player_name: string
+          season_team_id: string
+          season_team_player_id: string
+          team_name: string
+          void_reason: string | null
+          voided_at: string | null
+        }[]
+      }
+      get_guest_official_invite: {
+        Args: { p_token: string }
+        Returns: {
+          competition_id: string
+          guest_name: string | null
+          invite_expires_at: string
+          match_id: string
+          match_official_id: string
+          organization_id: string
+          role: string
+          season_id: string
+          status: string
+        }[]
+      }
+      guest_record_match_event: {
+        Args: {
+          p_event_type: string
+          p_match_id: string
+          p_minute: number
+          p_notes?: string
+          p_season_team_player_id: string
+          p_token: string
+        }
+        Returns: string
+      }
+      guest_update_match_result: {
+        Args: {
+          p_away_score: number
+          p_home_score: number
+          p_match_id: string
+          p_status: string
+          p_token: string
+        }
+        Returns: {
+          away_score: number | null
+          created_at: string
+          home_score: number | null
+          id: string
+          organization_id: string
+          season_id: string
+          status: string
+          updated_at: string
+        }
+      }
+      set_guest_official_name: {
+        Args: { p_name: string; p_token: string }
+        Returns: {
+          created_at: string
+          guest_name: string | null
+          id: string
+          invite_expires_at: string | null
+          invite_token: string | null
+          match_id: string
+          organization_id: string
+          profile_id: string | null
           role: string
           status: string
           updated_at: string

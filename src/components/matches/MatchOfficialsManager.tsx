@@ -4,8 +4,10 @@ import { useActionState } from "react";
 import {
   assignMatchOfficialAction,
   confirmMatchOfficialAction,
+  createGuestOfficialInviteAction,
   removeMatchOfficialAction,
 } from "@/lib/matches/actions";
+import { InviteLinkResult } from "@/components/teams/InviteLinkResult";
 import {
   MATCH_OFFICIAL_ROLE_OPTIONS,
   initialCaptureActionState,
@@ -53,6 +55,8 @@ export function MatchOfficialsManager({
     removeMatchOfficialAction,
     initialCaptureActionState
   );
+  const [guestInviteState, guestInviteAction, guestInvitePending] =
+    useActionState(createGuestOfficialInviteAction, initialCaptureActionState);
 
   const canRemove =
     canManage &&
@@ -101,16 +105,24 @@ export function MatchOfficialsManager({
                   />
                 </div>
               </div>
-              {!official.hasRequiredSeasonRole &&
+              {!official.isGuestInvite &&
+                !official.hasRequiredSeasonRole &&
                 (official.role === "referee" ||
                   official.role === "delegate") && (
                   <p className="text-xs text-warning">
                     Falta season_role coincidente; no podrá capturar.
                   </p>
                 )}
+              {official.isGuestInvite && (
+                <p className="text-xs text-text-secondary">
+                  {official.guestInviteActive
+                    ? "Invitación por link activa."
+                    : "Invitación por link expirada o usada."}
+                </p>
+              )}
               {canManage && (
                 <div className="flex flex-wrap gap-2">
-                  {official.status !== "confirmed" && (
+                  {!official.isGuestInvite && official.status !== "confirmed" && (
                     <form action={confirmAction}>
                       <input type="hidden" name="organizationId" value={organizationId} />
                       <input type="hidden" name="competitionId" value={competitionId} />
@@ -159,19 +171,41 @@ export function MatchOfficialsManager({
 
       {(assignState.message ||
         confirmState.message ||
-        removeState.message) && (
+        removeState.message ||
+        guestInviteState.message) && (
         <p
           className={cn(
             "rounded-xl border px-3 py-2 text-sm",
-            assignState.ok || confirmState.ok || removeState.ok
+            assignState.ok ||
+              confirmState.ok ||
+              removeState.ok ||
+              guestInviteState.ok
               ? "border-success/40 bg-success/10 text-success"
               : "border-danger/40 bg-danger/10 text-danger"
           )}
         >
           {assignState.message ||
             confirmState.message ||
-            removeState.message}
+            removeState.message ||
+            guestInviteState.message}
         </p>
+      )}
+
+      <InviteLinkResult inviteUrl={guestInviteState.inviteUrl} />
+
+      {canManage && (
+        <form action={guestInviteAction} className="space-y-3 border-t border-border pt-4">
+          <input type="hidden" name="organizationId" value={organizationId} />
+          <input type="hidden" name="competitionId" value={competitionId} />
+          <input type="hidden" name="seasonId" value={seasonId} />
+          <input type="hidden" name="matchId" value={matchId} />
+          <p className="text-sm text-text-secondary">
+            Genera un enlace de un solo uso para un árbitro sin cuenta.
+          </p>
+          <SubmitButton pending={guestInvitePending} className="w-auto">
+            Invitar por link (sin cuenta)
+          </SubmitButton>
+        </form>
       )}
 
       {canManage && (

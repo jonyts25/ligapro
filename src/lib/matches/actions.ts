@@ -18,7 +18,9 @@ import {
   type SeasonRoleValue,
 } from "@/lib/matches/types";
 import { humanizeCaptureError } from "@/lib/matches/capture-errors";
+import { computeGuestOfficialInviteExpiry } from "@/lib/matches/guest-official";
 import { validateUpdateResultAuthorization } from "@/lib/matches/update-result-permissions";
+import { getPublicSiteUrl } from "@/lib/site-url";
 
 async function revalidateMatchPaths(
   organizationId: string,
@@ -222,6 +224,73 @@ export async function assignMatchOfficialAction(
 
   await revalidateMatchPaths(organizationId, competitionId, seasonId, matchId);
   return { ok: true, message: "Oficial asignado." };
+}
+
+export async function createGuestOfficialInviteAction(
+  _prev: CaptureActionState,
+  formData: FormData
+): Promise<CaptureActionState> {
+  const user = await requireUser();
+  const organizationId = String(formData.get("organizationId") ?? "");
+  const competitionId = String(formData.get("competitionId") ?? "");
+  const seasonId = String(formData.get("seasonId") ?? "");
+  const matchId = String(formData.get("matchId") ?? "");
+
+  await requireOrganizationAdmin(user.id, organizationId);
+
+  const supabase = await createClient();
+  const { data: match } = await supabase
+    .from("matches")
+    .select("id, status, field_reservations(starts_at)")
+    .eq("id", matchId)
+    .eq("organization_id", organizationId)
+    .eq("season_id", seasonId)
+    .maybeSingle();
+
+  if (!match) {
+    return { ok: false, message: "Partido no encontrado." };
+  }
+
+  if (match.status === "finished" || match.status === "in_progress") {
+    return {
+      ok: false,
+      message: "No se puede invitar a un partido en curso o finalizado.",
+    };
+  }
+
+  const reservationRel = match.field_reservations as
+    | { starts_at: string | null }
+    | { starts_at: string | null }[]
+    | null;
+  const reservation = Array.isArray(reservationRel)
+    ? reservationRel[0]
+    : reservationRel;
+  const inviteToken = crypto.randomUUID();
+  const inviteExpiresAt = computeGuestOfficialInviteExpiry(
+    reservation?.starts_at ?? null
+  );
+
+  const { error } = await supabase.from("match_officials").insert({
+    organization_id: organizationId,
+    match_id: matchId,
+    profile_id: null,
+    role: "referee",
+    status: "assigned",
+    invite_token: inviteToken,
+    invite_expires_at: inviteExpiresAt.toISOString(),
+  });
+
+  if (error) {
+    return humanError(error.message);
+  }
+
+  const inviteUrl = `${getPublicSiteUrl()}/invitacion-arbitral/${inviteToken}`;
+  await revalidateMatchPaths(organizationId, competitionId, seasonId, matchId);
+  return {
+    ok: true,
+    message: "Enlace de invitación generado.",
+    inviteUrl,
+  };
 }
 
 export async function confirmMatchOfficialAction(

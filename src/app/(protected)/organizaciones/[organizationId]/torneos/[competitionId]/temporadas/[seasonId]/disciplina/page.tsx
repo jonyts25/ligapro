@@ -13,10 +13,8 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { DisciplineTable } from "@/components/standings/DisciplineTable";
 import { SeasonStandingsNav } from "@/components/standings/SeasonStandingsNav";
 import { DisciplineAdminPanel } from "@/components/discipline/DisciplineAdminPanel";
-import { VerificationReviewPanel } from "@/components/verification/VerificationReviewPanel";
 import { isOrganizationAdminRole } from "@/lib/auth/is-organization-admin";
 import { canManageActiveSeason } from "@/lib/competitions/season-visibility";
-import { getPendingVerificationPlayers } from "@/lib/verification/queries";
 import { SeasonExportButtons } from "@/components/export/ExportButtons";
 
 type PageProps = {
@@ -25,10 +23,18 @@ type PageProps = {
     competitionId: string;
     seasonId: string;
   }>;
+  searchParams: Promise<{ tab?: string }>;
 };
 
-export default async function SeasonDisciplinePage({ params }: PageProps) {
+// TODO: player verification UI was removed from Disciplina; legacy data remains in
+// `players.verification_status` and `player_verification_reviews` if cleanup is needed later.
+
+export default async function SeasonDisciplinePage({
+  params,
+  searchParams,
+}: PageProps) {
   const { organizationId, competitionId, seasonId } = await params;
+  const { tab } = await searchParams;
   const user = await requireUser();
   const membership = await requireOrganizationMembership(
     user.id,
@@ -44,18 +50,15 @@ export default async function SeasonDisciplinePage({ params }: PageProps) {
   if (!season) notFound();
 
   const canManageActive = canManageActiveSeason(season, canManage);
+  const activeTab = tab === "nueva" ? "nueva" : "activas";
 
-  const [rows, activeSuspensions, rosterPlayers, pendingVerification] =
-    await Promise.all([
+  const [rows, activeSuspensions, rosterPlayers] = await Promise.all([
     getSeasonDisciplineSummary(seasonId),
     canManageActive
       ? getActiveDisciplineSuspensions(organizationId, seasonId)
       : Promise.resolve([]),
     canManageActive
       ? getSeasonRosterPlayerOptions(organizationId, seasonId)
-      : Promise.resolve([]),
-    canManageActive
-      ? getPendingVerificationPlayers(organizationId, seasonId)
       : Promise.resolve([]),
   ]);
 
@@ -76,43 +79,42 @@ export default async function SeasonDisciplinePage({ params }: PageProps) {
       />
 
       {canManageActive && (
-        <VerificationReviewPanel
-          organizationId={organizationId}
-          competitionId={competitionId}
-          seasonId={seasonId}
-          pendingPlayers={pendingVerification}
-        />
+        <>
+          {activeTab === "activas" && (
+            <div className="flex justify-end">
+              <SeasonExportButtons
+                organizationId={organizationId}
+                competitionId={competitionId}
+                seasonId={seasonId}
+                exportKind="discipline"
+              />
+            </div>
+          )}
+          <DisciplineAdminPanel
+            organizationId={organizationId}
+            competitionId={competitionId}
+            seasonId={seasonId}
+            activeSuspensions={activeSuspensions}
+            rosterPlayers={rosterPlayers}
+            initialTab={activeTab}
+          />
+        </>
       )}
 
-      {canManageActive && (
-        <DisciplineAdminPanel
-          organizationId={organizationId}
-          competitionId={competitionId}
-          seasonId={seasonId}
-          activeSuspensions={activeSuspensions}
-          rosterPlayers={rosterPlayers}
+      {activeTab === "activas" && (
+        <DisciplineTable
+          rows={rows.map((row) => ({
+            key: row.playerId,
+            playerName: row.playerName,
+            teamName: row.teamName,
+            yellowCards: row.yellowCards,
+            redCards: row.redCards,
+            matchesRemaining: row.matchesRemaining,
+            suspensionStatus: row.suspensionStatus,
+            isSuspended: row.activeSuspensions > 0,
+          }))}
         />
       )}
-
-      <SeasonExportButtons
-        organizationId={organizationId}
-        competitionId={competitionId}
-        seasonId={seasonId}
-        exportKind="discipline"
-      />
-
-      <DisciplineTable
-        rows={rows.map((row) => ({
-          key: row.playerId,
-          playerName: row.playerName,
-          teamName: row.teamName,
-          yellowCards: row.yellowCards,
-          redCards: row.redCards,
-          matchesRemaining: row.matchesRemaining,
-          suspensionStatus: row.suspensionStatus,
-          isSuspended: row.activeSuspensions > 0,
-        }))}
-      />
     </div>
   );
 }

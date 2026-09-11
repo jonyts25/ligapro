@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useActionState, useState } from "react";
 import {
   adjustDisciplineSuspensionAction,
@@ -24,6 +26,7 @@ type DisciplineAdminPanelProps = {
   seasonId: string;
   activeSuspensions: ActiveSuspensionRow[];
   rosterPlayers: RosterPlayerOption[];
+  initialTab?: "activas" | "nueva";
 };
 
 function ActionMessage({
@@ -46,6 +49,47 @@ function ActionMessage({
     >
       {message}
     </p>
+  );
+}
+
+function DisciplineTabs({
+  activeTab,
+}: {
+  activeTab: "activas" | "nueva";
+}) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  function hrefFor(tab: "activas" | "nueva") {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", tab);
+    const qs = params.toString();
+    return qs ? `${pathname}?${qs}` : pathname;
+  }
+
+  const tabs = [
+    { key: "activas" as const, label: "Sanciones activas" },
+    { key: "nueva" as const, label: "Nueva sanción administrativa" },
+  ];
+
+  return (
+    <div className="flex flex-wrap gap-2 border-b border-border pb-3">
+      {tabs.map((tab) => (
+        <Link
+          key={tab.key}
+          href={hrefFor(tab.key)}
+          scroll={false}
+          className={cn(
+            "inline-flex min-h-11 items-center rounded-xl border px-4 text-sm font-medium",
+            activeTab === tab.key
+              ? "border-brand bg-brand text-brand-foreground"
+              : "border-border text-text-secondary hover:bg-surface-elevated"
+          )}
+        >
+          {tab.label}
+        </Link>
+      ))}
+    </div>
   );
 }
 
@@ -79,9 +123,7 @@ function SuspensionAdminActions({
   return (
     <Card className="space-y-3">
       <div>
-        <p className="font-medium text-text-primary">
-          {suspension.playerName}
-        </p>
+        <p className="font-medium text-text-primary">{suspension.playerName}</p>
         <p className="text-sm text-text-secondary">
           {suspension.teamName} · {suspensionTypeLabel(suspension.suspensionType)}{" "}
           · {suspension.matchesRemaining} partido(s) restante(s)
@@ -119,22 +161,15 @@ function SuspensionAdminActions({
           <input type="hidden" name="competitionId" value={competitionId} />
           <input type="hidden" name="seasonId" value={seasonId} />
           <input type="hidden" name="suspensionId" value={suspension.id} />
-          <label className="block text-sm font-medium" htmlFor={`waive-${suspension.id}`}>
-            Motivo (obligatorio)
-          </label>
           <textarea
-            id={`waive-${suspension.id}`}
             name="reason"
             value={waiveReason}
-            onChange={(e) => setWaiveReason(e.target.value)}
+            onChange={(event) => setWaiveReason(event.target.value)}
             required
             rows={2}
             disabled={waivePending}
             className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
           />
-          {waiveState.fieldErrors?.reason && (
-            <p className="text-xs text-danger">{waiveState.fieldErrors.reason}</p>
-          )}
           <div className="flex gap-2">
             <SubmitButton pending={waivePending} className="w-auto text-sm">
               Confirmar levantamiento
@@ -157,53 +192,25 @@ function SuspensionAdminActions({
           <input type="hidden" name="competitionId" value={competitionId} />
           <input type="hidden" name="seasonId" value={seasonId} />
           <input type="hidden" name="suspensionId" value={suspension.id} />
-          <div className="space-y-1.5">
-            <label
-              htmlFor={`matches-${suspension.id}`}
-              className="block text-sm font-medium"
-            >
-              Partidos restantes
-            </label>
-            <input
-              id={`matches-${suspension.id}`}
-              name="matchesRemaining"
-              type="number"
-              min="0"
-              value={matchesRemaining}
-              onChange={(e) => setMatchesRemaining(e.target.value)}
-              required
-              disabled={adjustPending}
-              className="min-h-11 w-full max-w-[8rem] rounded-xl border border-border bg-background px-3 text-sm"
-            />
-            {adjustState.fieldErrors?.matchesRemaining && (
-              <p className="text-xs text-danger">
-                {adjustState.fieldErrors.matchesRemaining}
-              </p>
-            )}
-          </div>
-          <div className="space-y-1.5">
-            <label
-              htmlFor={`adjust-reason-${suspension.id}`}
-              className="block text-sm font-medium"
-            >
-              Motivo (obligatorio)
-            </label>
-            <textarea
-              id={`adjust-reason-${suspension.id}`}
-              name="reason"
-              value={adjustReason}
-              onChange={(e) => setAdjustReason(e.target.value)}
-              required
-              rows={2}
-              disabled={adjustPending}
-              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
-            />
-            {adjustState.fieldErrors?.reason && (
-              <p className="text-xs text-danger">
-                {adjustState.fieldErrors.reason}
-              </p>
-            )}
-          </div>
+          <input
+            name="matchesRemaining"
+            type="number"
+            min="0"
+            value={matchesRemaining}
+            onChange={(event) => setMatchesRemaining(event.target.value)}
+            required
+            disabled={adjustPending}
+            className="min-h-11 w-full max-w-[8rem] rounded-xl border border-border bg-background px-3 text-sm"
+          />
+          <textarea
+            name="reason"
+            value={adjustReason}
+            onChange={(event) => setAdjustReason(event.target.value)}
+            required
+            rows={2}
+            disabled={adjustPending}
+            className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+          />
           <div className="flex gap-2">
             <SubmitButton pending={adjustPending} className="w-auto text-sm">
               Guardar ajuste
@@ -227,7 +234,7 @@ function CreateAdministrativeSuspensionForm({
   competitionId,
   seasonId,
   rosterPlayers,
-}: Omit<DisciplineAdminPanelProps, "activeSuspensions">) {
+}: Omit<DisciplineAdminPanelProps, "activeSuspensions" | "initialTab">) {
   const [state, action, pending] = useActionState(
     createAdministrativeSuspensionAction,
     initialDisciplineActionState
@@ -236,7 +243,7 @@ function CreateAdministrativeSuspensionForm({
   return (
     <Card className="space-y-4">
       <SectionHeader
-        title="Crear sanción administrativa"
+        title="Nueva sanción administrativa"
         description="Sin evento de partido origen. El motivo queda registrado en la sanción."
       />
       <ActionMessage ok={state.ok} message={state.message} />
@@ -260,17 +267,12 @@ function CreateAdministrativeSuspensionForm({
             <option value="" disabled>
               Selecciona jugador
             </option>
-            {rosterPlayers.map((p) => (
-              <option key={p.seasonTeamPlayerId} value={p.seasonTeamPlayerId}>
-                {p.playerName} · {p.teamName}
+            {rosterPlayers.map((player) => (
+              <option key={player.seasonTeamPlayerId} value={player.seasonTeamPlayerId}>
+                {player.playerName} · {player.teamName}
               </option>
             ))}
           </select>
-          {state.fieldErrors?.seasonTeamPlayerId && (
-            <p className="text-xs text-danger">
-              {state.fieldErrors.seasonTeamPlayerId}
-            </p>
-          )}
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -293,10 +295,7 @@ function CreateAdministrativeSuspensionForm({
             </select>
           </div>
           <div className="space-y-1.5">
-            <label
-              htmlFor="matchesRemaining"
-              className="block text-sm font-medium"
-            >
+            <label htmlFor="matchesRemaining" className="block text-sm font-medium">
               Partidos
             </label>
             <input
@@ -309,11 +308,6 @@ function CreateAdministrativeSuspensionForm({
               disabled={pending}
               className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
             />
-            {state.fieldErrors?.matchesRemaining && (
-              <p className="text-xs text-danger">
-                {state.fieldErrors.matchesRemaining}
-              </p>
-            )}
           </div>
         </div>
 
@@ -329,9 +323,6 @@ function CreateAdministrativeSuspensionForm({
             disabled={pending}
             className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
           />
-          {state.fieldErrors?.reason && (
-            <p className="text-xs text-danger">{state.fieldErrors.reason}</p>
-          )}
         </div>
 
         <SubmitButton pending={pending} className="w-auto">
@@ -342,33 +333,43 @@ function CreateAdministrativeSuspensionForm({
   );
 }
 
-export function DisciplineAdminPanel(props: DisciplineAdminPanelProps) {
+export function DisciplineAdminPanel({
+  initialTab = "activas",
+  ...props
+}: DisciplineAdminPanelProps) {
+  const activeTab = initialTab;
+
   return (
-    <div className="space-y-6">
-      <CreateAdministrativeSuspensionForm {...props} />
-      <div className="space-y-3">
-        <SectionHeader
-          title="Sanciones activas"
-          description="Levantar o ajustar partidos restantes con motivo obligatorio."
-        />
-        {props.activeSuspensions.length === 0 ? (
-          <Card>
-            <p className="text-sm text-text-secondary">
-              No hay sanciones activas en este momento.
-            </p>
-          </Card>
-        ) : (
-          props.activeSuspensions.map((suspension) => (
-            <SuspensionAdminActions
-              key={suspension.id}
-              organizationId={props.organizationId}
-              competitionId={props.competitionId}
-              seasonId={props.seasonId}
-              suspension={suspension}
-            />
-          ))
-        )}
-      </div>
+    <div className="space-y-4">
+      <DisciplineTabs activeTab={activeTab} />
+
+      {activeTab === "nueva" ? (
+        <CreateAdministrativeSuspensionForm {...props} />
+      ) : (
+        <div className="space-y-3">
+          <SectionHeader
+            title="Sanciones activas"
+            description="Levantar o ajustar partidos restantes con motivo obligatorio."
+          />
+          {props.activeSuspensions.length === 0 ? (
+            <Card>
+              <p className="text-sm text-text-secondary">
+                No hay sanciones activas en este momento.
+              </p>
+            </Card>
+          ) : (
+            props.activeSuspensions.map((suspension) => (
+              <SuspensionAdminActions
+                key={suspension.id}
+                organizationId={props.organizationId}
+                competitionId={props.competitionId}
+                seasonId={props.seasonId}
+                suspension={suspension}
+              />
+            ))
+          )}
+        </div>
+      )}
     </div>
   );
 }

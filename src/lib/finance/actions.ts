@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth/require-user";
 import { requireOrganizationAdmin } from "@/lib/auth/require-organization-admin";
+import { buildOverpaymentWarning } from "@/lib/finance/balance";
+import { getTeamBalance } from "@/lib/finance/queries";
 import {
   CHARGE_TYPE_OPTIONS,
   PAYMENT_METHOD_OPTIONS,
@@ -107,7 +109,7 @@ export async function addTeamChargesAction(
   };
 }
 
-export async function markTeamPaidAction(
+export async function recordPaymentAction(
   _prev: FinanceActionState,
   formData: FormData
 ): Promise<FinanceActionState> {
@@ -120,6 +122,8 @@ export async function markTeamPaidAction(
 
   const paymentMethod = String(formData.get("paymentMethod") ?? "cash");
   const amountRaw = String(formData.get("amount") ?? "").trim();
+  const paidAtRaw = String(formData.get("paidAt") ?? "").trim();
+  const notesRaw = String(formData.get("notes") ?? "").trim();
 
   if (!seasonTeamId) {
     return { ok: false, message: "Equipo no válido." };
@@ -128,15 +132,27 @@ export async function markTeamPaidAction(
     return { ok: false, message: "Método de pago no válido." };
   }
   if (!amountRaw || Number.isNaN(Number(amountRaw)) || Number(amountRaw) <= 0) {
-    return { ok: false, message: "El saldo pendiente debe ser mayor a cero." };
+    return { ok: false, message: "Indica un monto mayor a cero." };
   }
+
+  const amount = Number(amountRaw);
+  const currentBalance = await getTeamBalance(organizationId, seasonTeamId);
+  const overpaymentWarning = currentBalance
+    ? buildOverpaymentWarning(currentBalance, amount)
+    : null;
+
+  const paidAt = paidAtRaw
+    ? new Date(`${paidAtRaw}T12:00:00`).toISOString()
+    : undefined;
 
   const supabase = await createClient();
   const { error } = await supabase.from("team_payments").insert({
     organization_id: organizationId,
     season_team_id: seasonTeamId,
-    amount: Number(amountRaw),
+    amount,
     payment_method: paymentMethod,
+    notes: notesRaw || null,
+    paid_at: paidAt,
     recorded_by_profile_id: user.id,
   });
 
@@ -148,8 +164,14 @@ export async function markTeamPaidAction(
   }
 
   await revalidateFinancePaths(organizationId, competitionId, seasonId);
-  return { ok: true, message: "Pago registrado por el saldo pendiente." };
+  return {
+    ok: true,
+    message: overpaymentWarning ?? "Pago registrado correctamente.",
+  };
 }
+
+/** @deprecated Use recordPaymentAction */
+export const markTeamPaidAction = recordPaymentAction;
 
 export async function voidTeamChargeAction(
   _prev: FinanceActionState,

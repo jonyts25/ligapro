@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { displaySeasonTeamName } from "@/lib/teams/types";
+import { computeTeamBalance, type TeamBalance } from "@/lib/finance/balance";
 import {
   deriveFinanceTeamStatus,
   type FinanceChargeRow,
@@ -55,7 +56,7 @@ export async function getSeasonFinanceOverview(
       supabase
         .from("team_payments")
         .select(
-          "id, season_team_id, amount, payment_method, reference, notes, paid_at, created_at"
+          "id, season_team_id, amount, payment_method, reference, notes, paid_at, created_at, profiles!recorded_by_profile_id(display_name)"
         )
         .eq("organization_id", organizationId)
         .in("season_team_id", seasonTeamIds)
@@ -84,6 +85,11 @@ export async function getSeasonFinanceOverview(
 
   const paymentsByTeam = new Map<string, FinancePaymentRow[]>();
   for (const row of payments ?? []) {
+    const profileRel = row.profiles as
+      | { display_name: string | null }
+      | { display_name: string | null }[]
+      | null;
+    const profile = Array.isArray(profileRel) ? profileRel[0] : profileRel;
     const list = paymentsByTeam.get(row.season_team_id) ?? [];
     list.push({
       id: row.id,
@@ -94,6 +100,7 @@ export async function getSeasonFinanceOverview(
       notes: row.notes,
       paidAt: row.paid_at,
       createdAt: row.created_at,
+      recordedByName: profile?.display_name?.trim() || "Admin",
     });
     paymentsByTeam.set(row.season_team_id, list);
   }
@@ -117,4 +124,27 @@ export async function getSeasonFinanceOverview(
       payments: paymentsByTeam.get(team.id) ?? [],
     };
   });
+}
+
+export async function getTeamBalance(
+  organizationId: string,
+  seasonTeamId: string
+): Promise<TeamBalance | null> {
+  const supabase = await createClient();
+
+  const { data: summary } = await supabase
+    .from("season_team_financial_summary")
+    .select("total_active_charges, total_active_payments, balance_due")
+    .eq("organization_id", organizationId)
+    .eq("season_team_id", seasonTeamId)
+    .maybeSingle();
+
+  if (!summary) {
+    return computeTeamBalance(0, 0);
+  }
+
+  return computeTeamBalance(
+    Number(summary.total_active_charges ?? 0),
+    Number(summary.total_active_payments ?? 0)
+  );
 }

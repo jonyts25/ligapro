@@ -1,5 +1,6 @@
 "use server";
 
+import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth/require-user";
@@ -198,5 +199,7 @@ export async function createAdministrativeSuspensionAction(
   }
 
   await revalidateDisciplinePaths(organizationId, competitionId, seasonId);
-  return { ok: true, message: "Sanción administrativa registrada." };
+  redirect(
+    `/organizaciones/${organizationId}/torneos/${competitionId}/temporadas/${seasonId}/disciplina?tab=activas`
+  );
 }

@@ -1,4 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
+import {
+  normalizeOrganizationSeasonFieldBlocks,
+  type OrganizationSeasonFieldBlock,
+} from "@/lib/season-fields/organization-blocks";
 import { isFieldEffectivelyAvailable } from "@/lib/venues/types";
 import type { ActiveFieldOption, SeasonFieldBlock } from "@/lib/season-fields/types";
 
@@ -79,4 +83,23 @@ export async function getSeasonFieldBlocks(
       ends_at: normalizeTime(block.ends_at),
     };
   });
+}
+
+/** All season_field_blocks for an organization (every field, every tournament). */
+export async function getOrganizationSeasonFieldBlocks(
+  organizationId: string
+): Promise<OrganizationSeasonFieldBlock[]> {
+  const supabase = await createClient();
+
+  const { data: blocks } = await supabase
+    .from("season_field_blocks")
+    .select(
+      "id, field_id, day_of_week, starts_at, ends_at, season_id, seasons(name, competition_id, competitions(name))"
+    )
+    .eq("organization_id", organizationId)
+    .order("field_id")
+    .order("day_of_week")
+    .order("starts_at");
+
+  return normalizeOrganizationSeasonFieldBlocks(blocks ?? []);
 }

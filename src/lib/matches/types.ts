@@ -55,6 +55,8 @@ export type CaptureActionState = {
   errorKind?: CaptureErrorKind;
   fieldErrors?: Record<string, string>;
   values?: Record<string, string | number | null>;
+  inviteUrl?: string | null;
+  whatsAppHref?: string | null;
 };
 
 export const initialCaptureActionState: CaptureActionState = {
@@ -79,12 +81,14 @@ export type SeasonRoleListItem = {
 
 export type MatchOfficialListItem = {
   id: string;
-  profileId: string;
+  profileId: string | null;
   role: MatchOfficialRole;
   status: MatchOfficialStatus;
   displayName: string;
   email: string;
   hasRequiredSeasonRole: boolean;
+  isGuestInvite: boolean;
+  guestInviteActive: boolean;
 };
 
 export type MatchTimelineEvent = {

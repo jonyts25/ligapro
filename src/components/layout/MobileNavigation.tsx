@@ -7,6 +7,7 @@ import {
   getMobilePrimaryNavItems,
   isActiveRoute,
 } from "@/components/layout/nav-items";
+import { parseSeasonContextFromPathname } from "@/lib/organizations/season-picker";
 
 type MobileNavigationProps = {
   organizationId: string;
@@ -18,8 +19,15 @@ export function MobileNavigation({
   canManageSettings = false,
 }: MobileNavigationProps) {
   const pathname = usePathname();
+  const seasonContext = parseSeasonContextFromPathname(pathname);
   const primaryItems = getMobilePrimaryNavItems(organizationId, {
     canManageSettings,
+    activeSeasonContext: seasonContext
+      ? {
+          seasonId: seasonContext.seasonId,
+          competitionId: seasonContext.competitionId,
+        }
+      : null,
   });
 
   return (

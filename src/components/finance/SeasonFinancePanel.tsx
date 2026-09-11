@@ -3,10 +3,11 @@
 import { useActionState, useState } from "react";
 import {
   addTeamChargesAction,
-  markTeamPaidAction,
+  recordPaymentAction,
   voidTeamChargeAction,
   voidTeamPaymentAction,
 } from "@/lib/finance/actions";
+import { summarizeSeasonFinanceTotals } from "@/lib/finance/balance";
 import {
   CHARGE_TYPE_OPTIONS,
   PAYMENT_METHOD_OPTIONS,
@@ -206,7 +207,14 @@ export function AddTeamChargeForm({
   );
 }
 
-function MarkTeamPaidForm({
+function formatPaymentDate(value: string): string {
+  return new Date(value).toLocaleString("es-MX", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+}
+
+function RecordPaymentForm({
   organizationId,
   competitionId,
   seasonId,
@@ -218,47 +226,109 @@ function MarkTeamPaidForm({
   team: SeasonFinanceTeamRow;
 }) {
   const [state, action, pending] = useActionState(
-    markTeamPaidAction,
+    recordPaymentAction,
     initialFinanceActionState
   );
+  const [open, setOpen] = useState(false);
 
-  if (team.balanceDue <= 0) return null;
+  if (team.totalCharges <= 0) return null;
 
   return (
-    <form action={action} className="space-y-2">
-      <ActionMessage ok={state.ok} message={state.message} />
-      <input type="hidden" name="organizationId" value={organizationId} />
-      <input type="hidden" name="competitionId" value={competitionId} />
-      <input type="hidden" name="seasonId" value={seasonId} />
-      <input type="hidden" name="seasonTeamId" value={team.seasonTeamId} />
-      <input type="hidden" name="amount" value={String(team.balanceDue)} />
-      <div className="flex flex-wrap items-end gap-2">
-        <div className="space-y-1">
-          <label
-            htmlFor={`pay-method-${team.seasonTeamId}`}
-            className="block text-xs font-medium text-text-secondary"
-          >
-            Método
-          </label>
-          <select
-            id={`pay-method-${team.seasonTeamId}`}
-            name="paymentMethod"
-            defaultValue="cash"
-            disabled={pending}
-            className="min-h-11 rounded-xl border border-border bg-background px-3 text-sm"
-          >
-            {PAYMENT_METHOD_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <SubmitButton pending={pending} className="w-auto">
-          Marcar pagado ({formatMoney(team.balanceDue)})
-        </SubmitButton>
-      </div>
-    </form>
+    <div className="space-y-2">
+      {!open ? (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="inline-flex min-h-11 items-center rounded-xl bg-brand px-4 text-sm font-semibold text-brand-foreground"
+        >
+          Registrar pago
+        </button>
+      ) : (
+        <form action={action} className="space-y-3 rounded-xl border border-border p-4">
+          <ActionMessage ok={state.ok} message={state.message} />
+          <input type="hidden" name="organizationId" value={organizationId} />
+          <input type="hidden" name="competitionId" value={competitionId} />
+          <input type="hidden" name="seasonId" value={seasonId} />
+          <input type="hidden" name="seasonTeamId" value={team.seasonTeamId} />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <label htmlFor={`pay-amount-${team.seasonTeamId}`} className="block text-sm font-medium">
+                Monto (MXN)
+              </label>
+              <input
+                id={`pay-amount-${team.seasonTeamId}`}
+                name="amount"
+                type="number"
+                min="0.01"
+                step="0.01"
+                defaultValue={
+                  team.balanceDue > 0 ? String(team.balanceDue) : ""
+                }
+                required
+                disabled={pending}
+                className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label htmlFor={`pay-method-${team.seasonTeamId}`} className="block text-sm font-medium">
+                Método
+              </label>
+              <select
+                id={`pay-method-${team.seasonTeamId}`}
+                name="paymentMethod"
+                defaultValue="cash"
+                disabled={pending}
+                className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
+              >
+                {PAYMENT_METHOD_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <label htmlFor={`pay-date-${team.seasonTeamId}`} className="block text-sm font-medium">
+                Fecha del pago
+              </label>
+              <input
+                id={`pay-date-${team.seasonTeamId}`}
+                name="paidAt"
+                type="date"
+                disabled={pending}
+                className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label htmlFor={`pay-notes-${team.seasonTeamId}`} className="block text-sm font-medium">
+                Notas
+              </label>
+              <input
+                id={`pay-notes-${team.seasonTeamId}`}
+                name="notes"
+                type="text"
+                disabled={pending}
+                className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
+              />
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <SubmitButton pending={pending} className="w-auto">
+              Guardar pago
+            </SubmitButton>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="min-h-11 rounded-xl border border-border px-4 text-sm"
+            >
+              Cancelar
+            </button>
+          </div>
+        </form>
+      )}
+    </div>
   );
 }
 
@@ -339,6 +409,27 @@ function VoidEntryForm({
   );
 }
 
+function SeasonFinanceSummary({ teams }: { teams: SeasonFinanceTeamRow[] }) {
+  const totals = summarizeSeasonFinanceTotals(teams);
+
+  return (
+    <Card className="grid gap-4 sm:grid-cols-3">
+      <div>
+        <p className="text-xs uppercase tracking-wide text-muted">Total cargos</p>
+        <p className="text-lg font-semibold">{formatMoney(totals.totalCharges)}</p>
+      </div>
+      <div>
+        <p className="text-xs uppercase tracking-wide text-muted">Total cobrado</p>
+        <p className="text-lg font-semibold">{formatMoney(totals.totalCollected)}</p>
+      </div>
+      <div>
+        <p className="text-xs uppercase tracking-wide text-muted">Total pendiente</p>
+        <p className="text-lg font-semibold">{formatMoney(totals.totalPending)}</p>
+      </div>
+    </Card>
+  );
+}
+
 export function SeasonFinanceTable({
   organizationId,
   competitionId,
@@ -358,6 +449,7 @@ export function SeasonFinanceTable({
 
   return (
     <div className="space-y-4">
+      <SeasonFinanceSummary teams={teams} />
       <ResponsiveTableContainer label="Finanzas por equipo">
         <table className="w-full min-w-[36rem] text-left text-sm">
           <thead className="bg-surface-elevated text-xs uppercase tracking-wide text-muted">
@@ -394,14 +486,31 @@ export function SeasonFinanceTable({
 
       {teams.map((team) => (
         <Card key={team.seasonTeamId} className="space-y-4">
-          <SectionHeader
-            title={team.teamName}
-            description={`Saldo pendiente: ${
-              team.balanceDue > 0 ? formatMoney(team.balanceDue) : "—"
-            }`}
-          />
+          <SectionHeader title={team.teamName} />
+          <div className="grid gap-3 sm:grid-cols-3">
+            <Card className="space-y-1">
+              <p className="text-xs uppercase tracking-wide text-muted">Saldo pendiente</p>
+              <p className="text-xl font-semibold text-text-primary">
+                {team.totalCharges <= 0
+                  ? "—"
+                  : team.balanceDue > 0
+                    ? formatMoney(team.balanceDue)
+                    : team.balanceDue < 0
+                      ? `Saldo a favor ${formatMoney(Math.abs(team.balanceDue))}`
+                      : formatMoney(0)}
+              </p>
+            </Card>
+            <Card className="space-y-1">
+              <p className="text-xs uppercase tracking-wide text-muted">Total cargos</p>
+              <p className="text-lg font-semibold">{formatMoney(team.totalCharges)}</p>
+            </Card>
+            <Card className="space-y-1">
+              <p className="text-xs uppercase tracking-wide text-muted">Total pagado</p>
+              <p className="text-lg font-semibold">{formatMoney(team.totalPayments)}</p>
+            </Card>
+          </div>
           {!readOnly && (
-            <MarkTeamPaidForm
+            <RecordPaymentForm
               organizationId={organizationId}
               competitionId={competitionId}
               seasonId={seasonId}
@@ -449,7 +558,7 @@ export function SeasonFinanceTable({
                 )}
               </div>
               <div className="space-y-2">
-                <h4 className="text-sm font-semibold">Pagos activos</h4>
+                <h4 className="text-sm font-semibold">Historial de pagos</h4>
                 {team.payments.length === 0 ? (
                   <p className="text-sm text-text-secondary">Sin pagos.</p>
                 ) : (
@@ -461,15 +570,17 @@ export function SeasonFinanceTable({
                       >
                         <div className="flex justify-between gap-2">
                           <span>
+                            {formatPaymentDate(payment.paidAt)} ·{" "}
                             {paymentMethodLabel(payment.paymentMethod)}
-                            {payment.reference
-                              ? ` · ${payment.reference}`
-                              : ""}
                           </span>
                           <span className="font-medium">
                             {formatMoney(payment.amount)}
                           </span>
                         </div>
+                        <p className="text-xs text-muted">
+                          Registrado por {payment.recordedByName}
+                          {payment.notes ? ` · ${payment.notes}` : ""}
+                        </p>
                         {!readOnly && (
                           <VoidEntryForm
                             organizationId={organizationId}

@@ -96,7 +96,9 @@ export async function getMatchOfficials(
   const [{ data: officials }, { data: roles }] = await Promise.all([
     supabase
       .from("match_officials")
-      .select("id, profile_id, role, status, profiles(display_name, email)")
+      .select(
+        "id, profile_id, role, status, guest_name, invite_token, invite_expires_at, profiles(display_name, email)"
+      )
       .eq("organization_id", organizationId)
       .eq("match_id", matchId)
       .order("created_at"),
@@ -121,18 +123,29 @@ export async function getMatchOfficials(
       ? profileLabel(profile)
       : { displayName: "Usuario", email: "" };
     const role = row.role as MatchOfficialRole;
+    const isGuestInvite = row.profile_id == null && Boolean(row.invite_token);
+    const guestInviteActive =
+      isGuestInvite &&
+      Boolean(row.invite_expires_at) &&
+      new Date(row.invite_expires_at as string).getTime() > Date.now();
     const needsSeasonRole = role === "referee" || role === "delegate";
-    const hasRequiredSeasonRole = needsSeasonRole
-      ? roleSet.has(`${row.profile_id}:${role}`)
-      : true;
+    const hasRequiredSeasonRole = isGuestInvite
+      ? true
+      : needsSeasonRole
+        ? roleSet.has(`${row.profile_id}:${role}`)
+        : true;
     return {
       id: row.id,
       profileId: row.profile_id,
       role,
       status: row.status as MatchOfficialStatus,
-      displayName: label.displayName,
-      email: label.email,
+      displayName: isGuestInvite
+        ? row.guest_name?.trim() || "Invitación por link"
+        : label.displayName,
+      email: isGuestInvite ? "Sin cuenta" : label.email,
       hasRequiredSeasonRole,
+      isGuestInvite,
+      guestInviteActive,
     };
   });
 }

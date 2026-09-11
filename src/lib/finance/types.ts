@@ -36,6 +36,7 @@ export type FinancePaymentRow = {
   notes: string | null;
   paidAt: string;
   createdAt: string;
+  recordedByName: string;
 };
 
 export type SeasonFinanceTeamRow = {

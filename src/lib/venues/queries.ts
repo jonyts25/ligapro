@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import type { OrganizationFieldCard } from "@/lib/venues/field-cards";
 import {
   isFieldEffectivelyAvailable,
   type AvailabilityInterval,
@@ -129,6 +130,59 @@ export async function getFieldAvailability(
     starts_at: normalizeTime(rule.starts_at),
     ends_at: normalizeTime(rule.ends_at),
   }));
+}
+
+export async function getOrganizationFieldCards(
+  organizationId: string
+): Promise<OrganizationFieldCard[]> {
+  const supabase = await createClient();
+
+  const [{ data: fields }, { data: rules }, { data: blocks }] =
+    await Promise.all([
+      supabase
+        .from("fields")
+        .select("id, name, surface_type, is_active, venue_id, venues(name)")
+        .eq("organization_id", organizationId)
+        .order("name"),
+      supabase
+        .from("field_availability_rules")
+        .select("field_id")
+        .eq("organization_id", organizationId),
+      supabase
+        .from("season_field_blocks")
+        .select("field_id")
+        .eq("organization_id", organizationId),
+    ]);
+
+  const rulesByField = new Map<string, number>();
+  for (const rule of rules ?? []) {
+    rulesByField.set(
+      rule.field_id,
+      (rulesByField.get(rule.field_id) ?? 0) + 1
+    );
+  }
+
+  const blocksByField = new Map<string, number>();
+  for (const block of blocks ?? []) {
+    blocksByField.set(
+      block.field_id,
+      (blocksByField.get(block.field_id) ?? 0) + 1
+    );
+  }
+
+  return (fields ?? []).map((field) => {
+    const venue = field.venues as { name: string } | null;
+    return {
+      fieldId: field.id,
+      fieldName: field.name,
+      venueId: field.venue_id,
+      venueName: venue?.name ?? "Sede",
+      surfaceType: field.surface_type,
+      isActive: field.is_active,
+      hasWeeklyAvailability: (rulesByField.get(field.id) ?? 0) > 0,
+      activeBlockCount: blocksByField.get(field.id) ?? 0,
+    };
+  });
 }
 
 export async function getOrganizationVenueStats(organizationId: string): Promise<{

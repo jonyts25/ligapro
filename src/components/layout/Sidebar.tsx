@@ -6,6 +6,7 @@ import { OrganizationBrand } from "@/components/branding/OrganizationBrand";
 import type { OrganizationBranding } from "@/types/branding";
 import type { CurrentUser } from "@/lib/auth/types";
 import { getOrganizationNavItems } from "@/components/layout/nav-items";
+import { parseSeasonContextFromPathname } from "@/lib/organizations/season-picker";
 import { NavItemLink } from "@/components/layout/NavItemLink";
 import { SignOutButton } from "@/components/layout/SignOutButton";
 import { platformInternalSectionLabel } from "@/lib/platform/config";
@@ -30,7 +31,16 @@ export function Sidebar({
   className,
 }: SidebarProps) {
   const pathname = usePathname();
-  const items = getOrganizationNavItems(organizationId, { canManageSettings });
+  const seasonContext = parseSeasonContextFromPathname(pathname);
+  const items = getOrganizationNavItems(organizationId, {
+    canManageSettings,
+    activeSeasonContext: seasonContext
+      ? {
+          seasonId: seasonContext.seasonId,
+          competitionId: seasonContext.competitionId,
+        }
+      : null,
+  });
 
   return (
     <aside
