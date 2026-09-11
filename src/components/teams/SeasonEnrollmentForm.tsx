@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import Link from "next/link";
 import { enrollTeamAction } from "@/lib/teams/actions";
+import { RosterImportSection } from "@/components/teams/RosterImportSection";
 import {
   SEASON_TEAM_STATUS_OPTIONS,
   initialTeamsActionState,
@@ -41,6 +42,9 @@ export function SeasonEnrollmentForm({
   );
   const [isNewTeam, setIsNewTeam] = useState(
     Boolean(state.values?.isNewTeam) || availableTeams.length === 0
+  );
+  const [selectedTeamId, setSelectedTeamId] = useState(
+    String(state.values?.teamId ?? "")
   );
 
   const v = state.values;
@@ -114,7 +118,8 @@ export function SeasonEnrollmentForm({
               name="teamId"
               required
               disabled={pending || availableTeams.length === 0}
-              defaultValue={String(v?.teamId ?? "")}
+              value={selectedTeamId}
+              onChange={(event) => setSelectedTeamId(event.target.value)}
               className={cn(
                 "min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm",
                 state.fieldErrors?.teamId && "border-danger"
@@ -133,6 +138,16 @@ export function SeasonEnrollmentForm({
                 No hay equipos disponibles para inscribir. Usa &quot;Equipo
                 nuevo&quot; arriba.
               </p>
+            )}
+            {selectedTeamId && (
+              <RosterImportSection
+                organizationId={organizationId}
+                seasonId={seasonId}
+                teamId={selectedTeamId}
+                disabled={pending}
+                defaultImportRoster={Boolean(v?.importRoster)}
+                defaultSourceSeasonTeamId={String(v?.sourceSeasonTeamId ?? "")}
+              />
             )}
           </div>
         )}

@@ -31,11 +31,16 @@ type PageProps = {
     seasonId: string;
     seasonTeamId: string;
   }>;
+  searchParams: Promise<{ aviso?: string }>;
 };
 
-export default async function SeasonTeamRosterPage({ params }: PageProps) {
+export default async function SeasonTeamRosterPage({
+  params,
+  searchParams,
+}: PageProps) {
   const { organizationId, competitionId, seasonId, seasonTeamId } =
     await params;
+  const { aviso } = await searchParams;
   const user = await requireUser();
   const membership = await requireOrganizationMembership(
     user.id,
@@ -61,6 +66,14 @@ export default async function SeasonTeamRosterPage({ params }: PageProps) {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
+      {aviso && (
+        <p
+          className="rounded-xl border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-warning"
+          role="status"
+        >
+          {aviso}
+        </p>
+      )}
       <PageHeader
         title={title}
         description={`${detail.competitionName} · ${detail.seasonName}`}

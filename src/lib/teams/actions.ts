@@ -21,6 +21,8 @@ import { buildCaptainWhatsAppLink } from "@/lib/captain/whatsapp";
 import { humanizeCaptainInvitationAdminError } from "@/lib/captain/errors";
 import { PLATFORM_NAME } from "@/lib/platform/config";
 import { canConfirmTeamRegistration } from "@/lib/teams/confirm-registration";
+import { importRosterToSeasonTeam } from "@/lib/teams/import-roster";
+import { getSeasonMaxRosterSize } from "@/lib/teams/queries";
 import {
   bulkPlayerEntriesForRpc,
   hasDuplicateJerseyNumbers,
@@ -256,6 +258,10 @@ export async function enrollTeamAction(
   const registrationStatus = String(
     formData.get("registrationStatus") ?? "registered"
   );
+  const importRoster = String(formData.get("importRoster") ?? "") === "1";
+  const sourceSeasonTeamId = String(
+    formData.get("sourceSeasonTeamId") ?? ""
+  ).trim();
 
   const values = {
     teamId,
@@ -264,6 +270,8 @@ export async function enrollTeamAction(
     displayName,
     groupName,
     registrationStatus,
+    importRoster,
+    sourceSeasonTeamId,
   };
 
   let resolvedTeamId = teamId;
@@ -349,15 +357,55 @@ export async function enrollTeamAction(
     };
   }
 
+  let rosterImportWarning: string | null = null;
+
+  if (!isNewTeam && importRoster && sourceSeasonTeamId) {
+    try {
+      const maxRosterSize = await getSeasonMaxRosterSize(
+        organizationId,
+        seasonId
+      );
+      const importResult = await importRosterToSeasonTeam(supabase, {
+        organizationId,
+        targetSeasonId: seasonId,
+        targetSeasonTeamId: seasonTeamId,
+        sourceSeasonTeamId,
+        teamId: resolvedTeamId,
+        maxRosterSize,
+      });
+
+      if (importResult.importedCount === 0) {
+        rosterImportWarning =
+          "El equipo se inscribió, pero no se importó ningún jugador del plantel seleccionado.";
+      } else {
+        rosterImportWarning = importResult.overCapacityWarning;
+        if (importResult.skippedCount > 0) {
+          const skippedMessage = `${importResult.skippedCount} jugador(es) no se importaron porque ya ocupan un cupo en este torneo.`;
+          rosterImportWarning = rosterImportWarning
+            ? `${rosterImportWarning} ${skippedMessage}`
+            : skippedMessage;
+        }
+      }
+    } catch (importError) {
+      rosterImportWarning =
+        importError instanceof Error
+          ? `El equipo se inscribió, pero no pudimos importar el plantel: ${importError.message}`
+          : "El equipo se inscribió, pero no pudimos importar el plantel.";
+    }
+  }
+
   await revalidateTeamPaths(organizationId, {
     teamId: resolvedTeamId,
     competitionId,
     seasonId,
     seasonTeamId,
   });
-  redirect(
-    `/organizaciones/${organizationId}/torneos/${competitionId}/temporadas/${seasonId}/equipos/${seasonTeamId}`
-  );
+
+  const destination = `/organizaciones/${organizationId}/torneos/${competitionId}/temporadas/${seasonId}/equipos/${seasonTeamId}`;
+  if (rosterImportWarning) {
+    redirect(`${destination}?aviso=${encodeURIComponent(rosterImportWarning)}`);
+  }
+  redirect(destination);
 }
 
 export async function createPlayerAndAddAction(

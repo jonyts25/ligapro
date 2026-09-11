@@ -1,4 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
+import {
+  selectActivePlayersForImport,
+  type RosterImportSource,
+} from "@/lib/teams/roster-import";
 import type {
   AvailablePlayerOption,
   PlayerRecord,
@@ -553,5 +557,126 @@ export async function getSeasonTeamsForCopy(
       displayName: row.display_name,
       registrationStatus: row.registration_status,
     };
+  });
+}
+
+export async function getSeasonMaxRosterSize(
+  organizationId: string,
+  seasonId: string
+): Promise<number | null> {
+  const supabase = await createClient();
+  const { data: rules } = await supabase
+    .from("season_rules")
+    .select("max_roster_size")
+    .eq("season_id", seasonId)
+    .eq("organization_id", organizationId)
+    .maybeSingle();
+
+  return rules?.max_roster_size ?? null;
+}
+
+export async function getTeamRosterImportSources(
+  organizationId: string,
+  teamId: string,
+  excludeSeasonId: string
+): Promise<RosterImportSource[]> {
+  const supabase = await createClient();
+
+  const { data: enrollments } = await supabase
+    .from("season_teams")
+    .select(
+      "id, season_id, seasons(id, name, created_at, starts_on, competition_id, competitions(name))"
+    )
+    .eq("organization_id", organizationId)
+    .eq("team_id", teamId)
+    .neq("season_id", excludeSeasonId);
+
+  if (!enrollments?.length) return [];
+
+  const seasonTeamIds = enrollments.map((row) => row.id);
+  const { data: rosterRows } = await supabase
+    .from("season_team_players")
+    .select(
+      "season_team_id, player_id, jersey_number, registration_status, players(full_name)"
+    )
+    .in("season_team_id", seasonTeamIds)
+    .eq("organization_id", organizationId);
+
+  const playersBySeasonTeam = new Map<
+    string,
+    Array<{
+      playerId: string;
+      fullName: string;
+      jerseyNumber: number | null;
+      registrationStatus: string;
+    }>
+  >();
+
+  for (const row of rosterRows ?? []) {
+    const playerRel = row.players as
+      | { full_name: string }
+      | { full_name: string }[]
+      | null;
+    const player = Array.isArray(playerRel) ? playerRel[0] : playerRel;
+    const bucket = playersBySeasonTeam.get(row.season_team_id) ?? [];
+    bucket.push({
+      playerId: row.player_id,
+      fullName: player?.full_name ?? "Jugador",
+      jerseyNumber: row.jersey_number,
+      registrationStatus: row.registration_status,
+    });
+    playersBySeasonTeam.set(row.season_team_id, bucket);
+  }
+
+  const sources: RosterImportSource[] = [];
+
+  for (const enrollment of enrollments) {
+    const seasonRel = enrollment.seasons as
+      | {
+          id: string;
+          name: string;
+          created_at: string;
+          starts_on: string | null;
+          competition_id: string;
+          competitions: { name: string } | { name: string }[] | null;
+        }
+      | {
+          id: string;
+          name: string;
+          created_at: string;
+          starts_on: string | null;
+          competition_id: string;
+          competitions: { name: string } | { name: string }[] | null;
+        }[]
+      | null;
+    const season = Array.isArray(seasonRel) ? seasonRel[0] : seasonRel;
+    if (!season) continue;
+
+    const competitionRel = season.competitions;
+    const competition = Array.isArray(competitionRel)
+      ? competitionRel[0]
+      : competitionRel;
+
+    const activePlayers = selectActivePlayersForImport(
+      playersBySeasonTeam.get(enrollment.id) ?? []
+    );
+    if (activePlayers.length === 0) continue;
+
+    sources.push({
+      seasonTeamId: enrollment.id,
+      seasonId: season.id,
+      competitionId: season.competition_id,
+      competitionName: competition?.name ?? "Torneo",
+      seasonName: season.name,
+      seasonCreatedAt: season.created_at,
+      seasonStartsOn: season.starts_on,
+      activePlayers,
+    });
+  }
+
+  return sources.sort((a, b) => {
+    const aDate = a.seasonStartsOn ?? a.seasonCreatedAt;
+    const bDate = b.seasonStartsOn ?? b.seasonCreatedAt;
+    return bDate.localeCompare(aDate);
   });
 }
