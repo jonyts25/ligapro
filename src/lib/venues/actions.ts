@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth/require-user";
 import { requireOrganizationAdmin } from "@/lib/auth/require-organization-admin";
 import { assertCanCreateField } from "@/lib/billing/tier-limits-queries";
+import { buildDirectFieldInsertRow } from "@/lib/venues/field-model";
 import type { VenueActionState } from "@/lib/venues/types";
 import { intervalsOverlap } from "@/lib/venues/availability-validation";
 
@@ -66,14 +67,15 @@ export async function createFieldAction(
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("fields")
-    .insert({
-      organization_id: organizationId,
-      name: name.trim(),
-      address,
-      surface_type: surfaceType,
-      is_active: isActive,
-      venue_id: null,
-    })
+    .insert(
+      buildDirectFieldInsertRow({
+        organizationId,
+        name,
+        address,
+        surfaceType,
+        isActive,
+      })
+    )
     .select("id")
     .single();
 
@@ -232,17 +234,4 @@ export async function replaceFieldAvailabilityAction(input: {
 
   revalidateFieldPaths(input.organizationId, input.fieldId);
   return { ok: true, message: "Disponibilidad actualizada." };
-}
-
-const deprecatedVenuesMessage =
-  "El flujo de sedes fue reemplazado por canchas directas. Usa el menú Canchas.";
-
-/** @deprecated Use createFieldAction on /canchas/nueva */
-export async function createVenueAction(): Promise<VenueActionState> {
-  return { ok: false, message: deprecatedVenuesMessage };
-}
-
-/** @deprecated Use updateFieldAction on /canchas/[fieldId]/editar */
-export async function updateVenueAction(): Promise<VenueActionState> {
-  return { ok: false, message: deprecatedVenuesMessage };
 }
