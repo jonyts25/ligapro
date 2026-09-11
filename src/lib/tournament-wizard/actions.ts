@@ -11,7 +11,8 @@ import {
   assertCanCreateVenue,
   getOrganizationTierLimitStatus,
 } from "@/lib/billing/tier-limits-queries";
-import { slugifySeasonName } from "@/lib/competitions/types";
+import { parseInitialSeasonSetup } from "@/lib/competitions/initial-season-setup";
+import { createInitialSeasonForCompetition } from "@/lib/competitions/create-initial-season";
 import {
   fixtureToJsonPayload,
   generateRoundRobinFixture,
@@ -80,13 +81,16 @@ export async function startTournamentWizardAction(
   const approximateTeamsRaw = String(formData.get("approximateTeams") ?? "4");
   const fieldCountRaw = String(formData.get("fieldCount") ?? "2");
 
+  const setup = parseInitialSeasonSetup(formData);
+
   const values = {
     tournamentName,
     approximateTeams: approximateTeamsRaw,
     fieldCount: fieldCountRaw,
+    ...setup.values,
   };
 
-  const fieldErrors: Record<string, string> = {};
+  const fieldErrors: Record<string, string> = { ...setup.fieldErrors };
   const nameError = validateName(tournamentName, "nombre del torneo");
   if (nameError) fieldErrors.tournamentName = nameError;
 
@@ -100,7 +104,7 @@ export async function startTournamentWizardAction(
     fieldErrors.fieldCount = "Indica un número válido de canchas.";
   }
 
-  if (Object.keys(fieldErrors).length > 0) {
+  if (Object.keys(fieldErrors).length > 0 || !setup.parsed) {
     return {
       ok: false,
       message: "Revisa los datos del torneo.",
@@ -150,35 +154,23 @@ export async function startTournamentWizardAction(
     };
   }
 
-  const seasonName = tournamentName.trim();
-  const { data: seasonId, error: seasonError } = await supabase.rpc(
-    "create_season_with_rules",
-    {
-      p_competition_id: competition.id,
-      p_name: seasonName,
-      p_slug: slugifySeasonName(seasonName),
-      p_format_type: "round_robin",
-      p_visibility: "draft",
-      p_starts_on: null as unknown as string,
-      p_ends_on: null as unknown as string,
-      p_points_win: 3,
-      p_points_draw: 1,
-      p_points_loss: 0,
-      p_allow_draws: true,
-      p_match_duration_minutes: 90,
-      p_minimum_rest_minutes: 0,
-      p_yellow_card_limit: 5,
-      p_suspension_matches: 1,
-    }
+  const seasonResult = await createInitialSeasonForCompetition(
+    competition.id,
+    organizationId,
+    tournamentName.trim(),
+    setup.parsed
   );
 
-  if (seasonError || !seasonId) {
+  if ("error" in seasonResult) {
+    await supabase.from("competitions").delete().eq("id", competition.id);
     return {
       ok: false,
-      message: "No pudimos crear la temporada. Inténtalo nuevamente.",
+      message: seasonResult.error,
       values,
     };
   }
+
+  const seasonId = seasonResult.seasonId;
 
   let venueId: string | null = null;
   const venueCheck = await assertCanCreateVenue(organizationId);

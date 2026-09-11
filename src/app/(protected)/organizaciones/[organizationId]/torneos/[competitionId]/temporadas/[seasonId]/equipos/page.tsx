@@ -54,15 +54,15 @@ export default async function SeasonTeamsPage({ params }: PageProps) {
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <PageHeader
-        title="Equipos de la temporada"
-        description={`${season.competitionName} · ${season.name}`}
+        title="Equipos del torneo"
+        description={season.competitionName}
         actions={
           <div className="flex flex-wrap gap-2">
             <Link
               href={`/organizaciones/${organizationId}/torneos/${competitionId}/temporadas/${seasonId}`}
               className="inline-flex min-h-11 items-center rounded-xl border border-border px-4 text-sm font-medium text-text-secondary"
             >
-              Volver a temporada
+              Volver al torneo
             </Link>
             {canManageActive && (
               <Link

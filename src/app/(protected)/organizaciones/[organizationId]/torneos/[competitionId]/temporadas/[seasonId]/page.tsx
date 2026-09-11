@@ -57,15 +57,15 @@ export default async function SeasonDetailPage({ params }: PageProps) {
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <PageHeader
-        title={season.name}
-        description={`Torneo: ${season.competitionName}`}
+        title={season.competitionName}
+        description="Equipos, calendario, reglas y publicación."
         actions={
           <div className="flex flex-wrap gap-2">
             <Link
-              href={`/organizaciones/${organizationId}/torneos/${competitionId}`}
+              href={`/organizaciones/${organizationId}/torneos`}
               className="inline-flex min-h-11 items-center rounded-xl border border-border px-4 text-sm font-medium text-text-secondary"
             >
-              Volver al torneo
+              Todos los torneos
             </Link>
             {canManageActive && (
               <Link
@@ -77,10 +77,18 @@ export default async function SeasonDetailPage({ params }: PageProps) {
             )}
             {canManageActive && (
               <Link
+                href={`/organizaciones/${organizationId}/torneos/${competitionId}/editar`}
+                className="inline-flex min-h-11 items-center rounded-xl border border-border px-4 text-sm font-medium"
+              >
+                Editar nombre
+              </Link>
+            )}
+            {canManageActive && (
+              <Link
                 href={`/organizaciones/${organizationId}/torneos/${competitionId}/temporadas/${seasonId}/editar`}
                 className="inline-flex min-h-11 items-center rounded-xl bg-brand px-4 text-sm font-semibold text-brand-foreground"
               >
-                Editar temporada
+                Editar configuración
               </Link>
             )}
           </div>
@@ -139,7 +147,7 @@ export default async function SeasonDetailPage({ params }: PageProps) {
           organizationId={organizationId}
           competitionId={competitionId}
           seasonId={seasonId}
-          seasonName={season.name}
+          seasonName={season.competitionName}
         />
       )}
 

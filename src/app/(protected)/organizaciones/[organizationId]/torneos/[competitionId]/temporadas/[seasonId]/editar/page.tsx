@@ -35,8 +35,8 @@ export default async function EditSeasonPage({ params }: PageProps) {
   return (
     <div className="mx-auto max-w-3xl">
       <PageHeader
-        title="Editar temporada"
-        description={season.name}
+        title="Editar configuración"
+        description={season.competitionName}
         actions={
           <Link
             href={`/organizaciones/${organizationId}/torneos/${competitionId}/temporadas/${seasonId}`}
@@ -49,7 +49,6 @@ export default async function EditSeasonPage({ params }: PageProps) {
       <SeasonForm
         organizationId={organizationId}
         competitionId={competitionId}
-        mode="edit"
         season={season}
       />
     </div>

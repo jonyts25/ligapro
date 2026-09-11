@@ -4,9 +4,11 @@ import { useActionState } from "react";
 import Link from "next/link";
 import { startTournamentWizardAction } from "@/lib/tournament-wizard/actions";
 import { initialTournamentWizardActionState } from "@/lib/tournament-wizard/types";
+import { CompetitionSetupFields } from "@/components/competitions/CompetitionSetupFields";
 import { SubmitButton } from "@/components/auth/SubmitButton";
 import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/utils/cn";
+import type { CompetitionActionState } from "@/lib/competitions/types";
 
 type TournamentWizardStep1FormProps = {
   organizationId: string;
@@ -35,6 +37,12 @@ export function TournamentWizardStep1Form({
     ? "0"
     : String(values.fieldCount ?? defaultFieldCount);
   const showFormError = !state.ok && Boolean(state.message);
+  const setupState: CompetitionActionState = {
+    ok: state.ok,
+    message: state.message,
+    fieldErrors: state.fieldErrors,
+    values: state.values,
+  };
 
   return (
     <Card>
@@ -78,6 +86,8 @@ export function TournamentWizardStep1Form({
             <p className="text-xs text-danger">{state.fieldErrors.tournamentName}</p>
           )}
         </div>
+
+        <CompetitionSetupFields pending={pending} state={setupState} />
 
         <div className="space-y-1.5">
           <label htmlFor="approximateTeams" className="block text-sm font-medium">

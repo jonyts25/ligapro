@@ -22,7 +22,7 @@ export function CompetitionList({
     return (
       <EmptyState
         title="Aún no has creado torneos"
-        description="Crea tu primera competencia para configurar una temporada."
+        description="Crea tu primer torneo para registrar equipos y generar el calendario."
         action={
           canManage ? (
             <TierLimitLink

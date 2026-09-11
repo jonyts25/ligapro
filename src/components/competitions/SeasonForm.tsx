@@ -1,13 +1,9 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState } from "react";
 import Link from "next/link";
+import { updateSeasonAction } from "@/lib/competitions/actions";
 import {
-  createSeasonAction,
-  updateSeasonAction,
-} from "@/lib/competitions/actions";
-import {
-  SEASON_FORMAT_OPTIONS,
   initialCompetitionActionState,
   type SeasonDetail,
 } from "@/lib/competitions/types";
@@ -16,6 +12,11 @@ import {
   formVisibilityHiddenValue,
   isSeasonPubliclyVisible,
 } from "@/lib/competitions/season-visibility";
+import {
+  isSeasonFormatLocked,
+  isSeasonMatchDurationLocked,
+} from "@/lib/competitions/season-edit-guards";
+import { CompetitionSetupFields } from "@/components/competitions/CompetitionSetupFields";
 import { SubmitButton } from "@/components/auth/SubmitButton";
 import { Card } from "@/components/ui/Card";
 import { SectionHeader } from "@/components/ui/SectionHeader";
@@ -24,8 +25,7 @@ import { cn } from "@/lib/utils/cn";
 type SeasonFormProps = {
   organizationId: string;
   competitionId: string;
-  mode: "create" | "edit";
-  season?: SeasonDetail;
+  season: SeasonDetail;
 };
 
 function FieldError({ message }: { message?: string }) {
@@ -40,33 +40,31 @@ function FieldError({ message }: { message?: string }) {
 export function SeasonForm({
   organizationId,
   competitionId,
-  mode,
   season,
 }: SeasonFormProps) {
-  const action = mode === "create" ? createSeasonAction : updateSeasonAction;
   const [state, formAction, pending] = useActionState(
-    action,
+    updateSeasonAction,
     initialCompetitionActionState
   );
 
   const v = state.values;
-  const rules = season?.rules;
-  const [formatType, setFormatType] = useState<string>(
-    String(v?.formatType ?? season?.format_type ?? "round_robin")
-  );
+  const rules = season.rules;
   const hiddenVisibility = formVisibilityHiddenValue(season);
-  const isPublicEdit =
-    mode === "edit" && season && isSeasonPubliclyVisible(season.visibility);
-  const [advancedOpen, setAdvancedOpen] = useState(mode === "edit");
+  const isPublicEdit = isSeasonPubliclyVisible(season.visibility);
+  const formatLocked = isSeasonFormatLocked(season);
+  const matchDurationLocked = isSeasonMatchDurationLocked(season);
 
   return (
     <form action={formAction} className="space-y-6">
       <input type="hidden" name="organizationId" value={organizationId} />
       <input type="hidden" name="competitionId" value={competitionId} />
-      {mode === "edit" && season && (
-        <input type="hidden" name="seasonId" value={season.id} />
-      )}
+      <input type="hidden" name="seasonId" value={season.id} />
       <input type="hidden" name="visibility" value={hiddenVisibility} />
+      <input
+        type="hidden"
+        name="name"
+        value={String(v?.name ?? season.name)}
+      />
 
       {state.message && (
         <p
@@ -83,109 +81,47 @@ export function SeasonForm({
 
       <Card className="space-y-4">
         <SectionHeader
-          title="Información de temporada"
-          description="Nombre, formato, estado y fechas."
+          title="Configuración del torneo"
+          description="Formato, duración de partido, estado y fechas."
+        />
+        <CompetitionSetupFields
+          pending={pending}
+          state={state}
+          defaultFormatType={season.format_type}
+          defaultMatchDurationMinutes={rules.match_duration_minutes}
+          formatLocked={formatLocked}
+          matchDurationLocked={matchDurationLocked}
         />
         <div className="space-y-1.5">
-          <label htmlFor="name" className="block text-sm font-medium">
-            Nombre
+          <label htmlFor="visibility" className="block text-sm font-medium">
+            Estado
           </label>
-          <input
-            id="name"
-            name="name"
-            required
-            minLength={2}
-            maxLength={100}
-            disabled={pending}
-            defaultValue={String(v?.name ?? season?.name ?? "")}
-            placeholder="Apertura 2026"
-            className={cn(
-              "min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none",
-              "focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
-            )}
-          />
-          <FieldError message={state.fieldErrors?.name} />
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <label htmlFor="formatType" className="block text-sm font-medium">
-              Formato
-            </label>
-            <select
-              id="formatType"
-              name="formatType"
-              disabled={pending}
-              value={formatType}
-              onChange={(e) => setFormatType(e.target.value)}
-              className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
+          {isPublicEdit ? (
+            <p
+              id="visibility"
+              className="min-h-11 rounded-xl border border-border bg-surface px-3 py-2.5 text-sm"
             >
-              {SEASON_FORMAT_OPTIONS.map((opt) => (
+              Pública — usa «Archivar» o la página del torneo para retirarla del
+              público.
+            </p>
+          ) : (
+            <select
+              id="visibility"
+              disabled
+              value={SEASON_FORM_VISIBILITY_OPTIONS[0]?.value ?? "draft"}
+              className="min-h-11 w-full rounded-xl border border-border bg-surface px-3 text-sm text-text-secondary"
+            >
+              {SEASON_FORM_VISIBILITY_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
                   {opt.label}
                 </option>
               ))}
             </select>
-            <FieldError message={state.fieldErrors?.formatType} />
-          </div>
-          {formatType === "groups_knockout" && (
-            <div className="space-y-1.5 sm:col-span-2">
-              <label
-                htmlFor="groupsAdvancePerGroup"
-                className="block text-sm font-medium"
-              >
-                Clasificados por grupo
-              </label>
-              <input
-                id="groupsAdvancePerGroup"
-                name="groupsAdvancePerGroup"
-                type="number"
-                min={1}
-                disabled={pending}
-                defaultValue={String(
-                  v?.groupsAdvancePerGroup ??
-                    rules?.groups_advance_per_group ??
-                    2
-                )}
-                className="min-h-11 w-full max-w-xs rounded-xl border border-border bg-background px-3 text-sm"
-              />
-              <p className="text-xs text-text-secondary">
-                Cuántos equipos de cada grupo avanzan a la eliminatoria.
-              </p>
-              <FieldError message={state.fieldErrors?.groupsAdvancePerGroup} />
-            </div>
           )}
-          <div className="space-y-1.5">
-            <label htmlFor="visibility" className="block text-sm font-medium">
-              Estado
-            </label>
-            {isPublicEdit ? (
-              <p
-                id="visibility"
-                className="min-h-11 rounded-xl border border-border bg-surface px-3 py-2.5 text-sm"
-              >
-                Pública — usa «Archivar» o la página de la temporada para retirarla del público.
-              </p>
-            ) : (
-              <select
-                id="visibility"
-                disabled
-                value={SEASON_FORM_VISIBILITY_OPTIONS[0]?.value ?? "draft"}
-                className="min-h-11 w-full rounded-xl border border-border bg-surface px-3 text-sm text-text-secondary"
-              >
-                {SEASON_FORM_VISIBILITY_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            )}
-            <FieldError message={state.fieldErrors?.visibility} />
-            <p className="text-xs text-text-secondary">
-              {mode === "create"
-                ? "Se crea en borrador. Publica cuando el checklist de preparación esté completo."
-                : "Para hacerla pública usa el botón «Publicar» en la página de la temporada."}
-            </p>
-          </div>
+          <FieldError message={state.fieldErrors?.visibility} />
+          <p className="text-xs text-text-secondary">
+            Para hacerlo público usa el botón «Publicar» en la página del torneo.
+          </p>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
@@ -197,8 +133,10 @@ export function SeasonForm({
               name="startsOn"
               type="date"
               disabled={pending}
-              defaultValue={String(v?.startsOn ?? season?.starts_on ?? "")}
-              className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
+              defaultValue={String(v?.startsOn ?? season.starts_on ?? "")}
+              className={cn(
+                "min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
+              )}
             />
           </div>
           <div className="space-y-1.5">
@@ -210,7 +148,7 @@ export function SeasonForm({
               name="endsOn"
               type="date"
               disabled={pending}
-              defaultValue={String(v?.endsOn ?? season?.ends_on ?? "")}
+              defaultValue={String(v?.endsOn ?? season.ends_on ?? "")}
               className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
             />
             <FieldError message={state.fieldErrors?.endsOn} />
@@ -218,178 +156,10 @@ export function SeasonForm({
         </div>
       </Card>
 
-      <Card className="space-y-4">
-        <button
-          type="button"
-          onClick={() => setAdvancedOpen((open) => !open)}
-          className="flex w-full items-center justify-between gap-3 text-left"
-          aria-expanded={advancedOpen}
-        >
-          <SectionHeader
-            title="Configuración avanzada"
-            description="Puntos, disciplina y duración. Valores estándar precargados."
-          />
-          <span className="shrink-0 text-sm font-medium text-brand">
-            {advancedOpen ? "Ocultar" : "Mostrar"}
-          </span>
-        </button>
-
-        {advancedOpen && (
-          <>
-        <div className="grid gap-4 sm:grid-cols-3">
-          <div className="space-y-1.5">
-            <label htmlFor="pointsWin" className="block text-sm font-medium">
-              Puntos por victoria
-            </label>
-            <input
-              id="pointsWin"
-              name="pointsWin"
-              type="number"
-              min={0}
-              disabled={pending}
-              defaultValue={String(v?.pointsWin ?? rules?.points_win ?? 3)}
-              className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
-            />
-            <FieldError message={state.fieldErrors?.pointsWin} />
-          </div>
-          <div className="space-y-1.5">
-            <label htmlFor="pointsDraw" className="block text-sm font-medium">
-              Puntos por empate
-            </label>
-            <input
-              id="pointsDraw"
-              name="pointsDraw"
-              type="number"
-              min={0}
-              disabled={pending}
-              defaultValue={String(v?.pointsDraw ?? rules?.points_draw ?? 1)}
-              className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
-            />
-            <FieldError message={state.fieldErrors?.pointsDraw} />
-          </div>
-          <div className="space-y-1.5">
-            <label htmlFor="pointsLoss" className="block text-sm font-medium">
-              Puntos por derrota
-            </label>
-            <input
-              id="pointsLoss"
-              name="pointsLoss"
-              type="number"
-              min={0}
-              disabled={pending}
-              defaultValue={String(v?.pointsLoss ?? rules?.points_loss ?? 0)}
-              className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
-            />
-            <FieldError message={state.fieldErrors?.pointsLoss} />
-          </div>
-        </div>
-        <label className="flex items-center gap-3 text-sm text-text-secondary">
-          <input
-            type="checkbox"
-            name="allowDraws"
-            disabled={pending}
-            defaultChecked={Boolean(
-              v?.allowDraws ?? rules?.allow_draws ?? true
-            )}
-          />
-          Permitir empates
-        </label>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <label
-              htmlFor="matchDurationMinutes"
-              className="block text-sm font-medium"
-            >
-              Duración del partido (minutos)
-            </label>
-            <input
-              id="matchDurationMinutes"
-              name="matchDurationMinutes"
-              type="number"
-              min={1}
-              disabled={pending}
-              defaultValue={String(
-                v?.matchDurationMinutes ?? rules?.match_duration_minutes ?? 90
-              )}
-              className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
-            />
-            <FieldError message={state.fieldErrors?.matchDurationMinutes} />
-          </div>
-          <div className="space-y-1.5">
-            <label
-              htmlFor="minimumRestMinutes"
-              className="block text-sm font-medium"
-            >
-              Descanso mínimo entre partidos (minutos)
-            </label>
-            <input
-              id="minimumRestMinutes"
-              name="minimumRestMinutes"
-              type="number"
-              min={0}
-              disabled={pending}
-              defaultValue={String(
-                v?.minimumRestMinutes ?? rules?.minimum_rest_minutes ?? 0
-              )}
-              className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
-            />
-            <FieldError message={state.fieldErrors?.minimumRestMinutes} />
-          </div>
-          <div className="space-y-1.5">
-            <label
-              htmlFor="yellowCardLimit"
-              className="block text-sm font-medium"
-            >
-              Límite de amarillas para suspensión
-            </label>
-            <input
-              id="yellowCardLimit"
-              name="yellowCardLimit"
-              type="number"
-              min={1}
-              disabled={pending}
-              defaultValue={String(
-                v?.yellowCardLimit ?? rules?.yellow_card_limit ?? 5
-              )}
-              className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
-            />
-            <FieldError message={state.fieldErrors?.yellowCardLimit} />
-          </div>
-          <div className="space-y-1.5">
-            <label
-              htmlFor="suspensionMatches"
-              className="block text-sm font-medium"
-            >
-              Partidos de suspensión
-            </label>
-            <input
-              id="suspensionMatches"
-              name="suspensionMatches"
-              type="number"
-              min={1}
-              disabled={pending}
-              defaultValue={String(
-                v?.suspensionMatches ?? rules?.suspension_matches ?? 1
-              )}
-              className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
-            />
-            <FieldError message={state.fieldErrors?.suspensionMatches} />
-          </div>
-        </div>
-          </>
-        )}
-      </Card>
-
       <div className="flex flex-wrap gap-3">
-        <SubmitButton pending={pending}>
-          {mode === "create" ? "Crear temporada" : "Guardar cambios"}
-        </SubmitButton>
+        <SubmitButton pending={pending}>Guardar cambios</SubmitButton>
         <Link
-          href={
-            mode === "edit" && season
-              ? `/organizaciones/${organizationId}/torneos/${competitionId}/temporadas/${season.id}`
-              : `/organizaciones/${organizationId}/torneos/${competitionId}`
-          }
+          href={`/organizaciones/${organizationId}/torneos/${competitionId}/temporadas/${season.id}`}
           className="inline-flex min-h-11 items-center rounded-xl border border-border px-4 text-sm font-medium text-text-secondary"
         >
           Cancelar

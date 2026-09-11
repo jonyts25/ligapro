@@ -42,7 +42,7 @@ export function SeasonPublishPanel({
           Página pública
         </h2>
         <p className="text-sm text-text-secondary">
-          Esta temporada es pública. Cualquiera con el enlace puede consultar
+          Este torneo es público. Cualquiera con el enlace puede consultar
           calendario, posiciones, goleadores y disciplina.
         </p>
         {state.message && (
@@ -73,7 +73,7 @@ export function SeasonPublishPanel({
     <Card className="space-y-4">
       <div>
         <h2 className="text-sm font-semibold text-text-primary">
-          Publicar temporada
+          Publicar torneo
         </h2>
         <p className="mt-1 text-sm text-text-secondary">
           Hace visible la página pública (calendario, posiciones, goleadores y
@@ -126,7 +126,7 @@ export function SeasonPublishPanel({
           <div className="space-y-2">
             <p className="text-sm text-text-secondary">
               ¿Publicar «{season.name}»? Cualquiera con el enlace podrá ver la
-              información de la temporada.
+              información del torneo.
             </p>
             <div className="flex flex-wrap gap-2">
               <SubmitButton pending={pending} className="w-auto px-4">

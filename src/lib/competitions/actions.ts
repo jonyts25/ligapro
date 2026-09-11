@@ -25,6 +25,12 @@ import {
   isSeasonArchived,
   isSeasonPubliclyVisible,
 } from "@/lib/competitions/season-visibility";
+import { parseInitialSeasonSetup } from "@/lib/competitions/initial-season-setup";
+import { createInitialSeasonForCompetition } from "@/lib/competitions/create-initial-season";
+import {
+  isSeasonFormatLocked,
+  isSeasonMatchDurationLocked,
+} from "@/lib/competitions/season-edit-guards";
 
 function validateName(name: string, label: string): string | null {
   const trimmed = name.trim();
@@ -113,12 +119,32 @@ export async function createCompetitionAction(
   const name = String(formData.get("name") ?? "");
   const isYouth = formData.get("isYouth") === "on";
   const nameError = validateName(name, "nombre del torneo");
-  if (nameError) {
+  const setup = parseInitialSeasonSetup(formData);
+
+  const values = {
+    name,
+    isYouth,
+    ...setup.values,
+  };
+
+  const fieldErrors: Record<string, string> = {};
+  if (nameError) fieldErrors.name = nameError;
+  Object.assign(fieldErrors, setup.fieldErrors);
+
+  if (Object.keys(fieldErrors).length > 0) {
     return {
       ok: false,
-      message: nameError,
-      fieldErrors: { name: nameError },
-      values: { name, isYouth },
+      message: "Revisa los datos del torneo.",
+      fieldErrors,
+      values,
+    };
+  }
+
+  if (!setup.parsed) {
+    return {
+      ok: false,
+      message: "Revisa los datos del torneo.",
+      values,
     };
   }
 
@@ -127,7 +153,7 @@ export async function createCompetitionAction(
     return {
       ok: false,
       message: tierCheck.message,
-      values: { name, isYouth },
+      values,
     };
   }
 
@@ -146,12 +172,34 @@ export async function createCompetitionAction(
     return {
       ok: false,
       message: "No pudimos crear el torneo. Inténtalo nuevamente.",
-      values: { name, isYouth },
+      values,
     };
   }
 
-  await revalidateCompetitionPaths(organizationId, data.id);
-  redirect(`/organizaciones/${organizationId}/torneos/${data.id}`);
+  const seasonResult = await createInitialSeasonForCompetition(
+    data.id,
+    organizationId,
+    name.trim(),
+    setup.parsed
+  );
+
+  if ("error" in seasonResult) {
+    await supabase.from("competitions").delete().eq("id", data.id);
+    return {
+      ok: false,
+      message: seasonResult.error,
+      values,
+    };
+  }
+
+  await revalidateCompetitionPaths(
+    organizationId,
+    data.id,
+    seasonResult.seasonId
+  );
+  redirect(
+    `/organizaciones/${organizationId}/torneos/${data.id}/temporadas/${seasonResult.seasonId}`
+  );
 }
 
 export async function updateCompetitionAction(
@@ -429,46 +477,55 @@ export async function updateSeasonAction(
   if (Object.keys(fieldErrors).length > 0) {
     return {
       ok: false,
-      message: "Revisa los datos de la temporada y las reglas.",
+      message: "Revisa los datos del torneo y las reglas.",
       fieldErrors,
       values,
     };
   }
 
   const supabase = await createClient();
-  const { data: season } = await supabase
-    .from("seasons")
-    .select("id")
-    .eq("id", seasonId)
-    .eq("competition_id", competitionId)
-    .eq("organization_id", organizationId)
-    .maybeSingle();
+  const seasonDetails = await getSeasonDetails(
+    organizationId,
+    competitionId,
+    seasonId
+  );
 
-  if (!season) {
-    return { ok: false, message: "No encontramos la temporada." };
+  if (!seasonDetails) {
+    return { ok: false, message: "No encontramos el torneo." };
   }
+
+  const formatLocked = isSeasonFormatLocked(seasonDetails);
+  const durationLocked = isSeasonMatchDurationLocked(seasonDetails);
+
+  const effectiveParsed = {
+    ...parsed,
+    formatType: formatLocked ? seasonDetails.format_type : parsed.formatType,
+    matchDurationMinutes: durationLocked
+      ? seasonDetails.rules.match_duration_minutes
+      : parsed.matchDurationMinutes,
+  };
 
   const { error } = await supabase.rpc("update_season_with_rules", {
     p_season_id: seasonId,
-    p_name: parsed.name,
-    p_format_type: parsed.formatType,
-    p_visibility: parsed.visibility,
-    p_starts_on: (parsed.startsOn ?? null) as string,
-    p_ends_on: (parsed.endsOn ?? null) as string,
-    p_points_win: parsed.pointsWin,
-    p_points_draw: parsed.pointsDraw,
-    p_points_loss: parsed.pointsLoss,
-    p_allow_draws: parsed.allowDraws,
-    p_match_duration_minutes: parsed.matchDurationMinutes,
-    p_minimum_rest_minutes: parsed.minimumRestMinutes,
-    p_yellow_card_limit: parsed.yellowCardLimit,
-    p_suspension_matches: parsed.suspensionMatches,
+    p_name: effectiveParsed.name,
+    p_format_type: effectiveParsed.formatType,
+    p_visibility: effectiveParsed.visibility,
+    p_starts_on: (effectiveParsed.startsOn ?? null) as string,
+    p_ends_on: (effectiveParsed.endsOn ?? null) as string,
+    p_points_win: effectiveParsed.pointsWin,
+    p_points_draw: effectiveParsed.pointsDraw,
+    p_points_loss: effectiveParsed.pointsLoss,
+    p_allow_draws: effectiveParsed.allowDraws,
+    p_match_duration_minutes: effectiveParsed.matchDurationMinutes,
+    p_minimum_rest_minutes: effectiveParsed.minimumRestMinutes,
+    p_yellow_card_limit: effectiveParsed.yellowCardLimit,
+    p_suspension_matches: effectiveParsed.suspensionMatches,
   });
 
   if (error) {
     return {
       ok: false,
-      message: "No pudimos guardar la temporada y las reglas. Inténtalo nuevamente.",
+      message: "No pudimos guardar el torneo y las reglas. Inténtalo nuevamente.",
       values,
     };
   }
@@ -476,14 +533,14 @@ export async function updateSeasonAction(
   await syncGroupsAdvancePerGroup(
     seasonId,
     organizationId,
-    parsed.formatType,
-    parsed.groupsAdvancePerGroup
+    effectiveParsed.formatType,
+    effectiveParsed.groupsAdvancePerGroup
   );
 
   await revalidateCompetitionPaths(organizationId, competitionId, seasonId);
   return {
     ok: true,
-    message: "Temporada y reglas actualizadas.",
+    message: "Torneo y reglas actualizados.",
     values,
   };
 }

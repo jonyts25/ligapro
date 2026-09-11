@@ -23,8 +23,7 @@ export default async function CompetitionsPage({ params }: PageProps) {
     membership.role === "organization_owner" ||
     membership.role === "organization_admin";
 
-  const { competitions, totalSeasons } =
-    await getOrganizationCompetitions(organizationId);
+  const { competitions } = await getOrganizationCompetitions(organizationId);
   const tierStatus = canManage
     ? await getOrganizationTierLimitStatus(organizationId)
     : null;
@@ -39,8 +38,8 @@ export default async function CompetitionsPage({ params }: PageProps) {
   return (
     <div className="mx-auto max-w-5xl">
       <PageHeader
-        title="Torneos y temporadas"
-        description={`${competitions.length} torneo${competitions.length === 1 ? "" : "s"} · ${totalSeasons} temporada${totalSeasons === 1 ? "" : "s"}`}
+        title="Torneos"
+        description={`${competitions.length} torneo${competitions.length === 1 ? "" : "s"}`}
         actions={
           canManage ? (
             <div className="flex flex-wrap gap-2">

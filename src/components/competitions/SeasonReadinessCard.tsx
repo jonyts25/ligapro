@@ -43,7 +43,7 @@ export function SeasonReadinessCard({
   return (
     <Card className="space-y-4">
       <SectionHeader
-        title="Preparación de temporada"
+        title="Preparación del torneo"
         description="Checklist con datos reales del fixture y planteles."
       />
       <StatusBadge

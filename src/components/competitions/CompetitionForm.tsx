@@ -7,6 +7,7 @@ import {
   updateCompetitionAction,
 } from "@/lib/competitions/actions";
 import { initialCompetitionActionState } from "@/lib/competitions/types";
+import { CompetitionSetupFields } from "@/components/competitions/CompetitionSetupFields";
 import { SubmitButton } from "@/components/auth/SubmitButton";
 import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/utils/cn";
@@ -90,10 +91,15 @@ export function CompetitionForm({
             <span className="block font-medium text-text-primary">
               Torneo infantil
             </span>
-            En las páginas públicas de la temporada se mostrarán nombres
-            abreviados de los jugadores (por ejemplo, Juan P.).
+            En las páginas públicas se mostrarán nombres abreviados de los
+            jugadores (por ejemplo, Juan P.).
           </span>
         </label>
+
+        {mode === "create" && (
+          <CompetitionSetupFields pending={pending} state={state} />
+        )}
+
         <p className="text-xs text-muted">
           Si necesitas categorías con reglas o calendarios distintos, crea
           torneos separados (por ejemplo Libre y Veteranos +35).

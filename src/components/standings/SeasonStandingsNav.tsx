@@ -23,7 +23,7 @@ type SeasonStandingsNavProps = {
 };
 
 const BASE_LINKS = [
-  { key: "temporada", label: "Temporada", path: "" },
+  { key: "temporada", label: "Torneo", path: "" },
   { key: "dashboard", label: "Dashboard", path: "/dashboard" },
   { key: "calendario", label: "Calendario", path: "/calendario" },
 ] as const;
@@ -76,7 +76,7 @@ export function SeasonStandingsNav({
 
   return (
     <nav
-      aria-label="Secciones de la temporada"
+      aria-label="Secciones del torneo"
       className="flex flex-wrap gap-2"
     >
       {links.map((link) => {

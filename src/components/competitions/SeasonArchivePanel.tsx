@@ -52,12 +52,12 @@ export function SeasonArchivePanel({
     <Card className="space-y-4 p-4">
       <div>
         <h2 className="text-sm font-semibold text-text-primary">
-          {isArchived ? "Reactivar temporada" : "Archivar temporada"}
+          {isArchived ? "Reactivar torneo" : "Archivar torneo"}
         </h2>
         <p className="mt-1 text-sm text-text-secondary">
           {isArchived
             ? "Vuelve a habilitar la gestión operativa. Elige el estado de visibilidad al reactivar."
-            : "La temporada deja de estar activa para gestión diaria. No se borran partidos, resultados, cargos ni disciplina. Si era pública, dejará de aparecer en las páginas públicas."}
+            : "El torneo deja de estar activo para gestión diaria. No se borran partidos, resultados, cargos ni disciplina. Si era público, dejará de aparecer en las páginas públicas."}
         </p>
       </div>
 
