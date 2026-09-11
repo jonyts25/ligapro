@@ -181,7 +181,6 @@ export async function scheduleMatchAction(
     fieldId,
     date,
     time,
-    venueId: String(formData.get("venueId") ?? ""),
   };
 
   if (!fieldId || !date || !time) {

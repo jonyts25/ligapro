@@ -45,7 +45,7 @@ export function FieldAvailabilityOverviewPanel({
   return (
     <Card className="space-y-4">
       <SectionHeader
-        title={`${venueName} · ${fieldName}`}
+        title={venueName ? `${fieldName} · ${venueName}` : fieldName}
         description={`Semana ${weekStart} — ${weekEnd} · Solo consulta`}
       />
       {Object.keys(grouped).length === 0 ? (

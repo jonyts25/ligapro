@@ -1,8 +1,7 @@
 export type OrganizationFieldCard = {
   fieldId: string;
   fieldName: string;
-  venueId: string;
-  venueName: string;
+  address: string | null;
   surfaceType: string | null;
   isActive: boolean;
   hasWeeklyAvailability: boolean;

@@ -2,10 +2,9 @@ import { redirect } from "next/navigation";
 
 type PageProps = {
   params: Promise<{ organizationId: string }>;
-  searchParams: Promise<Record<string, string | undefined>>;
 };
 
-export default async function LegacyFieldAvailabilityOverviewPage({
+export default async function LegacyAvailabilityRedirectPage({
   params,
 }: PageProps) {
   const { organizationId } = await params;

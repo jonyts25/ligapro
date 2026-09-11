@@ -12,7 +12,7 @@ export function FieldCardGrid({ organizationId, fields }: FieldCardGridProps) {
     return (
       <EmptyState
         title="Aún no hay canchas"
-        description="Registra una sede y agrega tu primera cancha para comenzar."
+        description="Registra tu primera cancha para comenzar."
       />
     );
   }

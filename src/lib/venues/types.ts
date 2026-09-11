@@ -1,16 +1,9 @@
-export type VenueRecord = {
-  id: string;
-  organization_id: string;
-  name: string;
-  address: string | null;
-  is_active: boolean;
-};
-
 export type FieldRecord = {
   id: string;
-  venue_id: string;
   organization_id: string;
+  venue_id: string | null;
   name: string;
+  address: string | null;
   surface_type: string | null;
   is_active: boolean;
 };
@@ -22,18 +15,12 @@ export type AvailabilityInterval = {
   ends_at: string;
 };
 
-export type VenueListItem = VenueRecord & {
-  fieldCount: number;
-};
-
 export type FieldWithAvailability = FieldRecord & {
   intervals: AvailabilityInterval[];
   effectivelyAvailable: boolean;
 };
 
-export type VenueDetail = VenueRecord & {
-  fields: FieldWithAvailability[];
-};
+export type FieldDetail = FieldWithAvailability;
 
 export type VenueActionState = {
   ok: boolean;
@@ -62,10 +49,24 @@ export const DAY_LABELS_ES = [
   "Sábado",
 ] as const;
 
-/** Field is operationally available only when both field and venue are active. */
-export function isFieldEffectivelyAvailable(
-  fieldActive: boolean,
-  venueActive: boolean
-): boolean {
-  return fieldActive && venueActive;
+export function isFieldEffectivelyAvailable(fieldActive: boolean): boolean {
+  return fieldActive;
 }
+
+/** @deprecated Legacy venues table — kept for old components during migration */
+export type VenueRecord = {
+  id: string;
+  organization_id: string;
+  name: string;
+  address: string | null;
+  is_active: boolean;
+};
+
+/** @deprecated Legacy venues table — kept for old components during migration */
+export type VenueListItem = {
+  id: string;
+  name: string;
+  address: string | null;
+  is_active: boolean;
+  fieldCount: number;
+};

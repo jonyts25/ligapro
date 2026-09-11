@@ -2,7 +2,7 @@ export type SeasonFieldBlock = {
   id?: string;
   field_id: string;
   field_name: string;
-  venue_name: string;
+  field_address: string | null;
   day_of_week: number;
   starts_at: string;
   ends_at: string;
@@ -11,8 +11,7 @@ export type SeasonFieldBlock = {
 export type ActiveFieldOption = {
   id: string;
   name: string;
-  venueName: string;
-  venueActive: boolean;
+  address: string | null;
   fieldActive: boolean;
 };
 
@@ -38,5 +37,9 @@ export function humanizeSeasonFieldBlocksError(message: string): string {
   if (lower.includes("not authorized")) {
     return "No tienes permiso para editar los bloqueos de cancha.";
   }
-  return "No pudimos guardar los bloqueos. Revisa los datos e inténtalo de nuevo.";
+  return message;
+}
+
+export function fieldOptionLabel(field: ActiveFieldOption): string {
+  return field.address ? `${field.name} · ${field.address}` : field.name;
 }

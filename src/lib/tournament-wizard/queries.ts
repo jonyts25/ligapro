@@ -32,10 +32,9 @@ export async function getWizardContext(
 
   const { data: fields } = await supabase
     .from("fields")
-    .select("id, name, venue_id, venues!inner(name, is_active)")
+    .select("id, name, address")
     .eq("organization_id", organizationId)
     .eq("is_active", true)
-    .eq("venues.is_active", true)
     .order("created_at", { ascending: true });
 
   const fixtureCtx = await getSeasonFixtureContext(
@@ -52,8 +51,8 @@ export async function getWizardContext(
     seasonName: season.name,
     fields: (fields ?? []).map((field) => ({
       id: field.id,
-      venueId: field.venue_id,
       name: field.name,
+      address: field.address,
     })),
     teams: (seasonTeams ?? []).map((row) => {
       const team = row.teams as unknown as { name: string } | null;
@@ -74,7 +73,7 @@ export async function getWizardFieldsForSeason(
   organizationId: string,
   competitionId: string,
   seasonId: string
-): Promise<Array<{ id: string; venueId: string; name: string }>> {
+): Promise<Array<{ id: string; name: string; address: string | null }>> {
   const context = await getWizardContext(
     organizationId,
     competitionId,

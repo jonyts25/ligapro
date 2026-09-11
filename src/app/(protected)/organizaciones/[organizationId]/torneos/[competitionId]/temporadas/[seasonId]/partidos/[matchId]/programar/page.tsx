@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth/require-user";
 import { requireOrganizationMembership } from "@/lib/auth/require-organization-membership";
 import {
-  getActiveVenuesAndFields,
+  getActiveFieldsForScheduling,
   getMatchSchedulingDetails,
 } from "@/lib/fixtures/queries";
 import { MatchSchedulingForm } from "@/components/fixtures/MatchSchedulingForm";
@@ -29,14 +29,14 @@ export default async function ScheduleMatchPage({ params }: PageProps) {
     membership.role === "organization_owner" ||
     membership.role === "organization_admin";
 
-  const [details, venuesFields] = await Promise.all([
+  const [details, fields] = await Promise.all([
     getMatchSchedulingDetails(
       organizationId,
       competitionId,
       seasonId,
       matchId
     ),
-    getActiveVenuesAndFields(organizationId),
+    getActiveFieldsForScheduling(organizationId),
   ]);
   if (!details) notFound();
 
@@ -60,8 +60,7 @@ export default async function ScheduleMatchPage({ params }: PageProps) {
       />
       <MatchSchedulingForm
         details={details}
-        venues={venuesFields.venues}
-        fields={venuesFields.fields}
+        fields={fields}
         organizationId={organizationId}
         canManage={canManage}
       />

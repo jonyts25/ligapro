@@ -8,7 +8,6 @@ import { requireOrganizationAdmin } from "@/lib/auth/require-organization-admin"
 import {
   assertCanCreateCompetition,
   assertCanCreateField,
-  assertCanCreateVenue,
   getOrganizationTierLimitStatus,
 } from "@/lib/billing/tier-limits-queries";
 import { parseInitialSeasonSetup } from "@/lib/competitions/initial-season-setup";
@@ -172,43 +171,6 @@ export async function startTournamentWizardAction(
 
   const seasonId = seasonResult.seasonId;
 
-  let venueId: string | null = null;
-  const venueCheck = await assertCanCreateVenue(organizationId);
-  if (venueCheck.ok) {
-    const { data: venue, error: venueError } = await supabase
-      .from("venues")
-      .insert({
-        organization_id: organizationId,
-        name: "Mi sede",
-        is_active: true,
-      })
-      .select("id")
-      .single();
-
-    if (venueError || !venue) {
-      return {
-        ok: false,
-        message: "No pudimos crear la sede. Inténtalo nuevamente.",
-        values,
-      };
-    }
-    venueId = venue.id;
-  } else {
-    const { data: existingVenue } = await supabase
-      .from("venues")
-      .select("id")
-      .eq("organization_id", organizationId)
-      .eq("is_active", true)
-      .order("created_at", { ascending: true })
-      .limit(1)
-      .maybeSingle();
-
-    if (!existingVenue) {
-      return { ok: false, message: venueCheck.message, values };
-    }
-    venueId = existingVenue.id;
-  }
-
   let createdFields = 0;
   for (let index = 0; index < requestedFieldCount; index += 1) {
     const fieldTierCheck = await assertCanCreateField(organizationId);
@@ -220,7 +182,7 @@ export async function startTournamentWizardAction(
     }
 
     const { error: fieldError } = await supabase.from("fields").insert({
-      venue_id: venueId,
+      venue_id: null,
       organization_id: organizationId,
       name: `Cancha ${index + 1}`,
       is_active: true,

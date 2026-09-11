@@ -73,26 +73,14 @@ export async function countActiveVenues(organizationId: string): Promise<number>
 
 export async function countActiveFields(organizationId: string): Promise<number> {
   const supabase = await createClient();
-  const { data: fields, error: fieldsError } = await supabase
+  const { count, error } = await supabase
     .from("fields")
-    .select("id, venue_id, is_active")
+    .select("id", { count: "exact", head: true })
     .eq("organization_id", organizationId)
     .eq("is_active", true);
 
-  if (fieldsError) throw new Error(fieldsError.message);
-  if (!fields?.length) return 0;
-
-  const venueIds = [...new Set(fields.map((field) => field.venue_id))];
-  const { data: venues, error: venuesError } = await supabase
-    .from("venues")
-    .select("id")
-    .eq("organization_id", organizationId)
-    .eq("is_active", true)
-    .in("id", venueIds);
-
-  if (venuesError) throw new Error(venuesError.message);
-  const activeVenueIds = new Set((venues ?? []).map((venue) => venue.id));
-  return fields.filter((field) => activeVenueIds.has(field.venue_id)).length;
+  if (error) throw new Error(error.message);
+  return count ?? 0;
 }
 
 export async function countStaffUsers(organizationId: string): Promise<number> {

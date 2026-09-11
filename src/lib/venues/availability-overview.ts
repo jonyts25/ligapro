@@ -60,7 +60,7 @@ export async function getFieldAvailabilityOverview(
 
   const { data: field } = await supabase
     .from("fields")
-    .select("id, name, venues(name)")
+    .select("id, name, address, venues(name)")
     .eq("id", fieldId)
     .eq("organization_id", organizationId)
     .maybeSingle();
@@ -68,6 +68,7 @@ export async function getFieldAvailabilityOverview(
   if (!field) return null;
 
   const venue = field.venues as { name: string } | null;
+  const locationLabel = field.address?.trim() || venue?.name || "";
 
   const [{ data: rules }, { data: reservations }, { data: blocks }] =
     await Promise.all([
@@ -169,7 +170,7 @@ export async function getFieldAvailabilityOverview(
   return {
     fieldId: field.id,
     fieldName: field.name,
-    venueName: venue?.name ?? "",
+    venueName: locationLabel,
     weekStart,
     weekEnd,
     slots,
@@ -182,15 +183,16 @@ export async function getOrganizationFieldsForOverview(
   const supabase = await createClient();
   const { data: fields } = await supabase
     .from("fields")
-    .select("id, name, venues(name)")
+    .select("id, name, address, venues(name)")
     .eq("organization_id", organizationId)
     .order("name");
 
   return (fields ?? []).map((field) => {
     const venue = field.venues as { name: string } | null;
+    const location = field.address?.trim() || venue?.name;
     return {
       id: field.id,
-      label: venue ? `${venue.name} · ${field.name}` : field.name,
+      label: location ? `${field.name} · ${location}` : field.name,
     };
   });
 }

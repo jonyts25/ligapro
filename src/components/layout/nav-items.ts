@@ -34,7 +34,7 @@ const MODULES: Array<{
     icon: ClipboardList,
     available: true,
   },
-  { slug: "sedes", label: "Canchas", icon: MapPin, available: true },
+  { slug: "canchas", label: "Canchas", icon: MapPin, available: true },
   { slug: "torneos", label: "Torneos", icon: Trophy, available: true },
   { slug: "equipos", label: "Equipos", icon: Users, available: true },
   { slug: "partidos", label: "Partidos", icon: Swords, available: true },
@@ -121,6 +121,11 @@ export function isActiveRoute(pathname: string, href: string): boolean {
   }
   if (pathname === href || pathname.startsWith(`${href}/`)) {
     return true;
+  }
+
+  if (href.endsWith("/canchas")) {
+    if (pathname === href || pathname.startsWith(`${href}/`)) return true;
+    if (pathname.includes("/sedes")) return true;
   }
 
   // Org hub links to season-scoped pages (disciplina / finanzas).

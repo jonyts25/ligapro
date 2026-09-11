@@ -19,8 +19,8 @@ export type WizardSeasonTeam = {
 
 export type WizardField = {
   id: string;
-  venueId: string;
   name: string;
+  address: string | null;
 };
 
 export type WizardContext = {

@@ -13,7 +13,6 @@ import type { FieldRecord } from "@/lib/venues/types";
 
 type FieldFormProps = {
   organizationId: string;
-  venueId: string;
   mode: "create" | "edit";
   field?: FieldRecord;
   onCancelEdit?: () => void;
@@ -21,7 +20,6 @@ type FieldFormProps = {
 
 export function FieldForm({
   organizationId,
-  venueId,
   mode,
   field,
   onCancelEdit,
@@ -33,6 +31,7 @@ export function FieldForm({
   );
 
   const name = state.values?.name ?? field?.name ?? "";
+  const address = state.values?.address ?? field?.address ?? "";
   const surfaceType =
     state.values?.surfaceType ?? field?.surface_type ?? "";
   const isActive = state.values?.isActive ?? field?.is_active ?? true;
@@ -40,7 +39,7 @@ export function FieldForm({
   return (
     <Card className="space-y-4">
       <h3 className="text-sm font-semibold text-text-primary">
-        {mode === "create" ? "Agregar cancha" : "Editar cancha"}
+        {mode === "create" ? "Nueva cancha" : "Editar cancha"}
       </h3>
       {state.message && (
         <p
@@ -56,7 +55,6 @@ export function FieldForm({
       )}
       <form action={formAction} className="space-y-4">
         <input type="hidden" name="organizationId" value={organizationId} />
-        <input type="hidden" name="venueId" value={venueId} />
         {mode === "edit" && field && (
           <input type="hidden" name="fieldId" value={field.id} />
         )}
@@ -80,8 +78,22 @@ export function FieldForm({
           />
         </div>
         <div className="space-y-1.5">
+          <label htmlFor={`field-address-${field?.id ?? "new"}`} className="block text-sm font-medium">
+            Dirección (opcional)
+          </label>
+          <input
+            id={`field-address-${field?.id ?? "new"}`}
+            name="address"
+            defaultValue={address ?? ""}
+            maxLength={200}
+            disabled={pending}
+            placeholder="Av. Principal 123, Col. Centro"
+            className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
+          />
+        </div>
+        <div className="space-y-1.5">
           <label htmlFor={`surface-${field?.id ?? "new"}`} className="block text-sm font-medium">
-            Superficie
+            Superficie (opcional)
           </label>
           <input
             id={`surface-${field?.id ?? "new"}`}

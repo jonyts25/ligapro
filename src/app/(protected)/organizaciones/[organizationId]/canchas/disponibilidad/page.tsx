@@ -44,7 +44,7 @@ export default async function OrganizationAvailabilityGridPage({
         description="Grilla semanal de horarios habituales y bloqueos por torneo. Solo lectura."
         actions={
           <Link
-            href={`/organizaciones/${organizationId}/sedes`}
+            href={`/organizaciones/${organizationId}/canchas`}
             className="inline-flex min-h-11 items-center rounded-xl border border-border px-4 text-sm font-medium text-text-secondary"
           >
             Volver a canchas

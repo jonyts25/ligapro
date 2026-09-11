@@ -566,6 +566,7 @@ export type Database = {
       }
       fields: {
         Row: {
+          address: string | null
           created_at: string
           id: string
           is_active: boolean
@@ -573,9 +574,10 @@ export type Database = {
           organization_id: string
           surface_type: string | null
           updated_at: string
-          venue_id: string
+          venue_id: string | null
         }
         Insert: {
+          address?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
@@ -583,9 +585,10 @@ export type Database = {
           organization_id: string
           surface_type?: string | null
           updated_at?: string
-          venue_id: string
+          venue_id?: string | null
         }
         Update: {
+          address?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
@@ -593,7 +596,7 @@ export type Database = {
           organization_id?: string
           surface_type?: string | null
           updated_at?: string
-          venue_id?: string
+          venue_id?: string | null
         }
         Relationships: [
           {

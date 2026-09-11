@@ -3,7 +3,6 @@ import {
   supportsAutoRoundRobin,
   FIXTURE_TIMEZONE,
   type ActiveFieldOption,
-  type ActiveVenueOption,
   type EligibleSeasonTeam,
   type FieldAvailabilityInterval,
   type FixtureRoundGroup,
@@ -151,7 +150,7 @@ async function loadReservations(
       | {
           name: string;
           is_active: boolean;
-          venue_id: string;
+          venue_id: string | null;
           venues:
             | { name: string; is_active: boolean }
             | { name: string; is_active: boolean }[]
@@ -160,7 +159,7 @@ async function loadReservations(
       | {
           name: string;
           is_active: boolean;
-          venue_id: string;
+          venue_id: string | null;
           venues:
             | { name: string; is_active: boolean }
             | { name: string; is_active: boolean }[]
@@ -421,51 +420,23 @@ export async function getMatchSchedulingDetails(
   };
 }
 
-export async function getActiveVenuesAndFields(
+export async function getActiveFieldsForScheduling(
   organizationId: string
-): Promise<{
-  venues: ActiveVenueOption[];
-  fields: ActiveFieldOption[];
-}> {
+): Promise<ActiveFieldOption[]> {
   const supabase = await createClient();
-  const { data: venues } = await supabase
-    .from("venues")
-    .select("id, name, is_active")
-    .eq("organization_id", organizationId)
-    .eq("is_active", true)
-    .order("name");
-
   const { data: fields } = await supabase
     .from("fields")
-    .select("id, name, venue_id, is_active, venues(name, is_active)")
+    .select("id, name, address, is_active")
     .eq("organization_id", organizationId)
     .eq("is_active", true)
     .order("name");
 
-  const venueOptions: ActiveVenueOption[] = (venues ?? []).map((v) => ({
-    id: v.id,
-    name: v.name,
+  return (fields ?? []).map((field) => ({
+    id: field.id,
+    name: field.name,
+    address: field.address,
+    isActive: field.is_active,
   }));
-
-  const fieldOptions: ActiveFieldOption[] = [];
-  for (const f of fields ?? []) {
-    const venueRel = f.venues as
-      | { name: string; is_active: boolean }
-      | { name: string; is_active: boolean }[]
-      | null;
-    const venue = Array.isArray(venueRel) ? venueRel[0] : venueRel;
-    if (!venue?.is_active) continue;
-    fieldOptions.push({
-      id: f.id,
-      name: f.name,
-      venueId: f.venue_id,
-      venueName: venue.name,
-      isActive: f.is_active,
-      venueIsActive: venue.is_active,
-    });
-  }
-
-  return { venues: venueOptions, fields: fieldOptions };
 }
 
 export async function getFieldAvailabilityForDate(

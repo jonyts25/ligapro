@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useMemo, useState, useTransition } from "react";
+import { useActionState, useState, useTransition } from "react";
 import Link from "next/link";
 import {
   scheduleMatchAction,
@@ -9,9 +9,9 @@ import {
 import { loadFieldAvailabilityAction } from "@/lib/fixtures/availability-action";
 import { addMinutesToLocalPreview } from "@/lib/fixtures/format";
 import {
+  fieldSchedulingLabel,
   initialFixtureActionState,
   type ActiveFieldOption,
-  type ActiveVenueOption,
   type MatchSchedulingDetails,
 } from "@/lib/fixtures/types";
 import { FieldAvailabilitySummary } from "@/components/fixtures/FieldAvailabilitySummary";
@@ -21,7 +21,6 @@ import { cn } from "@/lib/utils/cn";
 
 type MatchSchedulingFormProps = {
   details: MatchSchedulingDetails;
-  venues: ActiveVenueOption[];
   fields: ActiveFieldOption[];
   organizationId: string;
   canManage: boolean;
@@ -29,7 +28,6 @@ type MatchSchedulingFormProps = {
 
 export function MatchSchedulingForm({
   details,
-  venues,
   fields,
   organizationId,
   canManage,
@@ -44,16 +42,8 @@ export function MatchSchedulingForm({
     initialFixtureActionState
   );
 
-  const [venueId, setVenueId] = useState(
-    () =>
-      scheduleState.values?.venueId ||
-      match.schedule.venueId ||
-      venues[0]?.id ||
-      ""
-  );
   const [fieldId, setFieldId] = useState(
-    () =>
-      scheduleState.values?.fieldId || match.schedule.fieldId || ""
+    () => scheduleState.values?.fieldId || match.schedule.fieldId || fields[0]?.id || ""
   );
   const [date, setDate] = useState(() => scheduleState.values?.date || "");
   const [time, setTime] = useState(() => scheduleState.values?.time || "");
@@ -63,14 +53,9 @@ export function MatchSchedulingForm({
   const [availPending, startAvail] = useTransition();
   const [availKey, setAvailKey] = useState("");
 
-  const fieldsForVenue = useMemo(
-    () => fields.filter((f) => f.venueId === venueId),
-    [fields, venueId]
-  );
-
-  const effectiveFieldId = fieldsForVenue.some((f) => f.id === fieldId)
+  const effectiveFieldId = fields.some((f) => f.id === fieldId)
     ? fieldId
-    : (fieldsForVenue[0]?.id ?? "");
+    : (fields[0]?.id ?? "");
 
   function refreshAvailability(nextFieldId: string, nextDate: string) {
     const key = `${nextFieldId}|${nextDate}`;
@@ -137,33 +122,6 @@ export function MatchSchedulingForm({
           />
           <input type="hidden" name="seasonId" value={match.seasonId} />
           <input type="hidden" name="matchId" value={match.id} />
-          <input type="hidden" name="venueId" value={venueId} />
-
-          <div className="space-y-1.5">
-            <label htmlFor="venueIdSelect" className="text-sm font-medium">
-              Sede
-            </label>
-            <select
-              id="venueIdSelect"
-              value={venueId}
-              onChange={(e) => {
-                const nextVenue = e.target.value;
-                setVenueId(nextVenue);
-                const nextFields = fields.filter((f) => f.venueId === nextVenue);
-                const nextField = nextFields[0]?.id ?? "";
-                setFieldId(nextField);
-                refreshAvailability(nextField, date);
-              }}
-              disabled={schedulePending}
-              className="min-h-11 w-full rounded-xl border border-border bg-surface px-3 text-sm"
-            >
-              {venues.map((v) => (
-                <option key={v.id} value={v.id}>
-                  {v.name}
-                </option>
-              ))}
-            </select>
-          </div>
 
           <div className="space-y-1.5">
             <label htmlFor="fieldId" className="text-sm font-medium">
@@ -178,15 +136,15 @@ export function MatchSchedulingForm({
                 setFieldId(next);
                 refreshAvailability(next, date);
               }}
-              disabled={schedulePending || fieldsForVenue.length === 0}
+              disabled={schedulePending || fields.length === 0}
               className="min-h-11 w-full rounded-xl border border-border bg-surface px-3 text-sm"
             >
-              {fieldsForVenue.length === 0 && (
+              {fields.length === 0 && (
                 <option value="">Sin canchas activas</option>
               )}
-              {fieldsForVenue.map((f) => (
-                <option key={f.id} value={f.id}>
-                  {f.name}
+              {fields.map((field) => (
+                <option key={field.id} value={field.id}>
+                  {fieldSchedulingLabel(field)}
                 </option>
               ))}
             </select>

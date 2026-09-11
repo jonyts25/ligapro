@@ -5,10 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth/require-user";
 import { requireOrganizationAdmin } from "@/lib/auth/require-organization-admin";
-import {
-  assertCanCreateField,
-  assertCanCreateVenue,
-} from "@/lib/billing/tier-limits-queries";
+import { assertCanCreateField } from "@/lib/billing/tier-limits-queries";
 import type { VenueActionState } from "@/lib/venues/types";
 import { intervalsOverlap } from "@/lib/venues/availability-validation";
 
@@ -20,131 +17,16 @@ function validateName(name: string, label = "nombre"): string | null {
   return null;
 }
 
-function revalidateVenuePaths(organizationId: string, venueId?: string) {
-  revalidatePath(`/organizaciones/${organizationId}/sedes`);
+function revalidateFieldPaths(organizationId: string, fieldId?: string) {
+  revalidatePath(`/organizaciones/${organizationId}/canchas`);
+  revalidatePath(`/organizaciones/${organizationId}/canchas/disponibilidad`);
   revalidatePath(`/organizaciones/${organizationId}/inicio`);
-  if (venueId) {
-    revalidatePath(`/organizaciones/${organizationId}/sedes/${venueId}`);
-    revalidatePath(`/organizaciones/${organizationId}/sedes/${venueId}/editar`);
+  if (fieldId) {
+    revalidatePath(`/organizaciones/${organizationId}/canchas/${fieldId}`);
+    revalidatePath(
+      `/organizaciones/${organizationId}/canchas/${fieldId}/editar`
+    );
   }
-}
-
-export async function createVenueAction(
-  _prev: VenueActionState,
-  formData: FormData
-): Promise<VenueActionState> {
-  const user = await requireUser();
-  const organizationId = String(formData.get("organizationId") ?? "");
-  await requireOrganizationAdmin(user.id, organizationId);
-
-  const name = String(formData.get("name") ?? "");
-  const addressRaw = String(formData.get("address") ?? "").trim();
-  const address = addressRaw.length > 0 ? addressRaw : null;
-  const isActive = formData.get("isActive") === "on";
-
-  const nameError = validateName(name, "nombre de la sede");
-  if (nameError) {
-    return {
-      ok: false,
-      message: nameError,
-      fieldErrors: { name: nameError },
-      values: { name, address, isActive },
-    };
-  }
-
-  const tierCheck = await assertCanCreateVenue(organizationId);
-  if (!tierCheck.ok) {
-    return {
-      ok: false,
-      message: tierCheck.message,
-      values: { name, address, isActive },
-    };
-  }
-
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("venues")
-    .insert({
-      organization_id: organizationId,
-      name: name.trim(),
-      address,
-      is_active: isActive,
-    })
-    .select("id")
-    .single();
-
-  if (error || !data) {
-    return {
-      ok: false,
-      message: "No pudimos crear la sede. Inténtalo nuevamente.",
-      values: { name, address, isActive },
-    };
-  }
-
-  revalidateVenuePaths(organizationId, data.id);
-  redirect(`/organizaciones/${organizationId}/sedes/${data.id}`);
-}
-
-export async function updateVenueAction(
-  _prev: VenueActionState,
-  formData: FormData
-): Promise<VenueActionState> {
-  const user = await requireUser();
-  const organizationId = String(formData.get("organizationId") ?? "");
-  const venueId = String(formData.get("venueId") ?? "");
-  await requireOrganizationAdmin(user.id, organizationId);
-
-  const name = String(formData.get("name") ?? "");
-  const addressRaw = String(formData.get("address") ?? "").trim();
-  const address = addressRaw.length > 0 ? addressRaw : null;
-  const isActive = formData.get("isActive") === "on";
-
-  const nameError = validateName(name, "nombre de la sede");
-  if (nameError) {
-    return {
-      ok: false,
-      message: nameError,
-      fieldErrors: { name: nameError },
-      values: { name, address, isActive },
-    };
-  }
-
-  const supabase = await createClient();
-  const { data: existing } = await supabase
-    .from("venues")
-    .select("id")
-    .eq("id", venueId)
-    .eq("organization_id", organizationId)
-    .maybeSingle();
-
-  if (!existing) {
-    return { ok: false, message: "No encontramos la sede." };
-  }
-
-  const { error } = await supabase
-    .from("venues")
-    .update({
-      name: name.trim(),
-      address,
-      is_active: isActive,
-    })
-    .eq("id", venueId)
-    .eq("organization_id", organizationId);
-
-  if (error) {
-    return {
-      ok: false,
-      message: "No pudimos guardar la sede. Inténtalo nuevamente.",
-      values: { name, address, isActive },
-    };
-  }
-
-  revalidateVenuePaths(organizationId, venueId);
-  return {
-    ok: true,
-    message: "Sede actualizada correctamente.",
-    values: { name: name.trim(), address, isActive },
-  };
 }
 
 export async function createFieldAction(
@@ -153,10 +35,11 @@ export async function createFieldAction(
 ): Promise<VenueActionState> {
   const user = await requireUser();
   const organizationId = String(formData.get("organizationId") ?? "");
-  const venueId = String(formData.get("venueId") ?? "");
   await requireOrganizationAdmin(user.id, organizationId);
 
   const name = String(formData.get("name") ?? "");
+  const addressRaw = String(formData.get("address") ?? "").trim();
+  const address = addressRaw.length > 0 ? addressRaw : null;
   const surfaceRaw = String(formData.get("surfaceType") ?? "").trim();
   const surfaceType = surfaceRaw.length > 0 ? surfaceRaw : null;
   const isActive = formData.get("isActive") === "on";
@@ -167,20 +50,8 @@ export async function createFieldAction(
       ok: false,
       message: nameError,
       fieldErrors: { name: nameError },
-      values: { name, surfaceType, isActive },
+      values: { name, address, surfaceType, isActive },
     };
-  }
-
-  const supabase = await createClient();
-  const { data: venue } = await supabase
-    .from("venues")
-    .select("id")
-    .eq("id", venueId)
-    .eq("organization_id", organizationId)
-    .maybeSingle();
-
-  if (!venue) {
-    return { ok: false, message: "No encontramos la sede." };
   }
 
   const tierCheck = await assertCanCreateField(organizationId);
@@ -188,32 +59,34 @@ export async function createFieldAction(
     return {
       ok: false,
       message: tierCheck.message,
-      values: { name, surfaceType, isActive },
+      values: { name, address, surfaceType, isActive },
     };
   }
 
-  const { error } = await supabase.from("fields").insert({
-    venue_id: venueId,
-    organization_id: organizationId,
-    name: name.trim(),
-    surface_type: surfaceType,
-    is_active: isActive,
-  });
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("fields")
+    .insert({
+      organization_id: organizationId,
+      name: name.trim(),
+      address,
+      surface_type: surfaceType,
+      is_active: isActive,
+      venue_id: null,
+    })
+    .select("id")
+    .single();
 
-  if (error) {
+  if (error || !data) {
     return {
       ok: false,
       message: "No pudimos crear la cancha. Inténtalo nuevamente.",
-      values: { name, surfaceType, isActive },
+      values: { name, address, surfaceType, isActive },
     };
   }
 
-  revalidateVenuePaths(organizationId, venueId);
-  return {
-    ok: true,
-    message: "Cancha creada correctamente.",
-    values: { name: "", surfaceType: null, isActive: true },
-  };
+  revalidateFieldPaths(organizationId, data.id);
+  redirect(`/organizaciones/${organizationId}/canchas/${data.id}`);
 }
 
 export async function updateFieldAction(
@@ -222,11 +95,12 @@ export async function updateFieldAction(
 ): Promise<VenueActionState> {
   const user = await requireUser();
   const organizationId = String(formData.get("organizationId") ?? "");
-  const venueId = String(formData.get("venueId") ?? "");
   const fieldId = String(formData.get("fieldId") ?? "");
   await requireOrganizationAdmin(user.id, organizationId);
 
   const name = String(formData.get("name") ?? "");
+  const addressRaw = String(formData.get("address") ?? "").trim();
+  const address = addressRaw.length > 0 ? addressRaw : null;
   const surfaceRaw = String(formData.get("surfaceType") ?? "").trim();
   const surfaceType = surfaceRaw.length > 0 ? surfaceRaw : null;
   const isActive = formData.get("isActive") === "on";
@@ -237,7 +111,7 @@ export async function updateFieldAction(
       ok: false,
       message: nameError,
       fieldErrors: { name: nameError },
-      values: { name, surfaceType, isActive },
+      values: { name, address, surfaceType, isActive },
     };
   }
 
@@ -246,7 +120,6 @@ export async function updateFieldAction(
     .from("fields")
     .select("id")
     .eq("id", fieldId)
-    .eq("venue_id", venueId)
     .eq("organization_id", organizationId)
     .maybeSingle();
 
@@ -258,6 +131,7 @@ export async function updateFieldAction(
     .from("fields")
     .update({
       name: name.trim(),
+      address,
       surface_type: surfaceType,
       is_active: isActive,
     })
@@ -268,21 +142,20 @@ export async function updateFieldAction(
     return {
       ok: false,
       message: "No pudimos guardar la cancha. Inténtalo nuevamente.",
-      values: { name, surfaceType, isActive },
+      values: { name, address, surfaceType, isActive },
     };
   }
 
-  revalidateVenuePaths(organizationId, venueId);
+  revalidateFieldPaths(organizationId, fieldId);
   return {
     ok: true,
     message: "Cancha actualizada correctamente.",
-    values: { name: name.trim(), surfaceType, isActive },
+    values: { name: name.trim(), address, surfaceType, isActive },
   };
 }
 
 export async function replaceFieldAvailabilityAction(input: {
   organizationId: string;
-  venueId: string;
   fieldId: string;
   intervals: Array<{
     day_of_week: number;
@@ -337,7 +210,6 @@ export async function replaceFieldAvailabilityAction(input: {
     .from("fields")
     .select("id")
     .eq("id", input.fieldId)
-    .eq("venue_id", input.venueId)
     .eq("organization_id", input.organizationId)
     .maybeSingle();
 
@@ -358,6 +230,19 @@ export async function replaceFieldAvailabilityAction(input: {
     };
   }
 
-  revalidateVenuePaths(input.organizationId, input.venueId);
+  revalidateFieldPaths(input.organizationId, input.fieldId);
   return { ok: true, message: "Disponibilidad actualizada." };
+}
+
+const deprecatedVenuesMessage =
+  "El flujo de sedes fue reemplazado por canchas directas. Usa el menú Canchas.";
+
+/** @deprecated Use createFieldAction on /canchas/nueva */
+export async function createVenueAction(): Promise<VenueActionState> {
+  return { ok: false, message: deprecatedVenuesMessage };
+}
+
+/** @deprecated Use updateFieldAction on /canchas/[fieldId]/editar */
+export async function updateVenueAction(): Promise<VenueActionState> {
+  return { ok: false, message: deprecatedVenuesMessage };
 }

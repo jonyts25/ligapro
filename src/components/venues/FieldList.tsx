@@ -11,18 +11,15 @@ import { EmptyState } from "@/components/ui/EmptyState";
 
 type FieldListProps = {
   organizationId: string;
-  venueId: string;
-  venueActive: boolean;
   fields: FieldWithAvailability[];
   canManage: boolean;
   canchasAtLimit?: boolean;
   canchasLimitMessage?: string | null;
 };
 
+/** @deprecated Legacy venue-scoped list — use FieldCardGrid on /canchas */
 export function FieldList({
   organizationId,
-  venueId,
-  venueActive,
   fields,
   canManage,
   canchasAtLimit = false,
@@ -54,17 +51,13 @@ export function FieldList({
       <TierLimitNotice message={canchasAtLimit ? canchasLimitMessage : null} />
 
       {canManage && showCreate && (
-        <FieldForm
-          organizationId={organizationId}
-          venueId={venueId}
-          mode="create"
-        />
+        <FieldForm organizationId={organizationId} mode="create" />
       )}
 
       {fields.length === 0 && !showCreate && (
         <EmptyState
           title="Sin canchas"
-          description="Registra las canchas o campos de esta sede."
+          description="Registra las canchas donde jugarán tus ligas."
           action={
             canManage ? (
               <TierLimitButton
@@ -99,13 +92,6 @@ export function FieldList({
                 />
               </div>
 
-              {!venueActive && (
-                <p className="rounded-xl border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-warning">
-                  Esta cancha no estará disponible mientras la sede permanezca
-                  inactiva.
-                </p>
-              )}
-
               <p className="text-sm text-text-secondary">
                 Disponibilidad:{" "}
                 {field.intervals.length === 0
@@ -134,14 +120,12 @@ export function FieldList({
                 <div className="space-y-4 border-t border-border pt-4">
                   <FieldForm
                     organizationId={organizationId}
-                    venueId={venueId}
                     mode="edit"
                     field={field}
                     onCancelEdit={() => setEditingId(null)}
                   />
                   <FieldAvailabilityEditor
                     organizationId={organizationId}
-                    venueId={venueId}
                     fieldId={field.id}
                     initialIntervals={field.intervals}
                     canEdit
@@ -152,7 +136,6 @@ export function FieldList({
               {!canManage && (
                 <FieldAvailabilityEditor
                   organizationId={organizationId}
-                  venueId={venueId}
                   fieldId={field.id}
                   initialIntervals={field.intervals}
                   canEdit={false}

@@ -12,7 +12,7 @@ type FieldCardProps = {
 };
 
 export function FieldCard({ organizationId, field }: FieldCardProps) {
-  const detailHref = `/organizaciones/${organizationId}/sedes/${field.venueId}`;
+  const detailHref = `/organizaciones/${organizationId}/canchas/${field.fieldId}`;
 
   return (
     <Link href={detailHref} className="block h-full">
@@ -22,6 +22,9 @@ export function FieldCard({ organizationId, field }: FieldCardProps) {
             <h3 className="font-semibold text-text-primary">{field.fieldName}</h3>
             {field.surfaceType && (
               <p className="text-sm text-text-secondary">{field.surfaceType}</p>
+            )}
+            {field.address && (
+              <p className="text-xs text-muted">{field.address}</p>
             )}
           </div>
           <StatusBadge

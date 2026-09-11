@@ -18,7 +18,6 @@ type DraftInterval = {
 
 type FieldAvailabilityEditorProps = {
   organizationId: string;
-  venueId: string;
   fieldId: string;
   initialIntervals: AvailabilityInterval[];
   canEdit: boolean;
@@ -41,7 +40,6 @@ function groupByDay(
 
 export function FieldAvailabilityEditor({
   organizationId,
-  venueId,
   fieldId,
   initialIntervals,
   canEdit,
@@ -118,7 +116,6 @@ export function FieldAvailabilityEditor({
     startTransition(async () => {
       const result = await replaceFieldAvailabilityAction({
         organizationId,
-        venueId,
         fieldId,
         intervals,
       });

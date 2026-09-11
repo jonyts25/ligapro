@@ -3,111 +3,37 @@ import type { OrganizationFieldCard } from "@/lib/venues/field-cards";
 import {
   isFieldEffectivelyAvailable,
   type AvailabilityInterval,
-  type FieldWithAvailability,
-  type VenueDetail,
-  type VenueListItem,
-  type VenueRecord,
+  type FieldDetail,
+  type FieldRecord,
 } from "@/lib/venues/types";
 
 function normalizeTime(value: string): string {
-  // Postgres time may arrive as HH:MM:SS — normalize to HH:MM for UI/RPC.
   return value.slice(0, 5);
 }
 
-export async function getOrganizationVenues(
-  organizationId: string
-): Promise<{ venues: VenueListItem[]; totalFields: number }> {
-  const supabase = await createClient();
-
-  const { data: venues, error } = await supabase
-    .from("venues")
-    .select("id, organization_id, name, address, is_active")
-    .eq("organization_id", organizationId)
-    .order("name");
-
-  if (error || !venues) {
-    return { venues: [], totalFields: 0 };
-  }
-
-  const { data: fields } = await supabase
-    .from("fields")
-    .select("id, venue_id")
-    .eq("organization_id", organizationId);
-
-  const counts = new Map<string, number>();
-  for (const field of fields ?? []) {
-    counts.set(field.venue_id, (counts.get(field.venue_id) ?? 0) + 1);
-  }
-
-  const list: VenueListItem[] = venues.map((venue) => ({
-    ...(venue as VenueRecord),
-    fieldCount: counts.get(venue.id) ?? 0,
-  }));
-
-  return {
-    venues: list,
-    totalFields: fields?.length ?? 0,
-  };
-}
-
-export async function getVenueWithFields(
+export async function getOrganizationFieldDetail(
   organizationId: string,
-  venueId: string
-): Promise<VenueDetail | null> {
+  fieldId: string
+): Promise<FieldDetail | null> {
   const supabase = await createClient();
 
-  const { data: venue, error } = await supabase
-    .from("venues")
-    .select("id, organization_id, name, address, is_active")
-    .eq("id", venueId)
+  const { data: field, error } = await supabase
+    .from("fields")
+    .select(
+      "id, organization_id, venue_id, name, address, surface_type, is_active"
+    )
+    .eq("id", fieldId)
     .eq("organization_id", organizationId)
     .maybeSingle();
 
-  if (error || !venue) return null;
+  if (error || !field) return null;
 
-  const { data: fields } = await supabase
-    .from("fields")
-    .select("id, venue_id, organization_id, name, surface_type, is_active")
-    .eq("venue_id", venueId)
-    .eq("organization_id", organizationId)
-    .order("name");
-
-  const fieldIds = (fields ?? []).map((f) => f.id);
-  const intervalsByField = new Map<string, AvailabilityInterval[]>();
-
-  if (fieldIds.length > 0) {
-    const { data: rules } = await supabase
-      .from("field_availability_rules")
-      .select("id, field_id, day_of_week, starts_at, ends_at")
-      .in("field_id", fieldIds)
-      .eq("organization_id", organizationId)
-      .order("day_of_week")
-      .order("starts_at");
-
-    for (const rule of rules ?? []) {
-      const list = intervalsByField.get(rule.field_id) ?? [];
-      list.push({
-        id: rule.id,
-        day_of_week: rule.day_of_week,
-        starts_at: normalizeTime(rule.starts_at),
-        ends_at: normalizeTime(rule.ends_at),
-      });
-      intervalsByField.set(rule.field_id, list);
-    }
-  }
-
-  const enriched: FieldWithAvailability[] = (fields ?? []).map((field) => ({
-    ...field,
-    intervals: intervalsByField.get(field.id) ?? [],
-    effectivelyAvailable: isFieldEffectivelyAvailable(
-      field.is_active,
-      venue.is_active
-    ),
-  }));
+  const intervals = await getFieldAvailability(organizationId, fieldId);
 
   return {
-    ...(venue as VenueRecord),
-    fields: enriched,
+    ...(field as FieldRecord),
+    intervals,
+    effectivelyAvailable: isFieldEffectivelyAvailable(field.is_active),
   };
 }
 
@@ -141,7 +67,7 @@ export async function getOrganizationFieldCards(
     await Promise.all([
       supabase
         .from("fields")
-        .select("id, name, surface_type, is_active, venue_id, venues(name)")
+        .select("id, name, address, surface_type, is_active")
         .eq("organization_id", organizationId)
         .order("name"),
       supabase
@@ -170,52 +96,48 @@ export async function getOrganizationFieldCards(
     );
   }
 
-  return (fields ?? []).map((field) => {
-    const venue = field.venues as { name: string } | null;
-    return {
-      fieldId: field.id,
-      fieldName: field.name,
-      venueId: field.venue_id,
-      venueName: venue?.name ?? "Sede",
-      surfaceType: field.surface_type,
-      isActive: field.is_active,
-      hasWeeklyAvailability: (rulesByField.get(field.id) ?? 0) > 0,
-      activeBlockCount: blocksByField.get(field.id) ?? 0,
-    };
-  });
+  return (fields ?? []).map((field) => ({
+    fieldId: field.id,
+    fieldName: field.name,
+    address: field.address,
+    surfaceType: field.surface_type,
+    isActive: field.is_active,
+    hasWeeklyAvailability: (rulesByField.get(field.id) ?? 0) > 0,
+    activeBlockCount: blocksByField.get(field.id) ?? 0,
+  }));
 }
 
+/** @deprecated Use getOrganizationFieldStats — kept for dashboard/readiness compat */
 export async function getOrganizationVenueStats(organizationId: string): Promise<{
   activeVenues: number;
   effectiveActiveFields: number;
   totalVenues: number;
   totalFields: number;
 }> {
-  const supabase = await createClient();
+  const stats = await getOrganizationFieldStats(organizationId);
+  return {
+    activeVenues: stats.activeFields,
+    effectiveActiveFields: stats.activeFields,
+    totalVenues: stats.totalFields,
+    totalFields: stats.totalFields,
+  };
+}
 
-  const { data: venues } = await supabase
-    .from("venues")
-    .select("id, is_active")
-    .eq("organization_id", organizationId);
+export async function getOrganizationFieldStats(organizationId: string): Promise<{
+  activeFields: number;
+  totalFields: number;
+}> {
+  const supabase = await createClient();
 
   const { data: fields } = await supabase
     .from("fields")
-    .select("id, venue_id, is_active")
+    .select("id, is_active")
     .eq("organization_id", organizationId);
 
-  const venueActive = new Map(
-    (venues ?? []).map((v) => [v.id, v.is_active] as const)
-  );
-
-  const activeVenues = (venues ?? []).filter((v) => v.is_active).length;
-  const effectiveActiveFields = (fields ?? []).filter(
-    (f) => f.is_active && venueActive.get(f.venue_id) === true
-  ).length;
+  const activeFields = (fields ?? []).filter((field) => field.is_active).length;
 
   return {
-    activeVenues,
-    effectiveActiveFields,
-    totalVenues: venues?.length ?? 0,
+    activeFields,
     totalFields: fields?.length ?? 0,
   };
 }

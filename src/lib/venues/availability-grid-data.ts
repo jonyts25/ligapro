@@ -11,6 +11,10 @@ function normalizeTime(value: string): string {
   return value.slice(0, 5);
 }
 
+function fieldLabel(name: string, address: string | null): string {
+  return address ? `${name} · ${address}` : name;
+}
+
 export async function getOrganizationAvailabilityGridData(
   organizationId: string
 ): Promise<OrganizationAvailabilityGridModel> {
@@ -19,7 +23,7 @@ export async function getOrganizationAvailabilityGridData(
   const [{ data: fields }, { data: rules }, blocks] = await Promise.all([
     supabase
       .from("fields")
-      .select("id, name, venues(name)")
+      .select("id, name, address")
       .eq("organization_id", organizationId)
       .order("name"),
     supabase
@@ -45,16 +49,12 @@ export async function getOrganizationAvailabilityGridData(
     }
   );
 
-  const fieldRows: AvailabilityGridFieldRow[] = (fields ?? []).map((field) => {
-    const venue = field.venues as { name: string } | null;
-    const venueName = venue?.name ?? "";
-    return {
-      fieldId: field.id,
-      fieldName: field.name,
-      fieldLabel: venueName ? `${venueName} · ${field.name}` : field.name,
-      hasWeeklyAvailability: (rulesByField.get(field.id) ?? 0) > 0,
-    };
-  });
+  const fieldRows: AvailabilityGridFieldRow[] = (fields ?? []).map((field) => ({
+    fieldId: field.id,
+    fieldName: field.name,
+    fieldLabel: fieldLabel(field.name, field.address),
+    hasWeeklyAvailability: (rulesByField.get(field.id) ?? 0) > 0,
+  }));
 
   return buildOrganizationAvailabilityGridModel({
     fields: fieldRows,

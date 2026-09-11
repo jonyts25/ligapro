@@ -6,6 +6,7 @@ import type {
   ActiveFieldOption,
   SeasonFieldBlock,
 } from "@/lib/season-fields/types";
+import { fieldOptionLabel } from "@/lib/season-fields/types";
 import { DAY_LABELS_ES } from "@/lib/venues/types";
 import { validateAvailabilityIntervals } from "@/lib/venues/availability-validation";
 import { Card } from "@/components/ui/Card";
@@ -56,7 +57,7 @@ export function SeasonFieldBlocksEditor({
     () =>
       fields.map((f) => ({
         id: f.id,
-        label: `${f.venueName} · ${f.name}`,
+        label: fieldOptionLabel(f),
       })),
     [fields]
   );

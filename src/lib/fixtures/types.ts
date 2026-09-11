@@ -83,19 +83,16 @@ export type FieldAvailabilityInterval = {
   endsAt: string;
 };
 
-export type ActiveVenueOption = {
-  id: string;
-  name: string;
-};
-
 export type ActiveFieldOption = {
   id: string;
   name: string;
-  venueId: string;
-  venueName: string;
+  address: string | null;
   isActive: boolean;
-  venueIsActive: boolean;
 };
+
+export function fieldSchedulingLabel(field: ActiveFieldOption): string {
+  return field.address ? `${field.name} · ${field.address}` : field.name;
+}
 
 export type MatchSchedulingDetails = {
   match: MatchListItem;

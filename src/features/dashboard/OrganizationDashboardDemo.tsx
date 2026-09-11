@@ -38,6 +38,7 @@ type OrganizationDashboardDemoProps = {
     activeVenues: number;
     effectiveActiveFields: number;
     totalVenues: number;
+    totalFields?: number;
     competitions: number;
     seasons: number;
     teams: number;
@@ -133,15 +134,9 @@ export function OrganizationDashboardDemo({
             icon={Users}
           />
           <StatCard
-            label="Sedes activas"
-            value={String(stats.activeVenues)}
-            hint={`${stats.totalVenues} registradas en total`}
-            icon={MapPin}
-          />
-          <StatCard
             label="Canchas activas"
             value={String(stats.effectiveActiveFields)}
-            hint="Activas y en sede activa"
+            hint={`${stats.totalFields ?? stats.totalVenues} registradas en total`}
             icon={MapPin}
           />
           <StatCard
@@ -151,17 +146,17 @@ export function OrganizationDashboardDemo({
             icon={CalendarDays}
           />
         </div>
-        {stats.totalVenues === 0 && (
+        {(stats.totalFields ?? stats.totalVenues) === 0 && (
           <div className="mt-4">
             <EmptyState
-              title="Configura tus sedes"
-              description="Registra tu complejo o unidad y las canchas donde jugarán tus ligas."
+              title="Configura tus canchas"
+              description="Registra las canchas donde jugarán tus ligas y su disponibilidad semanal."
               action={
                 <Link
-                  href={`/organizaciones/${organizationId}/sedes`}
+                  href={`/organizaciones/${organizationId}/canchas`}
                   className="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand px-4 text-sm font-semibold text-brand-foreground"
                 >
-                  Configurar sedes y canchas
+                  Configurar canchas
                 </Link>
               }
             />

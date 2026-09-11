@@ -16,11 +16,6 @@ export function getSeasonReadinessItems(
 
   return [
     {
-      label: "Sedes configuradas",
-      value: String(readiness.activeVenues),
-      ok: readiness.activeVenues > 0,
-    },
-    {
       label: "Canchas activas",
       value: String(readiness.effectiveActiveFields),
       ok: readiness.effectiveActiveFields > 0,

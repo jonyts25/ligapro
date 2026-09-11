@@ -57,7 +57,7 @@ export async function setSeasonFieldBlocksAction(input: {
 
   const base = `/organizaciones/${input.organizationId}/torneos/${input.competitionId}/temporadas/${input.seasonId}`;
   revalidatePath(`${base}/canchas`);
-  revalidatePath(`/organizaciones/${input.organizationId}/sedes/disponibilidad`);
+  revalidatePath(`/organizaciones/${input.organizationId}/canchas/disponibilidad`);
 
   return { ok: true, message: "Bloqueos de cancha guardados." };
 }
