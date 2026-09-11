@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import type { OrganizationFieldCard } from "@/lib/venues/field-cards";
+import { mapOrganizationFieldDetail } from "@/lib/venues/field-model";
 import {
-  isFieldEffectivelyAvailable,
   type AvailabilityInterval,
   type FieldDetail,
   type FieldRecord,
@@ -30,11 +30,7 @@ export async function getOrganizationFieldDetail(
 
   const intervals = await getFieldAvailability(organizationId, fieldId);
 
-  return {
-    ...(field as FieldRecord),
-    intervals,
-    effectivelyAvailable: isFieldEffectivelyAvailable(field.is_active),
-  };
+  return mapOrganizationFieldDetail(field as FieldRecord, intervals);
 }
 
 export async function getFieldAvailability(
@@ -76,8 +72,9 @@ export async function getOrganizationFieldCards(
         .eq("organization_id", organizationId),
       supabase
         .from("season_field_blocks")
-        .select("field_id")
-        .eq("organization_id", organizationId),
+        .select("field_id, seasons!inner(visibility)")
+        .eq("organization_id", organizationId)
+        .neq("seasons.visibility", "archived"),
     ]);
 
   const rulesByField = new Map<string, number>();

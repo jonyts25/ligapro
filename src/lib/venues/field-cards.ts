@@ -13,10 +13,10 @@ export function fieldCardStatusLabel(field: OrganizationFieldCard): string {
     return "Sin configurar";
   }
   if (field.activeBlockCount === 0) {
-    return "0 bloqueos activos esta semana";
+    return "Sin bloqueos de torneo";
   }
   if (field.activeBlockCount === 1) {
-    return "1 bloqueo activo esta semana";
+    return "1 bloqueo de torneo";
   }
-  return `${field.activeBlockCount} bloqueos activos esta semana`;
+  return `${field.activeBlockCount} bloqueos de torneo`;
 }
