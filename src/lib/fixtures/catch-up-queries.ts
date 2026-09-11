@@ -3,6 +3,7 @@ import { hasKnockoutBracket } from "@/lib/knockout/queries";
 import {
   buildCatchUpFixturePayload,
   evaluateCatchUpEligibility,
+  humanizeCatchUpError,
   inferSeasonFixtureMode,
   maxLeagueRoundNumber,
   type CatchUpEligibility,
@@ -36,11 +37,6 @@ export async function getCatchUpFixtureContext(
     .maybeSingle();
 
   if (!season) return null;
-
-  const knockoutPhaseStarted = await hasKnockoutBracket(
-    organizationId,
-    seasonId
-  );
 
   const [{ data: leagueMatches }, { data: newTeamMatches }, { data: teams }] =
     await Promise.all([
@@ -77,7 +73,6 @@ export async function getCatchUpFixtureContext(
 
   const eligibility = evaluateCatchUpEligibility({
     formatType: season.format_type,
-    knockoutPhaseStarted,
     existingLeagueMatchCount: league.length,
     newTeamMatchCount: newTeamMatches?.length ?? 0,
     opponentSeasonTeamIds,
@@ -160,23 +155,6 @@ export async function generateCatchUpFixture(
     matchIds,
     roundNumbers: built.roundNumbers,
   };
-}
-
-function humanizeCatchUpError(message: string): string {
-  const lower = message.toLowerCase();
-  if (lower.includes("knockout phase started")) {
-    return "No se pueden generar partidos de alcance: la fase de eliminación ya inició.";
-  }
-  if (lower.includes("round-robin")) {
-    return "Los partidos de alcance solo están disponibles en torneos todos contra todos.";
-  }
-  if (lower.includes("already has matches")) {
-    return "Este equipo ya tiene partidos en el torneo.";
-  }
-  if (lower.includes("no league matches")) {
-    return "Aún no hay fixture en este torneo.";
-  }
-  return message || "No se pudieron generar los partidos de alcance.";
 }
 
 export async function getSeasonEnrollmentCatchUpGate(

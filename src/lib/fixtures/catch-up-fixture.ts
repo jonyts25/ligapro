@@ -3,14 +3,17 @@ import {
   type FixtureMode,
   type GeneratedFixtureMatch,
 } from "@/lib/fixtures/round-robin";
-import { supportsAutoRoundRobin } from "@/lib/fixtures/types";
-
 export const CATCH_UP_ROUND_LABEL = "Jornada de alcance";
 export const CATCH_UP_RETURN_ROUND_LABEL = "Jornada de alcance (vuelta)";
 
+export const CATCH_UP_GROUPS_KNOCKOUT_MESSAGE =
+  "Los partidos de alcance no están disponibles para torneos de grupos + eliminación.";
+
+export const CATCH_UP_UNSUPPORTED_FORMAT_MESSAGE =
+  "Los partidos de alcance solo están disponibles en torneos todos contra todos.";
+
 export type CatchUpBlockReason =
   | "format_not_supported"
-  | "knockout_phase_started"
   | "no_existing_fixture"
   | "no_opponents"
   | "already_has_matches"
@@ -18,11 +21,21 @@ export type CatchUpBlockReason =
 
 export type CatchUpEligibilityInput = {
   formatType: string;
-  knockoutPhaseStarted: boolean;
   existingLeagueMatchCount: number;
   newTeamMatchCount: number;
   opponentSeasonTeamIds: string[];
 };
+
+export function isCatchUpSupportedFormat(formatType: string): boolean {
+  return formatType === "round_robin" || formatType === "round_robin_double";
+}
+
+export function catchUpUnsupportedFormatMessage(formatType: string): string {
+  if (formatType === "groups_knockout") {
+    return CATCH_UP_GROUPS_KNOCKOUT_MESSAGE;
+  }
+  return CATCH_UP_UNSUPPORTED_FORMAT_MESSAGE;
+}
 
 export type CatchUpEligibility = {
   eligible: boolean;
@@ -113,21 +126,11 @@ export function generateCatchUpFixtureMatches(input: {
 export function evaluateCatchUpEligibility(
   input: CatchUpEligibilityInput
 ): CatchUpEligibility {
-  if (input.formatType === "groups_knockout" && input.knockoutPhaseStarted) {
-    return {
-      eligible: false,
-      reason: "knockout_phase_started",
-      message:
-        "No se pueden agregar equipos con partidos de alcance: la fase de eliminación ya inició.",
-    };
-  }
-
-  if (!supportsAutoRoundRobin(input.formatType)) {
+  if (!isCatchUpSupportedFormat(input.formatType)) {
     return {
       eligible: false,
       reason: "format_not_supported",
-      message:
-        "Los partidos de alcance solo están disponibles en torneos todos contra todos.",
+      message: catchUpUnsupportedFormatMessage(input.formatType),
     };
   }
 
@@ -189,4 +192,21 @@ export function catchUpBlockMessageForEnrollment(
     return "No se pueden inscribir equipos nuevos: la fase de eliminación ya inició.";
   }
   return null;
+}
+
+export function humanizeCatchUpError(message: string): string {
+  const lower = message.toLowerCase();
+  if (lower.includes("groups and knockout")) {
+    return CATCH_UP_GROUPS_KNOCKOUT_MESSAGE;
+  }
+  if (lower.includes("round-robin")) {
+    return CATCH_UP_UNSUPPORTED_FORMAT_MESSAGE;
+  }
+  if (lower.includes("already has matches")) {
+    return "Este equipo ya tiene partidos en el torneo.";
+  }
+  if (lower.includes("no league matches")) {
+    return "Aún no hay fixture en este torneo.";
+  }
+  return message || "No se pudieron generar los partidos de alcance.";
 }

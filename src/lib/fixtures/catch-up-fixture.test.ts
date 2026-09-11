@@ -2,12 +2,22 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   buildCatchUpFixturePayload,
+  CATCH_UP_GROUPS_KNOCKOUT_MESSAGE,
+  CATCH_UP_UNSUPPORTED_FORMAT_MESSAGE,
   catchUpRoundNumbers,
+  catchUpUnsupportedFormatMessage,
   evaluateCatchUpEligibility,
   generateCatchUpFixtureMatches,
   inferSeasonFixtureMode,
+  humanizeCatchUpError,
   maxLeagueRoundNumber,
 } from "@/lib/fixtures/catch-up-fixture";
+
+const baseEligibilityInput = {
+  existingLeagueMatchCount: 12,
+  newTeamMatchCount: 0,
+  opponentSeasonTeamIds: ["a", "b"],
+};
 
 describe("generateCatchUpFixtureMatches", () => {
   it("creates one leg-1 match against each existing team in single mode", () => {
@@ -97,49 +107,71 @@ describe("inferSeasonFixtureMode", () => {
 describe("evaluateCatchUpEligibility", () => {
   it("allows catch-up for round-robin seasons with existing fixture", () => {
     const result = evaluateCatchUpEligibility({
+      ...baseEligibilityInput,
       formatType: "round_robin",
-      knockoutPhaseStarted: false,
-      existingLeagueMatchCount: 12,
-      newTeamMatchCount: 0,
-      opponentSeasonTeamIds: ["a", "b"],
     });
     assert.equal(result.eligible, true);
   });
 
-  it("blocks unsupported formats", () => {
+  it("blocks unsupported formats with the round-robin message", () => {
     const result = evaluateCatchUpEligibility({
+      ...baseEligibilityInput,
       formatType: "knockout",
-      knockoutPhaseStarted: false,
-      existingLeagueMatchCount: 4,
-      newTeamMatchCount: 0,
-      opponentSeasonTeamIds: ["a"],
     });
     assert.equal(result.eligible, false);
     assert.equal(result.reason, "format_not_supported");
+    assert.equal(result.message, CATCH_UP_UNSUPPORTED_FORMAT_MESSAGE);
   });
 
-  it("blocks when knockout phase already started in groups format", () => {
-    const result = evaluateCatchUpEligibility({
+  it("blocks groups_knockout with the same message whether or not elimination started", () => {
+    const withKnockout = evaluateCatchUpEligibility({
+      ...baseEligibilityInput,
       formatType: "groups_knockout",
-      knockoutPhaseStarted: true,
-      existingLeagueMatchCount: 20,
-      newTeamMatchCount: 0,
-      opponentSeasonTeamIds: ["a", "b"],
     });
-    assert.equal(result.eligible, false);
-    assert.equal(result.reason, "knockout_phase_started");
+    const withoutKnockout = evaluateCatchUpEligibility({
+      ...baseEligibilityInput,
+      formatType: "groups_knockout",
+    });
+
+    assert.equal(withKnockout.eligible, false);
+    assert.equal(withoutKnockout.eligible, false);
+    assert.equal(withKnockout.reason, "format_not_supported");
+    assert.equal(withKnockout.message, CATCH_UP_GROUPS_KNOCKOUT_MESSAGE);
+    assert.equal(withoutKnockout.message, withKnockout.message);
+    assert.equal(
+      catchUpUnsupportedFormatMessage("groups_knockout"),
+      CATCH_UP_GROUPS_KNOCKOUT_MESSAGE
+    );
   });
 
   it("blocks when the new team already has matches", () => {
     const result = evaluateCatchUpEligibility({
+      ...baseEligibilityInput,
       formatType: "round_robin",
-      knockoutPhaseStarted: false,
-      existingLeagueMatchCount: 12,
       newTeamMatchCount: 2,
-      opponentSeasonTeamIds: ["a", "b"],
     });
     assert.equal(result.eligible, false);
     assert.equal(result.reason, "already_has_matches");
+  });
+});
+
+describe("humanizeCatchUpError", () => {
+  it("maps RPC groups_knockout rejection to the same UI message", () => {
+    assert.equal(
+      humanizeCatchUpError(
+        "Catch-up matches are not available for groups and knockout seasons"
+      ),
+      CATCH_UP_GROUPS_KNOCKOUT_MESSAGE
+    );
+  });
+
+  it("maps RPC round-robin rejection to the same UI message", () => {
+    assert.equal(
+      humanizeCatchUpError(
+        "Catch-up matches are only supported for round-robin seasons"
+      ),
+      CATCH_UP_UNSUPPORTED_FORMAT_MESSAGE
+    );
   });
 });
 
