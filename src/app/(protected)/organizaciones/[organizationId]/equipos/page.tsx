@@ -4,7 +4,11 @@ import { Suspense } from "react";
 import { requireUser } from "@/lib/auth/require-user";
 import { requireOrganizationMembership } from "@/lib/auth/require-organization-membership";
 import { listOrganizationSeasonOptions } from "@/lib/organizations/queries";
-import { resolveOrganizationSeasonSelection } from "@/lib/organizations/season-picker";
+import {
+  organizationSeasonQueryString,
+  resolveOrganizationSeasonSelection,
+  shouldCanonicalizeOrganizationSeasonQuery,
+} from "@/lib/organizations/season-picker";
 import { getSeasonTeams } from "@/lib/teams/queries";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { OrganizationSeasonPicker } from "@/components/organizations/OrganizationSeasonPicker";
@@ -35,13 +39,14 @@ export default async function TeamsPage({ params, searchParams }: PageProps) {
     query.competitionId
   );
 
-  if (
-    selectedSeason &&
-    !query.seasonId &&
-    !query.competitionId
-  ) {
+  const canonicalSeason = shouldCanonicalizeOrganizationSeasonQuery(
+    seasons,
+    query.seasonId,
+    query.competitionId
+  );
+  if (canonicalSeason) {
     redirect(
-      `/organizaciones/${organizationId}/equipos?seasonId=${selectedSeason.seasonId}&competitionId=${selectedSeason.competitionId}`
+      `/organizaciones/${organizationId}/equipos?${organizationSeasonQueryString(canonicalSeason)}`
     );
   }
 

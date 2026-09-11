@@ -1,5 +1,8 @@
 import type { LucideIcon } from "lucide-react";
-import { buildOrganizationEquiposHref } from "@/lib/organizations/season-picker";
+import {
+  buildOrganizationScopedHref,
+  type OrganizationScopedSection,
+} from "@/lib/organizations/season-picker";
 import {
   CalendarDays,
   ClipboardList,
@@ -85,10 +88,20 @@ export function getOrganizationNavItems(
       if (!canManageSettings) return [];
     }
 
-    const href =
-      module.slug === "equipos"
-        ? buildOrganizationEquiposHref(organizationId, activeSeasonContext)
-        : `/organizaciones/${organizationId}/${module.slug}`;
+    const scopedSections: OrganizationScopedSection[] = [
+      "equipos",
+      "partidos",
+      "calendario",
+      "finanzas",
+      "disciplina",
+    ];
+    const href = scopedSections.includes(module.slug as OrganizationScopedSection)
+      ? buildOrganizationScopedHref(
+          organizationId,
+          module.slug as OrganizationScopedSection,
+          activeSeasonContext
+        )
+      : `/organizaciones/${organizationId}/${module.slug}`;
 
     return [
       {
@@ -128,8 +141,13 @@ export function isActiveRoute(pathname: string, href: string): boolean {
     if (pathname.includes("/sedes")) return true;
   }
 
-  // Org hub links to season-scoped pages (disciplina / finanzas).
-  for (const segment of ["disciplina", "finanzas"] as const) {
+  // Org hub links to season-scoped pages.
+  for (const segment of [
+    "disciplina",
+    "finanzas",
+    "calendario",
+    "partidos",
+  ] as const) {
     if (!href.endsWith(`/${segment}`)) continue;
     const orgBase = href.slice(0, -(segment.length + 1));
     if (!pathname.startsWith(`${orgBase}/`)) continue;
