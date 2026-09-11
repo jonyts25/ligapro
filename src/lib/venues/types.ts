@@ -52,21 +52,3 @@ export const DAY_LABELS_ES = [
 export function isFieldEffectivelyAvailable(fieldActive: boolean): boolean {
   return fieldActive;
 }
-
-/** @deprecated Legacy venues table — kept for old components during migration */
-export type VenueRecord = {
-  id: string;
-  organization_id: string;
-  name: string;
-  address: string | null;
-  is_active: boolean;
-};
-
-/** @deprecated Legacy venues table — kept for old components during migration */
-export type VenueListItem = {
-  id: string;
-  name: string;
-  address: string | null;
-  is_active: boolean;
-  fieldCount: number;
-};
