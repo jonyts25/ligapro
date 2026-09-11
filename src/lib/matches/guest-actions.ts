@@ -6,7 +6,6 @@ import {
   MATCH_EVENT_TYPE_OPTIONS,
   MATCH_STATUS_OPTIONS,
   allowedStatusTransitions,
-  initialCaptureActionState,
   type CaptureActionState,
   type MatchEventType,
   type MatchStatusValue,
@@ -180,5 +179,3 @@ export async function guestRecordMatchEventAction(
   revalidatePath(`/invitacion-arbitral/${token}`);
   return { ok: true, message: "Evento registrado." };
 }
-
-export { initialCaptureActionState };

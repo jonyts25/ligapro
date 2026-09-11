@@ -1,10 +1,8 @@
 "use client";
 
 import { useActionState } from "react";
-import {
-  initialCaptureActionState,
-  setGuestOfficialNameAction,
-} from "@/lib/matches/guest-actions";
+import { setGuestOfficialNameAction } from "@/lib/matches/guest-actions";
+import { initialCaptureActionState } from "@/lib/matches/types";
 import { SubmitButton } from "@/components/auth/SubmitButton";
 import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/utils/cn";
