@@ -170,9 +170,6 @@ export async function recordPaymentAction(
   };
 }
 
-/** @deprecated Use recordPaymentAction */
-export const markTeamPaidAction = recordPaymentAction;
-
 export async function voidTeamChargeAction(
   _prev: FinanceActionState,
   formData: FormData

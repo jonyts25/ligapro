@@ -22,6 +22,15 @@ describe("humanizeCaptureError", () => {
     const parsed = humanizeCaptureError("match_event abc is already voided");
     assert.equal(parsed.kind, "already_voided");
   });
+
+  it("maps empty roster close errors distinctly from match closed", () => {
+    const parsed = humanizeCaptureError(
+      "Neither team has active players on the roster to close this match"
+    );
+    assert.equal(parsed.kind, "roster_required");
+    assert.match(parsed.message, /jugadores activos/i);
+    assert.notEqual(parsed.kind, "match_closed");
+  });
 });
 
 describe("captureErrorAlertClass", () => {

@@ -1,7 +1,13 @@
+import {
+  MATCH_CLOSE_ROSTER_RPC_ERROR,
+  MATCH_CLOSE_ROSTER_USER_MESSAGE,
+} from "@/lib/matches/match-close-roster";
+
 export type CaptureErrorKind =
   | "capture_window_closed"
   | "not_authorized"
   | "match_closed"
+  | "roster_required"
   | "already_voided"
   | "generic";
 
@@ -16,6 +22,15 @@ export function humanizeCaptureError(message: string): {
     return {
       message: "La ventana de captura para este partido ya cerró",
       kind: "capture_window_closed",
+    };
+  }
+  if (
+    trimmed === MATCH_CLOSE_ROSTER_RPC_ERROR ||
+    lower.includes("active players on the roster to close this match")
+  ) {
+    return {
+      message: MATCH_CLOSE_ROSTER_USER_MESSAGE,
+      kind: "roster_required",
     };
   }
   if (lower.includes("not authorized") || lower.includes("row-level")) {
