@@ -1,0 +1,22 @@
+-- Migration 030b: reconcile cotizador migration history with ligapro-dev
+--
+-- ligapro-dev has this version recorded in supabase_migrations.schema_migrations,
+-- but 20260808200000 (v1) is NOT recorded there even though its objects exist —
+-- historically the full bundle was applied under this v2 timestamp instead of v1's.
+--
+-- Verified 2026-09-27 via Supabase MCP against ligapro-dev (akgcamaegpboewsbbevl):
+--   - schema_migrations has only 20260809201303, not 20260808200000.
+--   - jornada_summaries.content is text (not jsonb) — matches v1, not the
+--     discarded 9bf5 branch design.
+--   - pg_get_functiondef(void_match) is byte-for-byte identical to the body in
+--     20260808200000_cotizador_tier_teams_jornada.sql.
+--   - All 8 RPC signatures in the bundle (organization_has_premium,
+--     set_organization_plan_tier, get_platform_organizations_billing,
+--     void_match, set_season_team_status, enqueue_jornada_summary,
+--     create_teams_bulk, create_players_and_add_to_roster_bulk) match v1.
+--   - Grants already correct on all of them (authenticated only, no PUBLIC/anon).
+--
+-- Conclusion: v2 adds no schema. This file exists only so a from-scratch
+-- rebuild has a migration recorded under this exact version, matching dev's
+-- history. Intentionally a no-op.
+SELECT 1;
