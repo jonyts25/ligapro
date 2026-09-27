@@ -9,9 +9,11 @@ import { getTeamBalance } from "@/lib/finance/queries";
 import {
   CHARGE_TYPE_OPTIONS,
   PAYMENT_METHOD_OPTIONS,
+  SEASON_EXPENSE_CATEGORY_OPTIONS,
   type ChargeType,
   type FinanceActionState,
   type PaymentMethod,
+  type SeasonExpenseCategory,
 } from "@/lib/finance/types";
 
 async function revalidateFinancePaths(
@@ -30,6 +32,10 @@ function isChargeType(value: string): value is ChargeType {
 
 function isPaymentMethod(value: string): value is PaymentMethod {
   return PAYMENT_METHOD_OPTIONS.some((o) => o.value === value);
+}
+
+function isSeasonExpenseCategory(value: string): value is SeasonExpenseCategory {
+  return SEASON_EXPENSE_CATEGORY_OPTIONS.some((o) => o.value === value);
 }
 
 export async function addTeamChargesAction(
@@ -248,4 +254,102 @@ export async function voidTeamPaymentAction(
 
   await revalidateFinancePaths(organizationId, competitionId, seasonId);
   return { ok: true, message: "Pago anulado." };
+}
+
+export async function addSeasonExpenseAction(
+  _prev: FinanceActionState,
+  formData: FormData
+): Promise<FinanceActionState> {
+  const user = await requireUser();
+  const organizationId = String(formData.get("organizationId") ?? "");
+  const competitionId = String(formData.get("competitionId") ?? "");
+  const seasonId = String(formData.get("seasonId") ?? "");
+  await requireOrganizationAdmin(user.id, organizationId);
+
+  const category = String(formData.get("category") ?? "");
+  const description = String(formData.get("description") ?? "").trim();
+  const amountRaw = String(formData.get("amount") ?? "").trim();
+  const incurredAtRaw = String(formData.get("incurredAt") ?? "").trim();
+
+  const fieldErrors: Record<string, string> = {};
+  if (!isSeasonExpenseCategory(category)) {
+    fieldErrors.category = "Selecciona una categoría.";
+  }
+  if (!amountRaw || Number.isNaN(Number(amountRaw)) || Number(amountRaw) <= 0) {
+    fieldErrors.amount = "Indica un monto mayor a cero.";
+  }
+  if (incurredAtRaw && !/^\d{4}-\d{2}-\d{2}$/.test(incurredAtRaw)) {
+    fieldErrors.incurredAt = "Fecha inválida.";
+  }
+
+  if (Object.keys(fieldErrors).length > 0) {
+    return {
+      ok: false,
+      message: "Revisa los datos del gasto.",
+      fieldErrors,
+      values: { category, description, amount: amountRaw, incurredAt: incurredAtRaw },
+    };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("season_expenses").insert({
+    organization_id: organizationId,
+    season_id: seasonId,
+    category,
+    description: description || null,
+    amount: Number(amountRaw),
+    incurred_at: incurredAtRaw || undefined,
+    recorded_by_profile_id: user.id,
+  });
+
+  if (error) {
+    return {
+      ok: false,
+      message: "No pudimos registrar el gasto. Inténtalo nuevamente.",
+      values: { category, description, amount: amountRaw, incurredAt: incurredAtRaw },
+    };
+  }
+
+  await revalidateFinancePaths(organizationId, competitionId, seasonId);
+  return { ok: true, message: "Gasto registrado." };
+}
+
+export async function voidSeasonExpenseAction(
+  _prev: FinanceActionState,
+  formData: FormData
+): Promise<FinanceActionState> {
+  const user = await requireUser();
+  const organizationId = String(formData.get("organizationId") ?? "");
+  const competitionId = String(formData.get("competitionId") ?? "");
+  const seasonId = String(formData.get("seasonId") ?? "");
+  const expenseId = String(formData.get("expenseId") ?? "");
+  await requireOrganizationAdmin(user.id, organizationId);
+
+  const reason = String(formData.get("reason") ?? "").trim();
+  if (!reason) {
+    return {
+      ok: false,
+      message: "El motivo de anulación es obligatorio.",
+      fieldErrors: { reason: "Indica el motivo." },
+    };
+  }
+  if (!expenseId) {
+    return { ok: false, message: "Gasto no válido." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("void_season_expense", {
+    p_expense_id: expenseId,
+    p_reason: reason,
+  });
+
+  if (error) {
+    return {
+      ok: false,
+      message: "No pudimos anular el gasto. Inténtalo nuevamente.",
+    };
+  }
+
+  await revalidateFinancePaths(organizationId, competitionId, seasonId);
+  return { ok: true, message: "Gasto anulado." };
 }

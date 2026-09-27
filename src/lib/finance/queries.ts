@@ -5,6 +5,7 @@ import {
   deriveFinanceTeamStatus,
   type FinanceChargeRow,
   type FinancePaymentRow,
+  type SeasonExpenseRow,
   type SeasonFinanceTeamRow,
 } from "@/lib/finance/types";
 
@@ -122,6 +123,41 @@ export async function getSeasonFinanceOverview(
       status: deriveFinanceTeamStatus(totalCharges, balanceDue),
       charges: chargesByTeam.get(team.id) ?? [],
       payments: paymentsByTeam.get(team.id) ?? [],
+    };
+  });
+}
+
+export async function getSeasonExpenses(
+  organizationId: string,
+  seasonId: string
+): Promise<SeasonExpenseRow[]> {
+  const supabase = await createClient();
+
+  const { data: rows } = await supabase
+    .from("season_expenses")
+    .select(
+      "id, category, description, amount, incurred_at, profiles!recorded_by_profile_id(display_name)"
+    )
+    .eq("organization_id", organizationId)
+    .eq("season_id", seasonId)
+    .is("voided_at", null)
+    .order("incurred_at", { ascending: false })
+    .order("created_at", { ascending: false });
+
+  return (rows ?? []).map((row) => {
+    const profileRel = row.profiles as
+      | { display_name: string | null }
+      | { display_name: string | null }[]
+      | null;
+    const profile = Array.isArray(profileRel) ? profileRel[0] : profileRel;
+
+    return {
+      id: row.id,
+      category: row.category,
+      description: row.description,
+      amount: Number(row.amount),
+      incurredAt: row.incurred_at,
+      recordedByName: profile?.display_name?.trim() || "Admin",
     };
   });
 }

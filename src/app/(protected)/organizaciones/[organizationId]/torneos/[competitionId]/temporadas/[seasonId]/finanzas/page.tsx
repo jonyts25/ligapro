@@ -8,7 +8,10 @@ import {
   canManageActiveSeason,
   isSeasonArchived,
 } from "@/lib/competitions/season-visibility";
-import { getSeasonFinanceOverview } from "@/lib/finance/queries";
+import {
+  getSeasonExpenses,
+  getSeasonFinanceOverview,
+} from "@/lib/finance/queries";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SeasonStandingsNav } from "@/components/standings/SeasonStandingsNav";
 import { SeasonFinancePanel } from "@/components/finance/SeasonFinancePanel";
@@ -36,7 +39,10 @@ export default async function SeasonFinancePage({ params }: PageProps) {
   const archived = isSeasonArchived(season.visibility);
   const canManageActive = canManageActiveSeason(season, true);
 
-  const teams = await getSeasonFinanceOverview(organizationId, seasonId);
+  const [teams, expenses] = await Promise.all([
+    getSeasonFinanceOverview(organizationId, seasonId),
+    getSeasonExpenses(organizationId, seasonId),
+  ]);
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -62,6 +68,7 @@ export default async function SeasonFinancePage({ params }: PageProps) {
         competitionId={competitionId}
         seasonId={seasonId}
         teams={teams}
+        expenses={expenses}
         readOnly={archived}
       />
     </div>

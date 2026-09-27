@@ -2,23 +2,29 @@
 
 import { useActionState, useState } from "react";
 import {
+  addSeasonExpenseAction,
   addTeamChargesAction,
   recordPaymentAction,
+  voidSeasonExpenseAction,
   voidTeamChargeAction,
   voidTeamPaymentAction,
 } from "@/lib/finance/actions";
 import {
   buildOverpaymentWarning,
   computeTeamBalance,
-  summarizeSeasonFinanceTotals,
+  summarizeSeasonExpensesTotal,
+  summarizeSeasonFinanceWithMargin,
 } from "@/lib/finance/balance";
 import {
   CHARGE_TYPE_OPTIONS,
   PAYMENT_METHOD_OPTIONS,
+  SEASON_EXPENSE_CATEGORY_OPTIONS,
   chargeTypeLabel,
   financeTeamStatusLabel,
   initialFinanceActionState,
   paymentMethodLabel,
+  seasonExpenseCategoryLabel,
+  type SeasonExpenseRow,
   type SeasonFinanceTeamRow,
 } from "@/lib/finance/types";
 import { SubmitButton } from "@/components/auth/SubmitButton";
@@ -33,6 +39,7 @@ type SeasonFinancePanelProps = {
   competitionId: string;
   seasonId: string;
   teams: SeasonFinanceTeamRow[];
+  expenses: SeasonExpenseRow[];
   readOnly?: boolean;
 };
 
@@ -384,11 +391,15 @@ function VoidEntryForm({
   competitionId: string;
   seasonId: string;
   entryId: string;
-  entryType: "charge" | "payment";
+  entryType: "charge" | "payment" | "expense";
   label: string;
 }) {
   const actionFn =
-    entryType === "charge" ? voidTeamChargeAction : voidTeamPaymentAction;
+    entryType === "charge"
+      ? voidTeamChargeAction
+      : entryType === "payment"
+        ? voidTeamPaymentAction
+        : voidSeasonExpenseAction;
   const [state, action, pending] = useActionState(
     actionFn,
     initialFinanceActionState
@@ -417,7 +428,13 @@ function VoidEntryForm({
       <input type="hidden" name="seasonId" value={seasonId} />
       <input
         type="hidden"
-        name={entryType === "charge" ? "chargeId" : "paymentId"}
+        name={
+          entryType === "charge"
+            ? "chargeId"
+            : entryType === "payment"
+              ? "paymentId"
+              : "expenseId"
+        }
         value={entryId}
       />
       <input
@@ -449,17 +466,21 @@ function VoidEntryForm({
   );
 }
 
-function SeasonFinanceSummary({ teams }: { teams: SeasonFinanceTeamRow[] }) {
-  const totals = summarizeSeasonFinanceTotals(teams);
+function SeasonFinanceSummary({
+  teams,
+  expenses,
+}: {
+  teams: SeasonFinanceTeamRow[];
+  expenses: SeasonExpenseRow[];
+}) {
+  const totalExpenses = summarizeSeasonExpensesTotal(
+    expenses.map((expense) => expense.amount)
+  );
+  const totals = summarizeSeasonFinanceWithMargin(teams, totalExpenses);
   const showCredit = totals.totalCredit > 0;
 
   return (
-    <Card
-      className={cn(
-        "grid gap-4",
-        showCredit ? "sm:grid-cols-2 lg:grid-cols-4" : "sm:grid-cols-3"
-      )}
-    >
+    <Card className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       <div>
         <p className="text-xs uppercase tracking-wide text-muted">Total cargos</p>
         <p className="text-lg font-semibold">{formatMoney(totals.totalCharges)}</p>
@@ -478,6 +499,180 @@ function SeasonFinanceSummary({ teams }: { teams: SeasonFinanceTeamRow[] }) {
           <p className="text-lg font-semibold">{formatMoney(totals.totalCredit)}</p>
         </div>
       )}
+      <div>
+        <p className="text-xs uppercase tracking-wide text-muted">Total gastos</p>
+        <p className="text-lg font-semibold">{formatMoney(totals.totalExpenses)}</p>
+      </div>
+      <div>
+        <p className="text-xs uppercase tracking-wide text-muted">Margen</p>
+        <p
+          className={cn(
+            "text-lg font-semibold",
+            totals.margin < 0 ? "text-danger" : "text-text-primary"
+          )}
+        >
+          {formatMoney(totals.margin)}
+        </p>
+        <p className="text-[11px] text-muted">Cobrado − gastos (caja real)</p>
+      </div>
+    </Card>
+  );
+}
+
+export function AddSeasonExpenseForm({
+  organizationId,
+  competitionId,
+  seasonId,
+}: Pick<
+  SeasonFinancePanelProps,
+  "organizationId" | "competitionId" | "seasonId"
+>) {
+  const [state, action, pending] = useActionState(
+    addSeasonExpenseAction,
+    initialFinanceActionState
+  );
+
+  return (
+    <Card className="space-y-4">
+      <SectionHeader
+        title="Agregar gasto"
+        description="Registra un costo que paga el organizador (cancha, arbitraje, premios, etc.)."
+      />
+      <ActionMessage ok={state.ok} message={state.message} />
+      <form action={action} className="space-y-4">
+        <input type="hidden" name="organizationId" value={organizationId} />
+        <input type="hidden" name="competitionId" value={competitionId} />
+        <input type="hidden" name="seasonId" value={seasonId} />
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <label htmlFor="expenseCategory" className="block text-sm font-medium">
+              Categoría
+            </label>
+            <select
+              id="expenseCategory"
+              name="category"
+              defaultValue={String(state.values?.category ?? "cancha")}
+              disabled={pending}
+              className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
+            >
+              {SEASON_EXPENSE_CATEGORY_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+            {state.fieldErrors?.category && (
+              <p className="text-xs text-danger">{state.fieldErrors.category}</p>
+            )}
+          </div>
+          <div className="space-y-1.5">
+            <label htmlFor="expenseAmount" className="block text-sm font-medium">
+              Monto (MXN)
+            </label>
+            <input
+              id="expenseAmount"
+              name="amount"
+              type="number"
+              min="0.01"
+              step="0.01"
+              defaultValue={String(state.values?.amount ?? "")}
+              disabled={pending}
+              className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
+            />
+            {state.fieldErrors?.amount && (
+              <p className="text-xs text-danger">{state.fieldErrors.amount}</p>
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <label htmlFor="expenseDescription" className="block text-sm font-medium">
+            Descripción
+          </label>
+          <input
+            id="expenseDescription"
+            name="description"
+            type="text"
+            defaultValue={String(state.values?.description ?? "")}
+            disabled={pending}
+            className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <label htmlFor="expenseIncurredAt" className="block text-sm font-medium">
+            Fecha del gasto
+          </label>
+          <input
+            id="expenseIncurredAt"
+            name="incurredAt"
+            type="date"
+            defaultValue={String(state.values?.incurredAt ?? "")}
+            disabled={pending}
+            className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm sm:max-w-xs"
+          />
+          {state.fieldErrors?.incurredAt && (
+            <p className="text-xs text-danger">{state.fieldErrors.incurredAt}</p>
+          )}
+        </div>
+
+        <SubmitButton pending={pending} className="w-auto">
+          Registrar gasto
+        </SubmitButton>
+      </form>
+    </Card>
+  );
+}
+
+function SeasonExpensesSection({
+  organizationId,
+  competitionId,
+  seasonId,
+  expenses,
+  readOnly = false,
+}: SeasonFinancePanelProps) {
+  return (
+    <Card className="space-y-4">
+      <SectionHeader
+        title="Gastos del torneo"
+        description="Costos pagados por el organizador. Se restan del total cobrado para calcular el margen."
+      />
+      {expenses.length === 0 ? (
+        <p className="text-sm text-text-secondary">Sin gastos registrados.</p>
+      ) : (
+        <ul className="space-y-2">
+          {expenses.map((expense) => (
+            <li
+              key={expense.id}
+              className="rounded-xl border border-border px-3 py-2 text-sm"
+            >
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div>
+                  <p className="font-medium">
+                    {seasonExpenseCategoryLabel(expense.category)}
+                    {expense.description ? ` · ${expense.description}` : ""}
+                  </p>
+                  <p className="text-xs text-muted">
+                    {expense.incurredAt} · Registrado por {expense.recordedByName}
+                  </p>
+                </div>
+                <span className="font-semibold">{formatMoney(expense.amount)}</span>
+              </div>
+              {!readOnly && (
+                <VoidEntryForm
+                  organizationId={organizationId}
+                  competitionId={competitionId}
+                  seasonId={seasonId}
+                  entryId={expense.id}
+                  entryType="expense"
+                  label="Anular este gasto"
+                />
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
     </Card>
   );
 }
@@ -487,6 +682,7 @@ export function SeasonFinanceTable({
   competitionId,
   seasonId,
   teams,
+  expenses,
   readOnly = false,
 }: SeasonFinancePanelProps) {
   if (teams.length === 0) {
@@ -501,7 +697,7 @@ export function SeasonFinanceTable({
 
   return (
     <div className="space-y-4">
-      <SeasonFinanceSummary teams={teams} />
+      <SeasonFinanceSummary teams={teams} expenses={expenses} />
       <ResponsiveTableContainer label="Finanzas por equipo">
         <table className="w-full min-w-[36rem] text-left text-sm">
           <thead className="bg-surface-elevated text-xs uppercase tracking-wide text-muted">
@@ -663,7 +859,9 @@ export function SeasonFinancePanel({
   return (
     <div className="space-y-6">
       {!readOnly && <AddTeamChargeForm {...props} />}
+      {!readOnly && <AddSeasonExpenseForm {...props} />}
       <SeasonFinanceTable {...props} readOnly={readOnly} />
+      <SeasonExpensesSection {...props} readOnly={readOnly} />
     </div>
   );
 }

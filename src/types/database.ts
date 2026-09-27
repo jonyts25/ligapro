@@ -2741,6 +2741,83 @@ export type Database = {
           },
         ]
       }
+      season_expenses: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          incurred_at: string
+          organization_id: string
+          recorded_by_profile_id: string
+          season_id: string
+          updated_at: string
+          void_reason: string | null
+          voided_at: string | null
+          voided_by_profile_id: string | null
+        }
+        Insert: {
+          amount: number
+          category: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          incurred_at?: string
+          organization_id: string
+          recorded_by_profile_id: string
+          season_id: string
+          updated_at?: string
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by_profile_id?: string | null
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          incurred_at?: string
+          organization_id?: string
+          recorded_by_profile_id?: string
+          season_id?: string
+          updated_at?: string
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by_profile_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "season_expenses_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "season_expenses_recorded_by_profile_id_fkey"
+            columns: ["recorded_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "season_expenses_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "season_expenses_voided_by_profile_id_fkey"
+            columns: ["voided_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       team_charges: {
         Row: {
           amount: number
@@ -4379,6 +4456,30 @@ export type Database = {
       void_platform_income_entry: {
         Args: { p_entry_id: string; p_reason: string }
         Returns: undefined
+      }
+      void_season_expense: {
+        Args: { p_expense_id: string; p_reason: string }
+        Returns: {
+          amount: number
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          incurred_at: string
+          organization_id: string
+          recorded_by_profile_id: string
+          season_id: string
+          updated_at: string
+          void_reason: string | null
+          voided_at: string | null
+          voided_by_profile_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "season_expenses"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       void_team_charge: {
         Args: { p_charge_id: string; p_reason: string }
