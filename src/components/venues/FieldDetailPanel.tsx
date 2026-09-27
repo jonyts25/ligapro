@@ -4,6 +4,7 @@ import Link from "next/link";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { Card } from "@/components/ui/Card";
 import { FieldAvailabilityEditor } from "@/components/venues/FieldAvailabilityEditor";
+import { buildFieldCardBadges } from "@/lib/venues/field-cards";
 import { DAY_LABELS_ES, type FieldDetail } from "@/lib/venues/types";
 
 type FieldDetailPanelProps = {
@@ -17,6 +18,13 @@ export function FieldDetailPanel({
   field,
   canManage,
 }: FieldDetailPanelProps) {
+  const badges = buildFieldCardBadges({
+    parentFieldName: field.parent_field_name,
+    childCount: field.child_count,
+    modality: field.modality,
+    hourlyRate: field.hourly_rate,
+  });
+
   return (
     <div className="space-y-4">
       <Card className="space-y-3">
@@ -30,10 +38,19 @@ export function FieldDetailPanel({
               <p className="text-sm text-muted">{field.surface_type}</p>
             )}
           </div>
-          <StatusBadge
-            label={field.is_active ? "Activa" : "Inactiva"}
-            variant={field.is_active ? "success" : "warning"}
-          />
+          <div className="flex flex-wrap gap-2">
+            <StatusBadge
+              label={field.is_active ? "Activa" : "Inactiva"}
+              variant={field.is_active ? "success" : "warning"}
+            />
+            {badges.map((badge) => (
+              <StatusBadge
+                key={badge.label}
+                label={badge.label}
+                variant={badge.variant}
+              />
+            ))}
+          </div>
         </div>
         {canManage && (
           <Link

@@ -36,8 +36,12 @@ describe("mapOrganizationFieldDetail", () => {
         address: "Zona industrial",
         surface_type: null,
         is_active: true,
+        modality: null,
+        hourly_rate: null,
+        parent_field_id: null,
       },
-      []
+      [],
+      { parentFieldName: null, childCount: 0 }
     );
 
     assert.equal(detail.venue_id, null);
@@ -56,8 +60,12 @@ describe("mapOrganizationFieldDetail", () => {
         address: null,
         surface_type: "sintético",
         is_active: false,
+        modality: null,
+        hourly_rate: null,
+        parent_field_id: null,
       },
-      [{ day_of_week: 1, starts_at: "18:00", ends_at: "21:00" }]
+      [{ day_of_week: 1, starts_at: "18:00", ends_at: "21:00" }],
+      { parentFieldName: null, childCount: 0 }
     );
 
     assert.equal(detail.effectivelyAvailable, false);
@@ -76,6 +84,11 @@ describe("fieldCardStatusLabel", () => {
         isActive: true,
         hasWeeklyAvailability: false,
         activeBlockCount: 0,
+        parentFieldId: null,
+        parentFieldName: null,
+        childCount: 0,
+        modality: null,
+        hourlyRate: null,
       }),
       "Sin configurar"
     );

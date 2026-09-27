@@ -20,7 +20,7 @@ export async function getOrganizationFieldDetail(
   const { data: field, error } = await supabase
     .from("fields")
     .select(
-      "id, organization_id, venue_id, name, address, surface_type, is_active"
+      "id, organization_id, venue_id, name, address, surface_type, is_active, modality, hourly_rate, parent_field_id"
     )
     .eq("id", fieldId)
     .eq("organization_id", organizationId)
@@ -30,7 +30,27 @@ export async function getOrganizationFieldDetail(
 
   const intervals = await getFieldAvailability(organizationId, fieldId);
 
-  return mapOrganizationFieldDetail(field as FieldRecord, intervals);
+  let parentFieldName: string | null = null;
+  if (field.parent_field_id) {
+    const { data: parent } = await supabase
+      .from("fields")
+      .select("name")
+      .eq("id", field.parent_field_id)
+      .eq("organization_id", organizationId)
+      .maybeSingle();
+    parentFieldName = parent?.name ?? null;
+  }
+
+  const { count: childCount } = await supabase
+    .from("fields")
+    .select("id", { count: "exact", head: true })
+    .eq("organization_id", organizationId)
+    .eq("parent_field_id", fieldId);
+
+  return mapOrganizationFieldDetail(field as FieldRecord, intervals, {
+    parentFieldName,
+    childCount: childCount ?? 0,
+  });
 }
 
 export async function getFieldAvailability(
@@ -63,7 +83,9 @@ export async function getOrganizationFieldCards(
     await Promise.all([
       supabase
         .from("fields")
-        .select("id, name, address, surface_type, is_active")
+        .select(
+          "id, name, address, surface_type, is_active, modality, hourly_rate, parent_field_id"
+        )
         .eq("organization_id", organizationId)
         .order("name"),
       supabase
@@ -93,6 +115,33 @@ export async function getOrganizationFieldCards(
     );
   }
 
+  const parentNames = new Map(
+    (fields ?? [])
+      .filter((field) => field.parent_field_id)
+      .map((field) => [field.parent_field_id as string, ""])
+  );
+
+  if (parentNames.size > 0) {
+    const { data: parents } = await supabase
+      .from("fields")
+      .select("id, name")
+      .eq("organization_id", organizationId)
+      .in("id", [...parentNames.keys()]);
+
+    for (const parent of parents ?? []) {
+      parentNames.set(parent.id, parent.name);
+    }
+  }
+
+  const childCountByParent = new Map<string, number>();
+  for (const field of fields ?? []) {
+    if (!field.parent_field_id) continue;
+    childCountByParent.set(
+      field.parent_field_id,
+      (childCountByParent.get(field.parent_field_id) ?? 0) + 1
+    );
+  }
+
   return (fields ?? []).map((field) => ({
     fieldId: field.id,
     fieldName: field.name,
@@ -101,6 +150,16 @@ export async function getOrganizationFieldCards(
     isActive: field.is_active,
     hasWeeklyAvailability: (rulesByField.get(field.id) ?? 0) > 0,
     activeBlockCount: blocksByField.get(field.id) ?? 0,
+    parentFieldId: field.parent_field_id,
+    parentFieldName: field.parent_field_id
+      ? parentNames.get(field.parent_field_id) ?? null
+      : null,
+    childCount: childCountByParent.get(field.id) ?? 0,
+    modality: field.modality,
+    hourlyRate:
+      field.hourly_rate === null || field.hourly_rate === undefined
+        ? null
+        : Number(field.hourly_rate),
   }));
 }
 

@@ -7,8 +7,29 @@ import { requireUser } from "@/lib/auth/require-user";
 import { requireOrganizationAdmin } from "@/lib/auth/require-organization-admin";
 import { assertCanCreateField } from "@/lib/billing/tier-limits-queries";
 import { buildDirectFieldInsertRow } from "@/lib/venues/field-model";
+import {
+  parseFieldModality,
+  parseHourlyRate,
+} from "@/lib/venues/field-modality";
 import type { VenueActionState } from "@/lib/venues/types";
 import { intervalsOverlap } from "@/lib/venues/availability-validation";
+
+function readFieldPricing(formData: FormData) {
+  const modalityRaw = String(formData.get("modality") ?? "");
+  const hourlyRateRaw = String(formData.get("hourlyRate") ?? "");
+  const modality = parseFieldModality(modalityRaw);
+  const hourlyRate = parseHourlyRate(hourlyRateRaw);
+
+  const fieldErrors: Record<string, string> = {};
+  if (modalityRaw.trim() && !modality) {
+    fieldErrors.modality = "Selecciona una modalidad válida.";
+  }
+  if (hourlyRateRaw.trim() && hourlyRate === null) {
+    fieldErrors.hourlyRate = "La tarifa debe ser un número mayor o igual a 0.";
+  }
+
+  return { modality, hourlyRate, fieldErrors };
+}
 
 function validateName(name: string, label = "nombre"): string | null {
   const trimmed = name.trim();
@@ -44,14 +65,26 @@ export async function createFieldAction(
   const surfaceRaw = String(formData.get("surfaceType") ?? "").trim();
   const surfaceType = surfaceRaw.length > 0 ? surfaceRaw : null;
   const isActive = formData.get("isActive") === "on";
+  const pricing = readFieldPricing(formData);
 
   const nameError = validateName(name, "nombre de la cancha");
+  const fieldErrors = { ...pricing.fieldErrors };
   if (nameError) {
+    fieldErrors.name = nameError;
+  }
+  if (Object.keys(fieldErrors).length > 0) {
     return {
       ok: false,
-      message: nameError,
-      fieldErrors: { name: nameError },
-      values: { name, address, surfaceType, isActive },
+      message: nameError ?? "Revisa los datos de la cancha.",
+      fieldErrors,
+      values: {
+        name,
+        address,
+        surfaceType,
+        isActive,
+        modality: pricing.modality,
+        hourlyRate: String(formData.get("hourlyRate") ?? ""),
+      },
     };
   }
 
@@ -74,6 +107,8 @@ export async function createFieldAction(
         address,
         surfaceType,
         isActive,
+        modality: pricing.modality,
+        hourlyRate: pricing.hourlyRate,
       })
     )
     .select("id")
@@ -106,14 +141,26 @@ export async function updateFieldAction(
   const surfaceRaw = String(formData.get("surfaceType") ?? "").trim();
   const surfaceType = surfaceRaw.length > 0 ? surfaceRaw : null;
   const isActive = formData.get("isActive") === "on";
+  const pricing = readFieldPricing(formData);
 
   const nameError = validateName(name, "nombre de la cancha");
+  const fieldErrors = { ...pricing.fieldErrors };
   if (nameError) {
+    fieldErrors.name = nameError;
+  }
+  if (Object.keys(fieldErrors).length > 0) {
     return {
       ok: false,
-      message: nameError,
-      fieldErrors: { name: nameError },
-      values: { name, address, surfaceType, isActive },
+      message: nameError ?? "Revisa los datos de la cancha.",
+      fieldErrors,
+      values: {
+        name,
+        address,
+        surfaceType,
+        isActive,
+        modality: pricing.modality,
+        hourlyRate: String(formData.get("hourlyRate") ?? ""),
+      },
     };
   }
 
@@ -136,6 +183,8 @@ export async function updateFieldAction(
       address,
       surface_type: surfaceType,
       is_active: isActive,
+      modality: pricing.modality,
+      hourly_rate: pricing.hourlyRate,
     })
     .eq("id", fieldId)
     .eq("organization_id", organizationId);
@@ -234,4 +283,50 @@ export async function replaceFieldAvailabilityAction(input: {
 
   revalidateFieldPaths(input.organizationId, input.fieldId);
   return { ok: true, message: "Disponibilidad actualizada." };
+}
+
+export async function splitFieldAction(
+  _prev: VenueActionState,
+  formData: FormData
+): Promise<VenueActionState> {
+  const user = await requireUser();
+  const organizationId = String(formData.get("organizationId") ?? "");
+  const fieldId = String(formData.get("fieldId") ?? "");
+  await requireOrganizationAdmin(user.id, organizationId);
+
+  const childName1 = String(formData.get("childName1") ?? "");
+  const childName2 = String(formData.get("childName2") ?? "");
+  const values = { childName1, childName2 };
+  const fieldErrors: Record<string, string> = {};
+
+  const name1Error = validateName(childName1, "nombre de la primera mitad");
+  const name2Error = validateName(childName2, "nombre de la segunda mitad");
+  if (name1Error) fieldErrors.childName1 = name1Error;
+  if (name2Error) fieldErrors.childName2 = name2Error;
+
+  if (Object.keys(fieldErrors).length > 0) {
+    return {
+      ok: false,
+      message: "Revisa los nombres de las mitades.",
+      fieldErrors,
+      values,
+    };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("split_field_into_children", {
+    p_field_id: fieldId,
+    p_child_names: [childName1.trim(), childName2.trim()],
+  });
+
+  if (error) {
+    return {
+      ok: false,
+      message: error.message,
+      values,
+    };
+  }
+
+  revalidateFieldPaths(organizationId, fieldId);
+  redirect(`/organizaciones/${organizationId}/canchas`);
 }
