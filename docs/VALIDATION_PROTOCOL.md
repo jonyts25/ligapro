@@ -67,7 +67,7 @@ npx expo export --platform android
 
 Para `npm run lint` y `npx tsc --noEmit`, el branch **debe terminar en 0 errores** (sin warnings bloqueantes en lint).
 
-**Línea base verde (desde paso 0.1):** aplica desde el **2026-09-27**, commit **`310abd4`** (`feat/0.1-cleanup-baseline`). A partir de su merge a `main`, ya no se acepta «no agregar errores respecto a main»: lint y tsc deben quedar en cero antes de declarar terminado.
+**Línea base verde (desde paso 0.1):** aplica desde el **2026-09-27**, commit **`e6171f6`** (`feat/0.1-cleanup-baseline`). A partir de su merge a `main`, ya no se acepta «no agregar errores respecto a main»: lint y tsc deben quedar en cero antes de declarar terminado.
 
 En pasos anteriores a esa línea base, documentar la diferencia exacta vs `origin/main` si aún había deuda heredada.
 
