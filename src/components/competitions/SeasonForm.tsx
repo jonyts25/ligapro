@@ -17,6 +17,7 @@ import {
   isSeasonMatchDurationLocked,
 } from "@/lib/competitions/season-edit-guards";
 import { CompetitionSetupFields } from "@/components/competitions/CompetitionSetupFields";
+import { SeasonTiebreakOrderFields } from "@/components/competitions/SeasonTiebreakOrderFields";
 import { SubmitButton } from "@/components/auth/SubmitButton";
 import { Card } from "@/components/ui/Card";
 import { SectionHeader } from "@/components/ui/SectionHeader";
@@ -155,6 +156,14 @@ export function SeasonForm({
             <FieldError message={state.fieldErrors?.endsOn} />
           </div>
         </div>
+      </Card>
+
+      <Card>
+        <SeasonTiebreakOrderFields
+          initialOrder={rules.tiebreak_order}
+          pending={pending}
+          error={state.fieldErrors?.tiebreakOrder}
+        />
       </Card>
 
       <div className="flex flex-wrap gap-3">

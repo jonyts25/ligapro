@@ -2379,6 +2379,7 @@ export type Database = {
           reschedule_request_ttl_hours: number
           season_id: string
           suspension_matches: number
+          tiebreak_order: string[]
           transfer_lock_days: number
           updated_at: string
           yellow_card_limit: number
@@ -2405,6 +2406,7 @@ export type Database = {
           reschedule_request_ttl_hours?: number
           season_id: string
           suspension_matches?: number
+          tiebreak_order?: string[]
           transfer_lock_days?: number
           updated_at?: string
           yellow_card_limit?: number
@@ -2431,6 +2433,7 @@ export type Database = {
           reschedule_request_ttl_hours?: number
           season_id?: string
           suspension_matches?: number
+          tiebreak_order?: string[]
           transfer_lock_days?: number
           updated_at?: string
           yellow_card_limit?: number
@@ -4287,6 +4290,10 @@ export type Database = {
           p_name: string
           p_organization_id: string
         }
+        Returns: undefined
+      }
+      update_season_tiebreak_order: {
+        Args: { p_season_id: string; p_tiebreak_order: string[] }
         Returns: undefined
       }
       update_season_with_rules: {

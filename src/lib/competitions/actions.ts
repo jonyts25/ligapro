@@ -26,6 +26,7 @@ import {
   isSeasonPubliclyVisible,
 } from "@/lib/competitions/season-visibility";
 import { parseInitialSeasonSetup } from "@/lib/competitions/initial-season-setup";
+import { parseTiebreakOrderInput } from "@/lib/competitions/tiebreak-order";
 import { createInitialSeasonForCompetition } from "@/lib/competitions/create-initial-season";
 import { applySeasonUpdateLocks } from "@/lib/competitions/season-edit-guards";
 
@@ -471,7 +472,13 @@ export async function updateSeasonAction(
   await requireOrganizationAdmin(user.id, organizationId);
 
   const { values, fieldErrors, parsed } = parseSeasonForm(formData);
-  if (Object.keys(fieldErrors).length > 0) {
+  const tiebreakParsed = parseTiebreakOrderInput(
+    String(formData.get("tiebreakOrder") ?? "")
+  );
+  if (!tiebreakParsed.ok) {
+    fieldErrors.tiebreakOrder = tiebreakParsed.error;
+  }
+  if (Object.keys(fieldErrors).length > 0 || !parsed || !tiebreakParsed.ok) {
     return {
       ok: false,
       message: "Revisa los datos del torneo y las reglas.",
@@ -514,6 +521,22 @@ export async function updateSeasonAction(
     return {
       ok: false,
       message: "No pudimos guardar el torneo y las reglas. Inténtalo nuevamente.",
+      values,
+    };
+  }
+
+  const { error: tiebreakError } = await supabase.rpc(
+    "update_season_tiebreak_order",
+    {
+      p_season_id: seasonId,
+      p_tiebreak_order: tiebreakParsed.value,
+    }
+  );
+
+  if (tiebreakError) {
+    return {
+      ok: false,
+      message: tiebreakError.message,
       values,
     };
   }
