@@ -2,8 +2,11 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
+import { formatLabel } from "@/lib/competitions/types";
 import { wizardGenerateFixtureAction } from "@/lib/tournament-wizard/actions";
 import { initialTournamentWizardActionState } from "@/lib/tournament-wizard/types";
+import { estimateTournamentPlan } from "@/lib/tournament-wizard/simulator";
+import type { SeasonFormatType } from "@/lib/competitions/types";
 import { SubmitButton } from "@/components/auth/SubmitButton";
 import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/utils/cn";
@@ -14,6 +17,9 @@ type TournamentWizardGenerateStepProps = {
   seasonId: string;
   competitionName: string;
   teamCount: number;
+  formatType: SeasonFormatType;
+  fieldsCount: number;
+  groupsAdvancePerGroup: number | null;
   canGenerate: boolean;
   fixtureGenerated: boolean;
 };
@@ -24,6 +30,9 @@ export function TournamentWizardGenerateStep({
   seasonId,
   competitionName,
   teamCount,
+  formatType,
+  fieldsCount,
+  groupsAdvancePerGroup,
   canGenerate,
   fixtureGenerated,
 }: TournamentWizardGenerateStepProps) {
@@ -31,6 +40,13 @@ export function TournamentWizardGenerateStep({
     wizardGenerateFixtureAction,
     initialTournamentWizardActionState
   );
+
+  const plan = estimateTournamentPlan({
+    teamCount,
+    formatType,
+    fieldsCount,
+    groupsAdvancePerGroup,
+  });
 
   if (fixtureGenerated) {
     return (
@@ -66,8 +82,25 @@ export function TournamentWizardGenerateStep({
 
       <p className="mb-4 text-base text-text-primary">
         Listo para generar el fixture de {competitionName} con {teamCount} equipos
-        (todos contra todos, una vuelta).
+        ({formatLabel(formatType).toLowerCase()}).
       </p>
+
+      {plan && (
+        <div className="mb-4 space-y-2 rounded-xl border border-brand/30 bg-brand/5 p-4">
+          <p className="text-sm font-medium text-text-primary">
+            {plan.isApproximate ? "Serán aproximadamente" : "Serán"}{" "}
+            {plan.totalMatches} partidos, a un ritmo de {plan.matchesPerWeek} por
+            semana con las canchas elegidas: listo en ~{plan.estimatedWeeks}{" "}
+            semanas.
+          </p>
+          <p className="text-xs text-text-secondary">{plan.formula}</p>
+          {plan.isApproximate && (
+            <p className="text-xs text-text-secondary">
+              Estimado — depende de cómo armes los grupos.
+            </p>
+          )}
+        </div>
+      )}
 
       <form action={formAction} className="space-y-4">
         <input type="hidden" name="organizationId" value={organizationId} />
