@@ -24,6 +24,14 @@ describe("getOrganizationNavItems", () => {
     assert.equal(myMatches.href, `/organizaciones/${ORG}/mis-partidos`);
   });
 
+  it("includes jornada en vivo for all members", () => {
+    const items = getOrganizationNavItems(ORG, { canManageSettings: false });
+    const live = items.find((item) => item.label === "Jornada en vivo");
+    assert.ok(live);
+    assert.equal(live.available, true);
+    assert.equal(live.href, `/organizaciones/${ORG}/jornada-en-vivo`);
+  });
+
   it("hides finanzas and configuracion for non-admin members", () => {
     const items = getOrganizationNavItems(ORG, { canManageSettings: false });
     assert.equal(
