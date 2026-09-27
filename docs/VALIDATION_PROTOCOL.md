@@ -48,6 +48,10 @@ npx expo export --platform ios
 npx expo export --platform android
 ```
 
+**Empaquetado:** `tsc` de mobile **NO** prueba que la app empaquete. `npx expo export` es **obligatorio** en cualquier paso que toque `mobile/` o `src/lib/shared/`, y se corre como **último comando** antes de redactar el reporte.
+
+**Cambios en `src/lib/shared/`:** exigen la validación **web completa** (lint, tsc, test, build) **y** la de **mobile** (typecheck, expo-doctor, expo export ios + android).
+
 ### SQL (si hay migraciones)
 
 - Archivo nuevo en `supabase/migrations/`.

@@ -153,10 +153,15 @@ Regeneración: mismo comando que web (`supabase gen types typescript --project-i
 Patrón estable para todo lo que sigue:
 
 - **Qué va en `shared/`:** funciones de dominio **puras** o queries Supabase que reciben `SupabaseClient` como parámetro. Sin `next/*`, sin alias `@/…`, sin `createClient` de servidor.
+- **Regla de imports en `shared/`:** solo imports **relativos** dentro del árbol `shared/`, o `import type` desde fuera (p. ej. `Database`). Prohibido importar en runtime módulos web, Next.js o alias `@/…`.
 - **Web:** wrapper delgado en `src/lib/…` que crea el cliente SSR (`createClient()` de `@/lib/supabase/server`) y delega al núcleo shared. Comportamiento y firmas públicas existentes **no cambian**.
-- **Mobile:** alias `@ligapro/shared` → `../src/lib/shared` en `mobile/tsconfig.json`; la app importa el mismo núcleo.
-- **Primer caso:** `fetchMyOfficialMatchAssignments` / `buildMyOfficialMatchAssignments` (antes duplicado en `mobile/src/lib/matches/my-matches.ts`). Incluye filtro de temporadas archivadas (`isSeasonArchived` en `shared/season-visibility.ts`).
-- **Tests:** los unitarios siguen en web (`my-official-matches.test.ts`); prueban el builder vía wrapper web que añade `captureHref`.
+- **Mobile (TypeScript):** alias `@ligapro/shared` y `@ligapro/database` en `mobile/tsconfig.json` para `tsc`.
+- **Mobile (Metro):** `tsc` no prueba empaquetado. **`mobile/metro.config.js`** extiende `getDefaultConfig` de `expo/metro-config` con:
+  - `watchFolders`: `../src/lib/shared` y `../src/types` (no todo el repo — evita indexar la web).
+  - `resolver.nodeModulesPaths`: solo `mobile/node_modules` — imports dentro de `shared/` resuelven dependencias de la app, no del `node_modules` raíz.
+  - **`resolver.resolveRequest` explícito** para `@ligapro/shared` y `@ligapro/database`. No usamos solo los paths de `tsconfig` de Expo porque, con carpetas **fuera** de `mobile/`, Metro no resuelve el alias en bundle sin `watchFolders` + mapeo explícito (Expo SDK 57 documenta tsconfig paths para archivos dentro del proyecto).
+- **Primer caso:** `fetchMyOfficialMatchAssignments` / `buildMyOfficialMatchAssignments`. Incluye filtro de temporadas archivadas (`isSeasonArchived` en `shared/season-visibility.ts`).
+- **Tests:** unitarios en web (`my-official-matches.test.ts`); prueban el builder vía wrapper que añade `captureHref`.
 
 ### 10. PoC en `mobile/` (este paso)
 

@@ -52,6 +52,8 @@ Núcleo de dominio en `../src/lib/shared/` (sin Next.js). Alias:
 
 Ejemplo: «Mis partidos» usa `fetchMyOfficialMatchAssignments` — la misma query que `getMyOfficialMatchAssignments` en web (incluye filtro de temporadas archivadas).
 
+Metro (`metro.config.js`) resuelve `@ligapro/shared` hacia `../src/lib/shared` con `watchFolders` acotados; `tsc` solo no basta — correr `npx expo export` antes de dar por válido un cambio.
+
 ## Tipos de base de datos
 
 Fuente de verdad: `../src/types/database.ts` (generado con Supabase CLI en el repo web).
