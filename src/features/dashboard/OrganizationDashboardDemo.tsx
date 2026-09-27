@@ -22,6 +22,8 @@ import {
   DEMO_STATS,
   DEMO_UPCOMING_MATCHES,
 } from "@/features/dashboard/demo-data";
+import { PendingItemsPanel } from "@/features/dashboard/PendingItemsPanel";
+import type { OrganizationPendingItems } from "@/lib/dashboard/pending-items-core";
 
 function matchStatusVariant(
   status: (typeof DEMO_UPCOMING_MATCHES)[number]["status"]
@@ -74,6 +76,7 @@ type OrganizationDashboardDemoProps = {
     competitionName: string;
   }>;
   canManage?: boolean;
+  pendingItems?: OrganizationPendingItems | null;
 };
 
 export function OrganizationDashboardDemo({
@@ -86,6 +89,7 @@ export function OrganizationDashboardDemo({
   publicSeasonsCount = 0,
   publicSeasons = [],
   canManage = false,
+  pendingItems = null,
 }: OrganizationDashboardDemoProps) {
   const hasRealMatches = (matchStats?.totalMatches ?? 0) > 0;
 
@@ -102,6 +106,10 @@ export function OrganizationDashboardDemo({
         </p>
         <OrganizationBrand branding={branding} variant="full" />
       </div>
+
+      {canManage && pendingItems && (
+        <PendingItemsPanel pendingItems={pendingItems} />
+      )}
 
       <section aria-labelledby="real-stats-heading" className="mb-8">
         <div className="mb-3 flex flex-wrap items-center gap-2">

@@ -12,6 +12,7 @@ import {
   getPublicSeasonsCount,
   getRecentPublicSeasons,
 } from "@/lib/standings/queries";
+import { getOrganizationPendingItems } from "@/lib/dashboard/pending-items-queries";
 import { OrganizationDashboardDemo } from "@/features/dashboard/OrganizationDashboardDemo";
 import { notFound } from "next/navigation";
 
@@ -31,6 +32,10 @@ export default async function OrganizationHomePage({ params }: PageProps) {
   if (!organization) notFound();
 
   const branding = mapOrganizationBranding(organization);
+  const canManage =
+    membership.role === "organization_owner" ||
+    membership.role === "organization_admin";
+
   const [
     venueStats,
     competitionStats,
@@ -40,6 +45,7 @@ export default async function OrganizationHomePage({ params }: PageProps) {
     standingsLeader,
     publicSeasonsCount,
     publicSeasons,
+    pendingItems,
   ] = await Promise.all([
     getOrganizationVenueStats(organizationId),
     getOrganizationCompetitionStats(organizationId),
@@ -49,17 +55,15 @@ export default async function OrganizationHomePage({ params }: PageProps) {
     getDashboardStandingsLeader(organizationId),
     getPublicSeasonsCount(organizationId),
     getRecentPublicSeasons(organizationId, 3),
+    getOrganizationPendingItems(organizationId, { canManage }),
   ]);
-
-  const canManage =
-    membership.role === "organization_owner" ||
-    membership.role === "organization_admin";
 
   return (
     <OrganizationDashboardDemo
       branding={branding}
       organizationId={organizationId}
       canManage={canManage}
+      pendingItems={pendingItems}
       matchStats={matchStats}
       recentResults={recentResults}
       standingsLeader={standingsLeader}
