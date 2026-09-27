@@ -62,7 +62,7 @@ BEGIN
 
   -- 2. Outsider cannot write via RPC
   BEGIN
-    PERFORM public.set_platform_pricing_defaults(200, 1, 1.6, 2.6, 1, 0.9, 0.8);
+    PERFORM public.set_platform_pricing_defaults(1500, 200, 1, 1.6, 2.6, 1, 0.9, 0.8);
     INSERT INTO public.__mig028_test_results VALUES (
       '02_outsider_set_rejected', false, 'expected exception'
     );
@@ -112,7 +112,7 @@ BEGIN
   );
 
   -- 5. Staff can set and read back persisted values
-  PERFORM public.set_platform_pricing_defaults(250, 1.1, 1.7, 2.8, 1, 0.85, 0.75);
+  PERFORM public.set_platform_pricing_defaults(1800, 250, 1.1, 1.7, 2.8, 1, 0.85, 0.75);
 
   SELECT base_price_per_team, duration_multiplier_hasta_3
   INTO v_base, v_hasta_3

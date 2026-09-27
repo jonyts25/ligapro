@@ -99,6 +99,7 @@ export async function setPlatformPricingDefaultsAction(
   }
 
   const values = [
+    params.basePricePerTournament,
     params.basePricePerTeam,
     params.durationMultiplierHasta3,
     params.durationMultiplier4To6,
@@ -113,7 +114,13 @@ export async function setPlatformPricingDefaultsAction(
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.rpc("set_platform_pricing_defaults", {
+  const { error } = await (supabase as unknown as {
+    rpc: (
+      fn: string,
+      args?: Record<string, unknown>
+    ) => PromiseLike<{ error: { message: string } | null }>;
+  }).rpc("set_platform_pricing_defaults", {
+    p_base_price_per_tournament: params.basePricePerTournament,
     p_base_price_per_team: params.basePricePerTeam,
     p_duration_multiplier_hasta_3: params.durationMultiplierHasta3,
     p_duration_multiplier_4_to_6: params.durationMultiplier4To6,

@@ -6,6 +6,7 @@ import type {
 import {
   DEFAULT_COTIZADOR_PARAMS,
   type CotizadorParams,
+  type CotizadorPricingParams,
 } from "@/lib/platform-billing/cotizador";
 
 type UntypedRpc = {
@@ -32,6 +33,7 @@ type OrgBillingRpcRow = {
 };
 
 type PricingDefaultsRpcRow = {
+  base_price_per_tournament: number;
   base_price_per_team: number;
   duration_multiplier_hasta_3: number;
   duration_multiplier_4_to_6: number;
@@ -93,7 +95,6 @@ export async function getPlatformOrganizationsBilling(): Promise<
   }));
 }
 
-/** @deprecated Cotizador v2 uses fixed tiers in code; kept for legacy RPC tests. */
 export async function getPlatformPricingDefaults(): Promise<CotizadorParams> {
   const supabase = await createClient();
   const { data, error } = await (supabase as unknown as UntypedRpc).rpc(
@@ -110,6 +111,7 @@ export async function getPlatformPricingDefaults(): Promise<CotizadorParams> {
   }
 
   return {
+    basePricePerTournament: Number(row.base_price_per_tournament),
     basePricePerTeam: Number(row.base_price_per_team),
     durationMultiplierHasta3: Number(row.duration_multiplier_hasta_3),
     durationMultiplier4To6: Number(row.duration_multiplier_4_to_6),
@@ -117,6 +119,17 @@ export async function getPlatformPricingDefaults(): Promise<CotizadorParams> {
     volumeMultiplier1To2: Number(row.volume_multiplier_1_to_2),
     volumeMultiplier3To5: Number(row.volume_multiplier_3_to_5),
     volumeMultiplier6Plus: Number(row.volume_multiplier_6_plus),
+  };
+}
+
+export async function getCotizadorPricingParams(): Promise<CotizadorPricingParams> {
+  const defaults = await getPlatformPricingDefaults();
+  return {
+    basePricePerTournament: defaults.basePricePerTournament,
+    basePricePerTeam: defaults.basePricePerTeam,
+    volumeMultiplier1To2: defaults.volumeMultiplier1To2,
+    volumeMultiplier3To5: defaults.volumeMultiplier3To5,
+    volumeMultiplier6Plus: defaults.volumeMultiplier6Plus,
   };
 }
 

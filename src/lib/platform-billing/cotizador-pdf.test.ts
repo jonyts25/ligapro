@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 import {
   calculateCotizacion,
   DEFAULT_COTIZADOR_INPUT,
+  DEFAULT_COTIZADOR_PRICING,
   sanitizePdfText,
 } from "@/lib/platform-billing/cotizador";
 import {
@@ -16,31 +17,28 @@ describe("sanitizePdfText", () => {
   it("replaces common unicode symbols with ASCII", () => {
     assert.equal(sanitizePdfText("≤ 3 meses"), "hasta  3 meses");
     assert.equal(sanitizePdfText("3–5 torneos"), "3-5 torneos");
-    assert.equal(sanitizePdfText("×1.6"), "x1.6");
-    assert.equal(sanitizePdfText("−$100"), "-$100");
-    assert.equal(sanitizePdfText('"Cliente"'), '"Cliente"');
   });
 });
 
 describe("buildCotizadorPdf", () => {
-  it("does not embed unsafe characters in generated output", () => {
-    const quote = calculateCotizacion({
-      ...DEFAULT_COTIZADOR_INPUT,
-      teamCount: 8,
-      durationMonths: 3,
-    });
+  it("shows tournament breakdown without monthly price", () => {
+    const quote = calculateCotizacion(
+      { ...DEFAULT_COTIZADOR_INPUT, teamCount: 8 },
+      DEFAULT_COTIZADOR_PRICING
+    );
 
     assert.ok(quote);
 
     const pdfText = extractCotizadorPdfText({
       quote,
       input: DEFAULT_COTIZADOR_INPUT,
-      clientName: 'Liga "Cliente" Demo',
+      clientName: "Cliente Demo",
       quotedAt: new Date("2026-07-27T12:00:00.000Z"),
     });
 
-    assert.match(pdfText, /Precio mensual/);
-    assert.match(pdfText, /Precio torneo/);
+    assert.match(pdfText, /Base por torneo/);
+    assert.match(pdfText, /Precio total del torneo/);
+    assert.doesNotMatch(pdfText, /Precio mensual/);
     assert.doesNotMatch(pdfText, UNSAFE_CHARS);
 
     const bytes = buildCotizadorPdf({

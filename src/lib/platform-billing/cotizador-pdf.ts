@@ -46,10 +46,20 @@ export function buildCotizadorPdf(input: CotizadorPdfInput): Uint8Array {
 
   doc.setFontSize(10);
   const clientRows: Array<[string, string]> = [
-    ["Equipos", String(params.teamCount)],
-    ["Duracion (meses)", String(params.durationMonths)],
-    ["Precio mensual", formatCotizadorMoneyPdf(quote.monthlyPrice)],
-    ["Precio torneo", formatCotizadorMoneyPdf(quote.seasonPrice)],
+    ["Equipos inscritos", String(params.teamCount)],
+    [
+      "Base por torneo",
+      formatCotizadorMoneyPdf(quote.internal.tournamentBase),
+    ],
+    [
+      "Subtotal por equipos",
+      formatCotizadorMoneyPdf(quote.internal.teamSubtotal),
+    ],
+    [
+      "Descuento por volumen",
+      formatCotizadorMoneyPdf(-quote.internal.volumeDiscountAmount),
+    ],
+    ["Precio total del torneo", formatCotizadorMoneyPdf(quote.seasonPrice)],
     [
       "Precio por equipo (torneo)",
       formatCotizadorMoneyPdf(quote.pricePerTeamSeason),
@@ -67,7 +77,7 @@ export function buildCotizadorPdf(input: CotizadorPdfInput): Uint8Array {
   doc.setTextColor(100);
   doc.text(
     sanitizePdfText(
-      `Cotizacion hipotetica por volumen de partidos. Generada en ${PLATFORM_NAME}.`
+      `Cotizacion por torneo y equipos inscritos (sin mensualidad). Generada en ${PLATFORM_NAME}.`
     ),
     14,
     y,

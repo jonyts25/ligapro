@@ -1637,6 +1637,7 @@ export type Database = {
       }
       platform_pricing_defaults: {
         Row: {
+          base_price_per_tournament: number
           base_price_per_team: number
           duration_multiplier_4_to_6: number
           duration_multiplier_7_to_12: number
@@ -1649,6 +1650,7 @@ export type Database = {
           volume_multiplier_6_plus: number
         }
         Insert: {
+          base_price_per_tournament: number
           base_price_per_team: number
           duration_multiplier_4_to_6: number
           duration_multiplier_7_to_12: number
@@ -1661,6 +1663,7 @@ export type Database = {
           volume_multiplier_6_plus: number
         }
         Update: {
+          base_price_per_tournament?: number
           base_price_per_team?: number
           duration_multiplier_4_to_6?: number
           duration_multiplier_7_to_12?: number
@@ -3314,6 +3317,7 @@ export type Database = {
       get_platform_pricing_defaults: {
         Args: never
         Returns: {
+          base_price_per_tournament: number
           base_price_per_team: number
           duration_multiplier_4_to_6: number
           duration_multiplier_7_to_12: number
@@ -3743,6 +3747,7 @@ export type Database = {
       }
       set_platform_pricing_defaults: {
         Args: {
+          p_base_price_per_tournament: number
           p_base_price_per_team: number
           p_duration_multiplier_4_to_6: number
           p_duration_multiplier_7_to_12: number

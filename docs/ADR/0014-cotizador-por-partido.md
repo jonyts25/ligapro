@@ -66,3 +66,25 @@ precio_por_equipo_temporada = precio_temporada ÷ equipos
 ## Fuera de alcance
 
 Persistencia de cotizaciones, integración con `organizations.sold_by`, API de precios dinámicos.
+
+---
+
+## Nota de cambio de modelo (2026-09-27)
+
+El cotizador interno **volvió al precio por torneo y por equipo inscrito, sin mensualidad**
+(`feat/0.4-pricing-per-tournament`). La fórmula vigente es:
+
+```
+precio_torneo = base_price_per_tournament + (base_price_per_team × equipos)
+precio_final = precio_torneo × multiplicador_volumen(torneos activos)
+```
+
+Los parámetros se leen de `platform_pricing_defaults` (columna nueva
+`base_price_per_tournament` + `base_price_per_team` + multiplicadores de volumen).
+
+**No confundir** con `organizations.plan_tier` / `subscription_tier`: esos tiers siguen
+gating features Premium (p. ej. avisos de partido, resumen de jornada IA), no el precio
+de venta del cotizador PDF.
+
+El modelo intermedio por tiers mensuales según partidos/mes (secciones 1–5 arriba) quedó
+**obsoleto para ventas**; se conserva en este ADR como historial.
