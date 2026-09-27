@@ -13,6 +13,7 @@ import {
   View,
 } from "react-native";
 
+import { ScorekeeperStatsView } from "@/components/capture/ScorekeeperStatsView";
 import { MatchStopwatch } from "@/components/capture/MatchStopwatch";
 import { TeamBadge } from "@/components/capture/TeamBadge";
 import { useAuth } from "@/lib/auth/session";
@@ -106,6 +107,9 @@ export default function MatchCaptureScreen() {
   const { user, loading: authLoading } = useAuth();
 
   const [canCapture, setCanCapture] = useState<boolean | null>(null);
+  const [captureMode, setCaptureMode] = useState<
+    "referee" | "scorekeeper" | null
+  >(null);
   const [roster, setRoster] = useState<MatchRosterForCapture | null>(null);
   const [recentEvents, setRecentEvents] = useState<RecentEvent[]>([]);
   const [selectedPlayed, setSelectedPlayed] = useState<Set<string>>(new Set());
@@ -199,18 +203,47 @@ export default function MatchCaptureScreen() {
     setError(null);
     try {
       const supabase = getSupabase();
-      const [{ data: allowed }, eventsQueue, rosterQueue] = await Promise.all([
+      const [
+        { data: allowed },
+        { data: official },
+        rosterData,
+        eventsQueue,
+        rosterQueue,
+      ] = await Promise.all([
         supabase.rpc("can_capture_match", { p_match_id: matchId }),
+        supabase
+          .from("match_officials")
+          .select("role, status")
+          .eq("match_id", matchId)
+          .eq("profile_id", user.id)
+          .eq("status", "confirmed")
+          .maybeSingle(),
+        fetchMatchRosterForCapture(supabase, matchId),
         loadPendingEvents(),
         loadPendingRosterValidations(),
       ]);
 
-      setCanCapture(Boolean(allowed));
-      setPendingEvents(eventsQueue);
-      setPendingRoster(pendingRosterForMatch(rosterQueue, matchId));
+      const mode =
+        official?.role === "scorekeeper" ? "scorekeeper" : "referee";
 
-      if (allowed) {
-        await refreshRoster();
+      setCanCapture(Boolean(allowed));
+      setCaptureMode(mode);
+      setRoster(rosterData);
+
+      if (mode === "referee") {
+        setPendingEvents(eventsQueue);
+        setPendingRoster(pendingRosterForMatch(rosterQueue, matchId));
+
+        if (rosterData) {
+          const playedIds = [...rosterData.homePlayers, ...rosterData.awayPlayers]
+            .filter((p) => p.participationStatus === "played")
+            .map((p) => p.seasonTeamPlayerId);
+          setSelectedPlayed(new Set(playedIds));
+          if (playedIds.length > 0) setRosterCollapsed(true);
+        }
+      }
+
+      if (allowed && mode === "referee") {
         await loadRecentEvents();
       }
     } catch (err) {
@@ -492,7 +525,7 @@ export default function MatchCaptureScreen() {
     return <Redirect href="/login" />;
   }
 
-  if (loading || canCapture === null) {
+  if (loading || canCapture === null || captureMode === null) {
     return (
       <View style={styles.centered}>
         <ActivityIndicator />
@@ -518,6 +551,10 @@ export default function MatchCaptureScreen() {
         <Text>No encontramos el partido.</Text>
       </View>
     );
+  }
+
+  if (captureMode === "scorekeeper") {
+    return <ScorekeeperStatsView matchId={matchId!} roster={roster} />;
   }
 
   return (

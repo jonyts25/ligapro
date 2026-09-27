@@ -45,7 +45,7 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test src/lib/sync/**/*.test.ts"
+    "test": "node --import tsx --test src/lib/**/*.test.ts"
   },
   "private": true
 }
