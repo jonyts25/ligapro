@@ -56,6 +56,9 @@ export default async function TournamentWizardGeneratePage({ params }: PageProps
         seasonId={seasonId}
         competitionName={context.competitionName}
         teamCount={context.teams.length}
+        formatType={context.formatType}
+        fieldsCount={context.fieldsCount}
+        groupsAdvancePerGroup={context.groupsAdvancePerGroup}
         canGenerate={context.canGenerateFixture}
         fixtureGenerated={context.fixtureGenerated}
       />

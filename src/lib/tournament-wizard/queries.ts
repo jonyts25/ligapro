@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import type { SeasonFormatType } from "@/lib/competitions/types";
 import { getSeasonFixtureContext } from "@/lib/fixtures/queries";
 import type { WizardContext } from "@/lib/tournament-wizard/types";
 
@@ -11,7 +12,9 @@ export async function getWizardContext(
 
   const { data: season } = await supabase
     .from("seasons")
-    .select("id, name, competition_id, organization_id, competitions(name)")
+    .select(
+      "id, name, competition_id, organization_id, format_type, competitions(name)"
+    )
     .eq("id", seasonId)
     .eq("competition_id", competitionId)
     .eq("organization_id", organizationId)
@@ -20,6 +23,23 @@ export async function getWizardContext(
   if (!season) return null;
 
   const competition = season.competitions as unknown as { name: string } | null;
+
+  const { data: rules } = await supabase
+    .from("season_rules")
+    .select("match_duration_minutes, groups_advance_per_group")
+    .eq("season_id", seasonId)
+    .eq("organization_id", organizationId)
+    .maybeSingle();
+
+  const { data: scheduleBlocks } = await supabase
+    .from("season_field_blocks")
+    .select("field_id")
+    .eq("season_id", seasonId)
+    .eq("organization_id", organizationId);
+
+  const fieldsCount = new Set(
+    (scheduleBlocks ?? []).map((block) => block.field_id)
+  ).size;
 
   const { data: seasonTeams } = await supabase
     .from("season_teams")
@@ -54,6 +74,10 @@ export async function getWizardContext(
       name: field.name,
       address: field.address,
     })),
+    fieldsCount,
+    formatType: season.format_type as SeasonFormatType,
+    matchDurationMinutes: rules?.match_duration_minutes ?? 90,
+    groupsAdvancePerGroup: rules?.groups_advance_per_group ?? null,
     teams: (seasonTeams ?? []).map((row) => {
       const team = row.teams as unknown as { name: string } | null;
       const players = row.season_team_players as unknown as Array<{ id: string }>;

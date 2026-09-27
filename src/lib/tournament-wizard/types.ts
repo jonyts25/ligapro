@@ -1,3 +1,5 @@
+import type { SeasonFormatType } from "@/lib/competitions/types";
+
 export type TournamentWizardActionState = {
   ok: boolean;
   message: string | null;
@@ -30,6 +32,11 @@ export type WizardContext = {
   competitionName: string;
   seasonName: string;
   fields: WizardField[];
+  /** Canchas con bloque de horario configurado en el paso «horarios». */
+  fieldsCount: number;
+  formatType: SeasonFormatType;
+  matchDurationMinutes: number;
+  groupsAdvancePerGroup: number | null;
   teams: WizardSeasonTeam[];
   fixtureGenerated: boolean;
   canGenerateFixture: boolean;
