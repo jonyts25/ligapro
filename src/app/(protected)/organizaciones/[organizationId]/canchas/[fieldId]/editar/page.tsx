@@ -4,6 +4,8 @@ import { requireUser } from "@/lib/auth/require-user";
 import { requireOrganizationAdmin } from "@/lib/auth/require-organization-admin";
 import { getOrganizationFieldDetail } from "@/lib/venues/queries";
 import { FieldForm } from "@/components/venues/FieldForm";
+import { FieldSplitForm } from "@/components/venues/FieldSplitForm";
+import { canSplitField } from "@/lib/venues/field-cards";
 import { PageHeader } from "@/components/ui/PageHeader";
 
 type PageProps = {
@@ -33,6 +35,16 @@ export default async function EditFieldPage({ params }: PageProps) {
         }
       />
       <FieldForm organizationId={organizationId} mode="edit" field={field} />
+      {canSplitField({
+        parentFieldId: field.parent_field_id,
+        childCount: field.child_count,
+      }) && (
+        <FieldSplitForm
+          organizationId={organizationId}
+          fieldId={field.id}
+          fieldName={field.name}
+        />
+      )}
     </div>
   );
 }

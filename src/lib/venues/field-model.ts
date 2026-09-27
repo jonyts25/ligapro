@@ -11,6 +11,8 @@ export type DirectFieldInsertInput = {
   address: string | null;
   surfaceType: string | null;
   isActive: boolean;
+  modality?: string | null;
+  hourlyRate?: number | null;
 };
 
 export function buildDirectFieldInsertRow(input: DirectFieldInsertInput) {
@@ -20,17 +22,22 @@ export function buildDirectFieldInsertRow(input: DirectFieldInsertInput) {
     address: input.address,
     surface_type: input.surfaceType,
     is_active: input.isActive,
+    modality: input.modality ?? null,
+    hourly_rate: input.hourlyRate ?? null,
     venue_id: null as string | null,
   };
 }
 
 export function mapOrganizationFieldDetail(
   field: FieldRecord,
-  intervals: AvailabilityInterval[]
+  intervals: AvailabilityInterval[],
+  extras: { parentFieldName: string | null; childCount: number }
 ): FieldDetail {
   return {
     ...field,
     intervals,
     effectivelyAvailable: isFieldEffectivelyAvailable(field.is_active),
+    parent_field_name: extras.parentFieldName,
+    child_count: extras.childCount,
   };
 }

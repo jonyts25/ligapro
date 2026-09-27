@@ -6,6 +6,9 @@ export type FieldRecord = {
   address: string | null;
   surface_type: string | null;
   is_active: boolean;
+  modality: string | null;
+  hourly_rate: number | null;
+  parent_field_id: string | null;
 };
 
 export type AvailabilityInterval = {
@@ -20,7 +23,10 @@ export type FieldWithAvailability = FieldRecord & {
   effectivelyAvailable: boolean;
 };
 
-export type FieldDetail = FieldWithAvailability;
+export type FieldDetail = FieldWithAvailability & {
+  parent_field_name: string | null;
+  child_count: number;
+};
 
 export type VenueActionState = {
   ok: boolean;
@@ -31,6 +37,10 @@ export type VenueActionState = {
     address?: string | null;
     isActive?: boolean;
     surfaceType?: string | null;
+    modality?: string | null;
+    hourlyRate?: string | null;
+    childName1?: string;
+    childName2?: string;
   };
 };
 

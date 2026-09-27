@@ -568,10 +568,13 @@ export type Database = {
         Row: {
           address: string | null
           created_at: string
+          hourly_rate: number | null
           id: string
           is_active: boolean
+          modality: string | null
           name: string
           organization_id: string
+          parent_field_id: string | null
           surface_type: string | null
           updated_at: string
           venue_id: string | null
@@ -579,10 +582,13 @@ export type Database = {
         Insert: {
           address?: string | null
           created_at?: string
+          hourly_rate?: number | null
           id?: string
           is_active?: boolean
+          modality?: string | null
           name: string
           organization_id: string
+          parent_field_id?: string | null
           surface_type?: string | null
           updated_at?: string
           venue_id?: string | null
@@ -590,10 +596,13 @@ export type Database = {
         Update: {
           address?: string | null
           created_at?: string
+          hourly_rate?: number | null
           id?: string
           is_active?: boolean
+          modality?: string | null
           name?: string
           organization_id?: string
+          parent_field_id?: string | null
           surface_type?: string | null
           updated_at?: string
           venue_id?: string | null
@@ -604,6 +613,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fields_parent_field_id_fkey"
+            columns: ["parent_field_id"]
+            isOneToOne: false
+            referencedRelation: "fields"
             referencedColumns: ["id"]
           },
           {
@@ -4005,6 +4021,23 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      split_field_into_children: {
+        Args: { p_child_names: string[]; p_field_id: string }
+        Returns: {
+          address: string | null
+          created_at: string
+          hourly_rate: number | null
+          id: string
+          is_active: boolean
+          modality: string | null
+          name: string
+          organization_id: string
+          parent_field_id: string | null
+          surface_type: string | null
+          updated_at: string
+          venue_id: string | null
+        }[]
       }
       schedule_match: {
         Args: { p_field_id: string; p_match_id: string; p_starts_at: string }

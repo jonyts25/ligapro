@@ -5,6 +5,7 @@ import {
   createFieldAction,
   updateFieldAction,
 } from "@/lib/venues/actions";
+import { FIELD_MODALITY_OPTIONS } from "@/lib/venues/field-modality";
 import { initialVenueActionState } from "@/lib/venues/types";
 import { SubmitButton } from "@/components/auth/SubmitButton";
 import { Card } from "@/components/ui/Card";
@@ -35,6 +36,10 @@ export function FieldForm({
   const surfaceType =
     state.values?.surfaceType ?? field?.surface_type ?? "";
   const isActive = state.values?.isActive ?? field?.is_active ?? true;
+  const modality = String(state.values?.modality ?? field?.modality ?? "");
+  const hourlyRate = String(
+    state.values?.hourlyRate ?? field?.hourly_rate ?? ""
+  );
 
   return (
     <Card className="space-y-4">
@@ -104,6 +109,47 @@ export function FieldForm({
             placeholder="Pasto sintético, techada…"
             className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
           />
+        </div>
+        <div className="space-y-1.5">
+          <label htmlFor={`modality-${field?.id ?? "new"}`} className="block text-sm font-medium">
+            Modalidad (opcional)
+          </label>
+          <select
+            id={`modality-${field?.id ?? "new"}`}
+            name="modality"
+            disabled={pending}
+            defaultValue={modality}
+            className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
+          >
+            <option value="">Sin configurar</option>
+            {FIELD_MODALITY_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          {state.fieldErrors?.modality && (
+            <p className="text-xs text-danger">{state.fieldErrors.modality}</p>
+          )}
+        </div>
+        <div className="space-y-1.5">
+          <label htmlFor={`hourlyRate-${field?.id ?? "new"}`} className="block text-sm font-medium">
+            Tarifa por hora (opcional)
+          </label>
+          <input
+            id={`hourlyRate-${field?.id ?? "new"}`}
+            name="hourlyRate"
+            type="number"
+            min={0}
+            step="0.01"
+            disabled={pending}
+            defaultValue={hourlyRate}
+            placeholder="850.00"
+            className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
+          />
+          {state.fieldErrors?.hourlyRate && (
+            <p className="text-xs text-danger">{state.fieldErrors.hourlyRate}</p>
+          )}
         </div>
         <label className="flex items-center gap-3 text-sm text-text-secondary">
           <input

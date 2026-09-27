@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import {
+  buildFieldCardBadges,
   fieldCardStatusLabel,
   type OrganizationFieldCard,
 } from "@/lib/venues/field-cards";
@@ -13,6 +14,7 @@ type FieldCardProps = {
 
 export function FieldCard({ organizationId, field }: FieldCardProps) {
   const detailHref = `/organizaciones/${organizationId}/canchas/${field.fieldId}`;
+  const badges = buildFieldCardBadges(field);
 
   return (
     <Link href={detailHref} className="block h-full">
@@ -32,10 +34,19 @@ export function FieldCard({ organizationId, field }: FieldCardProps) {
             variant={field.isActive ? "success" : "warning"}
           />
         </div>
-        <StatusBadge
-          label={fieldCardStatusLabel(field)}
-          variant={field.hasWeeklyAvailability ? "info" : "default"}
-        />
+        <div className="flex flex-wrap gap-2">
+          <StatusBadge
+            label={fieldCardStatusLabel(field)}
+            variant={field.hasWeeklyAvailability ? "info" : "default"}
+          />
+          {badges.map((badge) => (
+            <StatusBadge
+              key={badge.label}
+              label={badge.label}
+              variant={badge.variant}
+            />
+          ))}
+        </div>
       </Card>
     </Link>
   );
