@@ -939,6 +939,84 @@ export type Database = {
           },
         ]
       }
+      match_result_disputes: {
+        Row: {
+          created_at: string
+          id: string
+          match_id: string
+          opened_by_profile_id: string
+          organization_id: string
+          reason: string
+          resolved_at: string | null
+          resolved_by_profile_id: string | null
+          season_team_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          match_id: string
+          opened_by_profile_id: string
+          organization_id: string
+          reason: string
+          resolved_at?: string | null
+          resolved_by_profile_id?: string | null
+          season_team_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          match_id?: string
+          opened_by_profile_id?: string
+          organization_id?: string
+          reason?: string
+          resolved_at?: string | null
+          resolved_by_profile_id?: string | null
+          season_team_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_result_disputes_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_result_disputes_opened_by_profile_id_fkey"
+            columns: ["opened_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_result_disputes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_result_disputes_resolved_by_profile_id_fkey"
+            columns: ["resolved_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_result_disputes_season_team_id_fkey"
+            columns: ["season_team_id"]
+            isOneToOne: false
+            referencedRelation: "season_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       match_player_stats: {
         Row: {
           created_at: string
@@ -1188,6 +1266,10 @@ export type Database = {
           leg_number: number | null
           organization_id: string
           round_label: string | null
+          result_approved_at: string | null
+          result_approved_by_profile_id: string | null
+          result_review_auto_close_at: string | null
+          result_review_opened_at: string | null
           round_number: number | null
           season_group_id: string | null
           season_id: string
@@ -1212,6 +1294,10 @@ export type Database = {
           leg_number?: number | null
           organization_id: string
           round_label?: string | null
+          result_approved_at?: string | null
+          result_approved_by_profile_id?: string | null
+          result_review_auto_close_at?: string | null
+          result_review_opened_at?: string | null
           round_number?: number | null
           season_group_id?: string | null
           season_id: string
@@ -1235,6 +1321,10 @@ export type Database = {
           knockout_round_id?: string | null
           leg_number?: number | null
           organization_id?: string
+          result_approved_at?: string | null
+          result_approved_by_profile_id?: string | null
+          result_review_auto_close_at?: string | null
+          result_review_opened_at?: string | null
           round_label?: string | null
           round_number?: number | null
           season_group_id?: string | null
@@ -3043,6 +3133,49 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      approve_match_result: {
+        Args: { p_match_id: string }
+        Returns: {
+          away_score: number | null
+          away_season_team_id: string
+          bracket_slot: number | null
+          calendar_status: string
+          created_at: string
+          field_reservation_id: string | null
+          home_score: number | null
+          home_season_team_id: string
+          id: string
+          knockout_round_id: string | null
+          leg_number: number | null
+          organization_id: string
+          result_approved_at: string | null
+          result_approved_by_profile_id: string | null
+          result_review_auto_close_at: string | null
+          result_review_opened_at: string | null
+          round_label: string | null
+          round_number: number | null
+          season_group_id: string | null
+          season_id: string
+          sequence_in_round: number | null
+          status: string
+          updated_at: string
+          void_reason: string | null
+          voided_at: string | null
+          voided_by_profile_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "matches"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      auto_close_pending_match_results: {
+        Args: never
+        Returns: {
+          match_id: string
+        }[]
+      }
       can_capture_match: { Args: { p_match_id: string }; Returns: boolean }
       can_view_player_photo: { Args: { p_player_id: string }; Returns: boolean }
       configure_knockout_round: {
@@ -3533,6 +3666,28 @@ export type Database = {
       has_season_role: {
         Args: { p_roles: string[]; p_season_id: string }
         Returns: boolean
+      }
+      open_match_result_dispute: {
+        Args: { p_match_id: string; p_reason: string }
+        Returns: {
+          created_at: string
+          id: string
+          match_id: string
+          opened_by_profile_id: string
+          organization_id: string
+          reason: string
+          resolved_at: string | null
+          resolved_by_profile_id: string | null
+          season_team_id: string
+          status: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "match_result_disputes"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       invite_captain_to_roster: {
         Args: { p_email: string; p_season_team_player_id: string }
