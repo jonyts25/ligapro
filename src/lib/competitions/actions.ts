@@ -27,10 +27,7 @@ import {
 } from "@/lib/competitions/season-visibility";
 import { parseInitialSeasonSetup } from "@/lib/competitions/initial-season-setup";
 import { createInitialSeasonForCompetition } from "@/lib/competitions/create-initial-season";
-import {
-  isSeasonFormatLocked,
-  isSeasonMatchDurationLocked,
-} from "@/lib/competitions/season-edit-guards";
+import { applySeasonUpdateLocks } from "@/lib/competitions/season-edit-guards";
 
 function validateName(name: string, label: string): string | null {
   const trimmed = name.trim();
@@ -284,7 +281,7 @@ function parseSeasonForm(formData: FormData) {
   };
 
   const fieldErrors: Record<string, string> = {};
-  const nameError = validateName(name, "nombre de la temporada");
+  const nameError = validateName(name, "nombre del torneo");
   if (nameError) fieldErrors.name = nameError;
 
   if (!isFormatType(formatType)) {
@@ -403,7 +400,7 @@ export async function createSeasonAction(
   if (Object.keys(fieldErrors).length > 0) {
     return {
       ok: false,
-      message: "Revisa los datos de la temporada y las reglas.",
+      message: "Revisa los datos del torneo y las reglas.",
       fieldErrors,
       values,
     };
@@ -445,7 +442,7 @@ export async function createSeasonAction(
   if (error || !seasonId) {
     return {
       ok: false,
-      message: "No pudimos crear la temporada. Inténtalo nuevamente.",
+      message: "No pudimos crear el torneo. Inténtalo nuevamente.",
       values,
     };
   }
@@ -494,16 +491,7 @@ export async function updateSeasonAction(
     return { ok: false, message: "No encontramos el torneo." };
   }
 
-  const formatLocked = isSeasonFormatLocked(seasonDetails);
-  const durationLocked = isSeasonMatchDurationLocked(seasonDetails);
-
-  const effectiveParsed = {
-    ...parsed,
-    formatType: formatLocked ? seasonDetails.format_type : parsed.formatType,
-    matchDurationMinutes: durationLocked
-      ? seasonDetails.rules.match_duration_minutes
-      : parsed.matchDurationMinutes,
-  };
+  const effectiveParsed = applySeasonUpdateLocks(seasonDetails, parsed);
 
   const { error } = await supabase.rpc("update_season_with_rules", {
     p_season_id: seasonId,
@@ -587,7 +575,7 @@ export async function archiveSeasonAction(
   if (String(formData.get("confirmed") ?? "") !== "1") {
     return {
       ok: false,
-      message: "Confirma que deseas archivar la temporada.",
+      message: "Confirma que deseas archivar el torneo.",
     };
   }
 
@@ -597,10 +585,10 @@ export async function archiveSeasonAction(
     seasonId
   );
   if (!season) {
-    return { ok: false, message: "No encontramos la temporada." };
+    return { ok: false, message: "No encontramos el torneo." };
   }
   if (isSeasonArchived(season.visibility)) {
-    return { ok: false, message: "Esta temporada ya está archivada." };
+    return { ok: false, message: "Este torneo ya está archivado." };
   }
 
   const result = await updateSeasonVisibilityFromDetail(season, "archived");
@@ -612,7 +600,7 @@ export async function archiveSeasonAction(
   return {
     ok: true,
     message:
-      "Temporada archivada. Los datos se conservan; la gestión operativa queda deshabilitada en la app.",
+      "Torneo archivado. Los datos se conservan; la gestión operativa queda deshabilitada en la app.",
   };
 }
 
@@ -630,7 +618,7 @@ export async function reactivateSeasonAction(
   if (String(formData.get("confirmed") ?? "") !== "1") {
     return {
       ok: false,
-      message: "Confirma que deseas reactivar la temporada.",
+      message: "Confirma que deseas reactivar el torneo.",
     };
   }
 
@@ -644,10 +632,10 @@ export async function reactivateSeasonAction(
     seasonId
   );
   if (!season) {
-    return { ok: false, message: "No encontramos la temporada." };
+    return { ok: false, message: "No encontramos el torneo." };
   }
   if (!isSeasonArchived(season.visibility)) {
-    return { ok: false, message: "Esta temporada no está archivada." };
+    return { ok: false, message: "Este torneo no está archivado." };
   }
 
   const result = await updateSeasonVisibilityFromDetail(
@@ -661,7 +649,7 @@ export async function reactivateSeasonAction(
   await revalidateCompetitionPaths(organizationId, competitionId, seasonId);
   return {
     ok: true,
-    message: `Temporada reactivada como «${targetVisibility}».`,
+    message: `Torneo reactivado como «${targetVisibility}».`,
   };
 }
 
@@ -678,7 +666,7 @@ export async function publishSeasonAction(
   if (String(formData.get("confirmed") ?? "") !== "1") {
     return {
       ok: false,
-      message: "Confirma que deseas publicar la temporada.",
+      message: "Confirma que deseas publicar el torneo.",
     };
   }
 
@@ -688,24 +676,24 @@ export async function publishSeasonAction(
     seasonId
   );
   if (!season) {
-    return { ok: false, message: "No encontramos la temporada." };
+    return { ok: false, message: "No encontramos el torneo." };
   }
 
   if (isSeasonArchived(season.visibility)) {
     return {
       ok: false,
-      message: "No se puede publicar una temporada archivada. Reactívala primero.",
+      message: "No se puede publicar un torneo archivado. Reactívalo primero.",
     };
   }
 
   if (isSeasonPubliclyVisible(season.visibility)) {
-    return { ok: false, message: "Esta temporada ya es pública." };
+    return { ok: false, message: "Este torneo ya es público." };
   }
 
   if (!canPublishSeasonVisibility(season.visibility)) {
     return {
       ok: false,
-      message: "Esta temporada no puede publicarse desde su estado actual.",
+      message: "Este torneo no puede publicarse desde su estado actual.",
     };
   }
 
@@ -726,7 +714,7 @@ export async function publishSeasonAction(
   return {
     ok: true,
     message:
-      "Temporada publicada. La página pública ya está disponible para cualquiera con el enlace.",
+      "Torneo publicado. La página pública ya está disponible para cualquiera con el enlace.",
   };
 }
 
@@ -743,7 +731,7 @@ export async function deleteSeasonAction(
   if (String(formData.get("confirmed") ?? "") !== "1") {
     return {
       ok: false,
-      message: "Confirma que deseas eliminar la temporada.",
+      message: "Confirma que deseas eliminar el torneo.",
     };
   }
 
@@ -753,14 +741,14 @@ export async function deleteSeasonAction(
     seasonId
   );
   if (!season) {
-    return { ok: false, message: "No encontramos la temporada." };
+    return { ok: false, message: "No encontramos el torneo." };
   }
 
   if (season.visibility !== "draft") {
     return {
       ok: false,
       message:
-        "Solo se pueden eliminar temporadas en borrador. Si ya no la usas, archívala en su lugar.",
+        "Solo se pueden eliminar torneos en borrador. Si ya no lo usas, archívalo en su lugar.",
     };
   }
 
@@ -779,7 +767,7 @@ export async function deleteSeasonAction(
     return {
       ok: false,
       message:
-        "No se puede eliminar: hay equipos inscritos en esta temporada.",
+        "No se puede eliminar: hay equipos inscritos en este torneo.",
     };
   }
 
@@ -844,7 +832,7 @@ export async function deleteCompetitionAction(
     return {
       ok: false,
       message:
-        "No se puede eliminar: el torneo tiene temporadas. Elimínalas primero (solo borrador sin equipos).",
+        "No se puede eliminar: tiene torneos activos. Elimínalos primero (solo borrador sin equipos).",
     };
   }
 

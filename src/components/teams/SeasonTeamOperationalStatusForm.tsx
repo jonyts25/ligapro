@@ -34,7 +34,7 @@ export function SeasonTeamOperationalStatusForm({
   return (
     <Card className="space-y-4">
       <SectionHeader
-        title="Estado en temporada"
+        title="Estado en torneo"
         description="Retirar un equipo anula sus partidos futuros programados. Requiere motivo."
       />
       {state.message && (

@@ -49,9 +49,9 @@ export function buildCotizadorPdf(input: CotizadorPdfInput): Uint8Array {
     ["Equipos", String(params.teamCount)],
     ["Duracion (meses)", String(params.durationMonths)],
     ["Precio mensual", formatCotizadorMoneyPdf(quote.monthlyPrice)],
-    ["Precio temporada", formatCotizadorMoneyPdf(quote.seasonPrice)],
+    ["Precio torneo", formatCotizadorMoneyPdf(quote.seasonPrice)],
     [
-      "Precio por equipo (temporada)",
+      "Precio por equipo (torneo)",
       formatCotizadorMoneyPdf(quote.pricePerTeamSeason),
     ],
   ];

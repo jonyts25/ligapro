@@ -38,7 +38,7 @@ export default async function PublicSeasonCalendarPage({ params }: PageProps) {
     >
       <SectionHeader
         title="Calendario"
-        description="Partidos de la temporada (solo lectura)."
+        description="Partidos del torneo (solo lectura)."
       />
 
       {matches.length === 0 ? (

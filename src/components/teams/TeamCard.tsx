@@ -23,13 +23,13 @@ export function TeamCard({ organizationId, team }: TeamCardProps) {
       </div>
       {team.latestSeasonName ? (
         <p className="text-sm text-text-secondary">
-          Última temporada:{" "}
+          Último torneo:{" "}
           <span className="font-medium text-text-primary">
             {team.latestSeasonName}
           </span>
         </p>
       ) : (
-        <p className="text-sm text-muted">Sin inscripciones en temporadas</p>
+        <p className="text-sm text-muted">Sin inscripciones en torneos</p>
       )}
       <Link
         href={`/organizaciones/${organizationId}/equipos/${team.id}`}

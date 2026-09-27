@@ -40,7 +40,7 @@ describe("buildCotizadorPdf", () => {
     });
 
     assert.match(pdfText, /Precio mensual/);
-    assert.match(pdfText, /Precio temporada/);
+    assert.match(pdfText, /Precio torneo/);
     assert.doesNotMatch(pdfText, UNSAFE_CHARS);
 
     const bytes = buildCotizadorPdf({

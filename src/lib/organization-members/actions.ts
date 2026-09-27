@@ -51,13 +51,13 @@ export async function assignOrganizationMemberSeasonScopeAction(
 
   if (error) {
     if (error.code === "23505") {
-      return { ok: false, message: "Esa temporada ya está asignada." };
+      return { ok: false, message: "Ese torneo ya está asignado." };
     }
     return { ok: false, message: error.message };
   }
 
   revalidatePath(membersPagePath(organizationId));
-  return { ok: true, message: "Temporada asignada al administrador." };
+  return { ok: true, message: "Torneo asignado al administrador." };
 }
 
 export async function removeOrganizationMemberSeasonScopeAction(
@@ -89,7 +89,7 @@ export async function removeOrganizationMemberSeasonScopeAction(
   }
 
   revalidatePath(membersPagePath(organizationId));
-  return { ok: true, message: "Scope de temporada eliminado." };
+  return { ok: true, message: "Scope de torneo eliminado." };
 }
 
 export async function inviteOrganizationMemberAction(

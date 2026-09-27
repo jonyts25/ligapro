@@ -132,7 +132,7 @@ export async function getTeamDetails(
         seasonTeamId: row.id,
         seasonId: row.season_id,
         competitionId: season?.competition_id ?? competition?.id ?? "",
-        seasonName: season?.name ?? "Temporada",
+        seasonName: season?.name ?? "Torneo",
         competitionName: competition?.name ?? "Torneo",
         registration_status:
           row.registration_status as SeasonTeamRegistrationStatus,
@@ -429,7 +429,7 @@ export async function getAvailablePlayersForRoster(
     const display = st?.display_name?.trim();
     blockedBy.set(
       row.player_id,
-      display || teamName || "otro equipo de la temporada"
+      display || teamName || "otro equipo del torneo"
     );
   }
 

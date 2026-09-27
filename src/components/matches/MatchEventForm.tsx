@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useMemo, useState } from "react";
+import { useActionState, useMemo, useState } from "react";
 import { recordMatchEventAction } from "@/lib/matches/actions";
 import { guestRecordMatchEventAction } from "@/lib/matches/guest-actions";
 import { captureErrorAlertClass } from "@/lib/matches/capture-errors";
@@ -150,18 +150,26 @@ export function MatchEventForm({
   );
   const [selected, setSelected] = useState<MatchRosterPlayer | null>(null);
   const [minute, setMinute] = useState(() => suggestMatchMinute(matchStartsAt));
+  const [prevMatchStartsAt, setPrevMatchStartsAt] = useState(matchStartsAt);
   const [showSubstitution, setShowSubstitution] = useState(false);
+  const [prevPending, setPrevPending] = useState(pending);
 
-  useEffect(() => {
+  if (matchStartsAt !== prevMatchStartsAt) {
+    setPrevMatchStartsAt(matchStartsAt);
     setMinute(suggestMatchMinute(matchStartsAt));
-  }, [matchStartsAt]);
+  }
 
-  useEffect(() => {
-    if (state.ok) {
+  if (prevPending && !pending && state.ok) {
+    if (selected !== null) {
       setSelected(null);
+    }
+    if (showSubstitution) {
       setShowSubstitution(false);
     }
-  }, [state.ok]);
+  }
+  if (prevPending !== pending) {
+    setPrevPending(pending);
+  }
 
   if (!canCapture) return null;
   if (matchClosed) {

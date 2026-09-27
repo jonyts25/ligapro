@@ -157,10 +157,10 @@ export function RosterPlayerCard({
           </p>
           <p className="mt-1 text-xs text-muted">
             {player.registration_status === "inactive"
-              ? "Inactivo libera al jugador para otro equipo de esta temporada."
+              ? "Inactivo libera al jugador para otro equipo de este torneo."
               : player.registration_status === "suspended"
-                ? "Suspendido sigue ocupando plaza en esta temporada."
-                : "Activo ocupa plaza en esta temporada."}
+                ? "Suspendido sigue ocupando plaza en este torneo."
+                : "Activo ocupa plaza en este torneo."}
           </p>
         </div>
         <StatusBadge
@@ -345,8 +345,8 @@ export function RosterPlayerCard({
                   : player.is_vice_captain
                     ? " Perderá la vicecapitanía."
                     : ""}{" "}
-                El historial se conserva y podrá agregarse a otro equipo de esta
-                temporada.
+                El historial se conserva y podrá agregarse a otro equipo de este
+                torneo.
               </span>
             </label>
             <button

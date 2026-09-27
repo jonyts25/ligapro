@@ -19,15 +19,15 @@ export function PlatformRecentPublishedSeasons({
   return (
     <Card className="space-y-4 p-4">
       <div>
-        <h2 className="text-base font-semibold">Temporadas publicadas recientemente</h2>
+        <h2 className="text-base font-semibold">Torneos publicados recientemente</h2>
         <p className="mt-1 text-sm text-text-secondary">
-          Vista interna para revisar qué temporadas quedaron públicas en la
+          Vista interna para revisar qué torneos quedaron públicos en la
           plataforma.
         </p>
       </div>
 
       {seasons.length === 0 ? (
-        <p className="text-sm text-muted">No hay temporadas públicas todavía.</p>
+        <p className="text-sm text-muted">No hay torneos públicos todavía.</p>
       ) : (
         <ul className="divide-y divide-border">
           {seasons.map((season) => (

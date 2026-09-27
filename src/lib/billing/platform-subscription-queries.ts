@@ -1,7 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import {
   buildTierLimitStatus,
-  getEffectiveLimits,
   normalizeSubscriptionTier,
   parseAddonOverrides,
 } from "@/lib/billing/tier-limits";

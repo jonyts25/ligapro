@@ -36,7 +36,7 @@ function scopeAccessLabel(member: OrganizationMemberListItem): string {
   if (member.seasonScopes.length === 0) {
     return "Toda la organización";
   }
-  return `Acotado (${member.seasonScopes.length} temporada${
+  return `Acotado (${member.seasonScopes.length} torneo${
     member.seasonScopes.length === 1 ? "" : "s"
   })`;
 }
@@ -143,12 +143,12 @@ export function OrganizationMembersPanel({
           la organización, como hoy.
         </p>
         <p>
-          Un scope de <strong>temporada</strong> limita hoy solo a: editar esa
-          temporada, programar sus partidos y anular eventos de esos partidos.
+          Un scope de <strong>torneo</strong> limita hoy solo a: editar ese
+          torneo, programar sus partidos y anular eventos de esos partidos.
         </p>
         <p>
           Roster, disciplina, finanzas de equipo, reservas de cancha y brackets
-          siguen sin acotar — un admin con scope de temporada aún tiene acceso
+          siguen sin acotar — un admin con scope de torneo aún tiene acceso
           de organización completa para esas áreas (Wave 1, ver ADR-0013).
         </p>
       </Card>
@@ -217,12 +217,12 @@ export function OrganizationMembersPanel({
                 {isScopedAdmin && (
                   <div className="space-y-3 rounded-xl border border-border bg-surface px-3 py-3">
                     <p className="text-xs font-medium uppercase tracking-wide text-muted">
-                      Scopes de temporada
+                      Scopes de torneo
                     </p>
 
                     {member.seasonScopes.length === 0 ? (
                       <p className="text-sm text-text-secondary">
-                        Sin temporadas asignadas — administra toda la
+                        Sin torneos asignados — administra toda la
                         organización.
                       </p>
                     ) : (
@@ -281,7 +281,7 @@ export function OrganizationMembersPanel({
                             htmlFor={`season-${member.memberId}`}
                             className="text-xs font-medium text-text-secondary"
                           >
-                            Agregar temporada
+                            Agregar torneo
                           </label>
                           <select
                             id={`season-${member.memberId}`}

@@ -37,7 +37,7 @@ export async function setPlatformBillingStatusAction(
     : null;
 
   if (!seasonId) {
-    return { ok: false, message: "Temporada no válida." };
+    return { ok: false, message: "Torneo no válido." };
   }
   if (!ALLOWED.includes(status)) {
     return { ok: false, message: "Estado no válido." };

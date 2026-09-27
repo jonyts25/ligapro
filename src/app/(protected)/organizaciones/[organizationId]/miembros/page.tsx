@@ -38,7 +38,7 @@ export default async function OrganizationMembersPage({ params }: PageProps) {
     <div className="mx-auto max-w-3xl space-y-6">
       <PageHeader
         title="Miembros"
-        description="Roles de la organización y scopes de administrador por temporada."
+        description="Roles de la organización y scopes de administrador por torneo."
         actions={
           <Link
             href={`/organizaciones/${organizationId}/configuracion`}

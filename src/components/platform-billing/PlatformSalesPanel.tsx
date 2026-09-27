@@ -19,7 +19,7 @@ export function PlatformSalesPanel({ rows }: PlatformSalesPanelProps) {
             <tr>
               <th className="px-3 py-2 font-medium">Organización</th>
               <th className="px-3 py-2 font-medium">Vendedor</th>
-              <th className="px-3 py-2 font-medium">Temporadas activas</th>
+              <th className="px-3 py-2 font-medium">Torneos activos</th>
               <th className="px-3 py-2 font-medium">Miembros</th>
               <th className="px-3 py-2 font-medium">Alta</th>
             </tr>

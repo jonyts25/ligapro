@@ -115,7 +115,7 @@ export async function assignSeasonRoleAction(
   }
 
   await revalidateMatchPaths(organizationId, competitionId, seasonId);
-  return { ok: true, message: "Rol de temporada asignado." };
+  return { ok: true, message: "Rol de torneo asignado." };
 }
 
 export async function removeSeasonRoleAction(
@@ -193,7 +193,7 @@ export async function assignMatchOfficialAction(
     if (!seasonRole) {
       return {
         ok: false,
-        message: `Asigna primero el rol de temporada «${role}» a esta persona.`,
+        message: `Asigna primero el rol de torneo «${role}» a esta persona.`,
       };
     }
   }

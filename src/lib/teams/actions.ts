@@ -314,7 +314,7 @@ export async function enrollTeamAction(
     .maybeSingle();
 
   if (!season) {
-    return { ok: false, message: "No encontramos la temporada." };
+    return { ok: false, message: "No encontramos el torneo." };
   }
 
   if (isNewTeam) {
@@ -352,7 +352,7 @@ export async function enrollTeamAction(
     return {
       ok: false,
       message: duplicate
-        ? "Ese equipo ya está inscrito en esta temporada."
+        ? "Ese equipo ya está inscrito en este torneo."
         : "No pudimos inscribir el equipo. Inténtalo nuevamente.",
       values,
     };
@@ -719,7 +719,7 @@ export async function setRosterStatusAction(
     ok: true,
     message:
       registrationStatus === "inactive"
-        ? "Jugador marcado como inactivo. Ya puede inscribirse en otro equipo de esta temporada."
+        ? "Jugador marcado como inactivo. Ya puede inscribirse en otro equipo de este torneo."
         : `Estado actualizado: ${label}.`,
   };
 }
@@ -1101,7 +1101,7 @@ export async function confirmTeamRegistrationAction(
     .maybeSingle();
 
   if (!seasonTeam) {
-    return { ok: false, message: "No encontramos al equipo en esta temporada." };
+    return { ok: false, message: "No encontramos al equipo en este torneo." };
   }
 
   const [{ count: activeCount }, { data: rules }] = await Promise.all([
@@ -1181,7 +1181,7 @@ export async function copySeasonTeamsAction(
   await requireOrganizationAdmin(user.id, organizationId);
 
   if (!fromSeasonId || !toSeasonId || teamIds.length === 0) {
-    return { ok: false, message: "Selecciona temporada origen y al menos un equipo." };
+    return { ok: false, message: "Selecciona torneo origen y al menos un equipo." };
   }
 
   const supabase = await createClient();
@@ -1203,7 +1203,7 @@ export async function copySeasonTeamsAction(
 
   return {
     ok: true,
-    message: `${copied ?? 0} equipo(s) copiado(s) a esta temporada.`,
+    message: `${copied ?? 0} equipo(s) copiado(s) a este torneo.`,
   };
 }
 
@@ -1226,7 +1226,7 @@ export async function setSeasonTeamOperationalStatusAction(
   }
 
   const supabase = await createClient();
-  const { data, error } = await (supabase as unknown as {
+  const { error } = await (supabase as unknown as {
     rpc: (
       fn: string,
       args?: Record<string, unknown>

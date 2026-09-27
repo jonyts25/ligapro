@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 import {
   buildOverpaymentWarning,
   computeTeamBalance,
+  summarizeSeasonFinanceTotals,
 } from "@/lib/finance/balance";
 
 describe("computeTeamBalance", () => {
@@ -43,5 +44,25 @@ describe("buildOverpaymentWarning", () => {
   it("does not warn for partial payments within balance", () => {
     const balance = computeTeamBalance(500, 100);
     assert.equal(buildOverpaymentWarning(balance, 200), null);
+  });
+
+  it("does not warn when payment equals pending balance", () => {
+    const balance = computeTeamBalance(500, 200);
+    assert.equal(buildOverpaymentWarning(balance, 300), null);
+  });
+});
+
+describe("summarizeSeasonFinanceTotals", () => {
+  it("aggregates totalCredit from teams with overpayment", () => {
+    const totals = summarizeSeasonFinanceTotals([
+      { totalCharges: 1000, totalPayments: 1100, balanceDue: -100 },
+      { totalCharges: 500, totalPayments: 400, balanceDue: 100 },
+      { totalCharges: 200, totalPayments: 250, balanceDue: -50 },
+    ]);
+
+    assert.equal(totals.totalCredit, 150);
+    assert.equal(totals.totalPending, 100);
+    assert.equal(totals.totalCollected, 1750);
+    assert.equal(totals.totalCharges, 1700);
   });
 });

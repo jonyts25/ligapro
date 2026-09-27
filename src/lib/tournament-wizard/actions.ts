@@ -468,14 +468,14 @@ export async function wizardGenerateFixtureAction(
   );
 
   if (!ctx) {
-    return { ok: false, message: "Temporada no encontrada." };
+    return { ok: false, message: "Torneo no encontrado." };
   }
 
   if (!ctx.canGenerate) {
     return {
       ok: false,
       message: ctx.existingMatchCount
-        ? "Esta temporada ya tiene fixture."
+        ? "Este torneo ya tiene fixture."
         : "Necesitas al menos 2 equipos inscritos para generar el fixture.",
     };
   }

@@ -6,7 +6,7 @@ export function buildJornadaSummaryPrompt(input: BuildJornadaPromptInput): strin
     "Responde SOLO con JSON válido con estas claves exactas:",
     '{"jugador_jornada":"","sorpresa":"","decepcion":"","resumen_general":""}',
     "",
-    `Temporada: ${input.seasonName}`,
+    `Torneo: ${input.seasonName}`,
     `Jornada: ${input.roundNumber}`,
     "",
     "=== Partidos de la jornada (marcador final oficial) ===",

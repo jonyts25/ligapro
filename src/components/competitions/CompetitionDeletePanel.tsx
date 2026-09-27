@@ -31,7 +31,7 @@ export function CompetitionDeletePanel({
         </h2>
         <p className="mt-1 text-sm text-text-secondary">
           Borra permanentemente «{competitionName}». Solo disponible cuando no
-          tiene temporadas.
+          tiene torneos.
         </p>
       </div>
 

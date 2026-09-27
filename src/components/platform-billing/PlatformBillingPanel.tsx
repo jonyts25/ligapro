@@ -198,7 +198,7 @@ export function PlatformBillingPanel({
           type="search"
           value={search}
           onChange={(event) => setSearch(event.target.value)}
-          placeholder="Organización o temporada…"
+          placeholder="Organización o torneo…"
           className="min-h-11 w-full max-w-md rounded-xl border border-border bg-background px-3 text-sm"
         />
       </div>
@@ -222,7 +222,7 @@ export function PlatformBillingPanel({
           <thead className="bg-surface-elevated text-xs uppercase tracking-wide text-muted">
             <tr>
               <th className="px-3 py-2 font-medium">Organización</th>
-              <th className="px-3 py-2 font-medium">Temporada</th>
+              <th className="px-3 py-2 font-medium">Torneo</th>
               <th className="px-3 py-2 font-medium">Estado</th>
               <th className="px-3 py-2 font-medium">Equipos</th>
               <th className="px-3 py-2 font-medium">Fixture</th>
@@ -236,7 +236,7 @@ export function PlatformBillingPanel({
                   colSpan={6}
                   className="px-3 py-6 text-center text-text-secondary"
                 >
-                  No hay temporadas con este filtro.
+                  No hay torneos con este filtro.
                 </td>
               </tr>
             ) : (

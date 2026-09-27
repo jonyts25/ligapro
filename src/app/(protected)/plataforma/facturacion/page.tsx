@@ -36,7 +36,7 @@ export default async function PlatformBillingPage({ searchParams }: PageProps) {
     <div className="mx-auto max-w-6xl space-y-6 px-4 py-8 sm:px-6">
       <PageHeader
         title="Facturación de plataforma"
-        description={`Panel interno ${PLATFORM_NAME} — estados de facturación por temporada.`}
+        description={`Panel interno ${PLATFORM_NAME} — estados de facturación por torneo.`}
       />
       <PlatformPlataformaNav />
       <PlatformOrganizationTierPanel rows={orgRows} />

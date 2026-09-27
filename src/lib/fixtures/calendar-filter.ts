@@ -14,7 +14,7 @@ export function filterFixtureRoundsByJornada(
   selectedRound: number | "all",
   filtro: "todas" | "pendientes" | "programadas" = "todas"
 ): FixtureRoundGroup[] {
-  let filtered =
+  const filtered =
     selectedRound === "all"
       ? rounds
       : rounds.filter((round) => round.roundNumber === selectedRound);

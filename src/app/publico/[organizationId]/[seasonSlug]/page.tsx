@@ -46,7 +46,7 @@ export default async function PublicSeasonHomePage({ params }: PageProps) {
       <section className="space-y-3">
         <SectionHeader
           title="Próximos partidos"
-          description="Agenda pública de la temporada."
+          description="Agenda pública del torneo."
         />
         <PublicUpcomingMatches matches={matches} />
       </section>

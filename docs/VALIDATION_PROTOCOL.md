@@ -65,7 +65,11 @@ npx expo export --platform android
 
 **Prohibido** reportar «pasa» sin haber corrido el comando.
 
-Para `npm run lint` y `npx tsc --noEmit`, correr **también** en `origin/main` limpio y documentar la **diferencia exacta** (errores solo en main, solo en el branch, o compartidos). El branch **no puede agregar errores nuevos** respecto a main.
+Para `npm run lint` y `npx tsc --noEmit`, el branch **debe terminar en 0 errores** (sin warnings bloqueantes en lint).
+
+**Línea base verde (desde paso 0.1):** aplica desde el **2026-09-27**, commit **`feat/0.1-cleanup-baseline`** mergeado a `main`. A partir de ahí ya no se acepta «no agregar errores respecto a main»: lint y tsc deben quedar en cero antes de declarar terminado.
+
+En pasos anteriores a esa línea base, documentar la diferencia exacta vs `origin/main` si aún había deuda heredada.
 
 ## 3. Migraciones
 

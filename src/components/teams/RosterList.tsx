@@ -30,7 +30,7 @@ export function RosterList({
     return (
       <EmptyState
         title="Plantel vacío"
-        description="Agrega jugadores para completar el plantel de este equipo en la temporada."
+        description="Agrega jugadores para completar el plantel de este equipo en el torneo."
       />
     );
   }

@@ -14,7 +14,7 @@ export function TeamList({ organizationId, teams, canManage }: TeamListProps) {
     return (
       <EmptyState
         title="Aún no has registrado equipos..."
-        description="Crea equipos de la organización para inscribirlos en temporadas."
+        description="Crea equipos de la organización para inscribirlos en torneos."
         action={
           canManage ? (
             <Link

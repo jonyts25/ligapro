@@ -7,7 +7,11 @@ import {
   voidTeamChargeAction,
   voidTeamPaymentAction,
 } from "@/lib/finance/actions";
-import { summarizeSeasonFinanceTotals } from "@/lib/finance/balance";
+import {
+  buildOverpaymentWarning,
+  computeTeamBalance,
+  summarizeSeasonFinanceTotals,
+} from "@/lib/finance/balance";
 import {
   CHARGE_TYPE_OPTIONS,
   PAYMENT_METHOD_OPTIONS,
@@ -43,24 +47,33 @@ function financeStatusVariant(
 function ActionMessage({
   ok,
   message,
+  tone = "default",
 }: {
   ok: boolean;
   message: string | null;
+  tone?: "default" | "warning";
 }) {
   if (!message) return null;
+  const isWarning = tone === "warning";
   return (
     <p
       className={cn(
         "rounded-xl border px-3 py-2 text-sm",
-        ok
-          ? "border-success/40 bg-success/10 text-success"
-          : "border-danger/40 bg-danger/10 text-danger"
+        !ok
+          ? "border-danger/40 bg-danger/10 text-danger"
+          : isWarning
+            ? "border-warning/40 bg-warning/10 text-warning"
+            : "border-success/40 bg-success/10 text-success"
       )}
       role={ok ? "status" : "alert"}
     >
       {message}
     </p>
   );
+}
+
+function isOverpaymentMessage(message: string | null): boolean {
+  return message?.includes("saldo a favor") ?? false;
 }
 
 function formatMoney(amount: number): string {
@@ -230,6 +243,18 @@ function RecordPaymentForm({
     initialFinanceActionState
   );
   const [open, setOpen] = useState(false);
+  const [amount, setAmount] = useState(() =>
+    team.balanceDue > 0 ? String(team.balanceDue) : ""
+  );
+
+  const teamBalance = computeTeamBalance(team.totalCharges, team.totalPayments);
+  const paymentAmount = Number(amount);
+  const preSubmitOverpaymentWarning =
+    amount.trim() !== "" &&
+    !Number.isNaN(paymentAmount) &&
+    paymentAmount > 0
+      ? buildOverpaymentWarning(teamBalance, paymentAmount)
+      : null;
 
   if (team.totalCharges <= 0) return null;
 
@@ -245,7 +270,23 @@ function RecordPaymentForm({
         </button>
       ) : (
         <form action={action} className="space-y-3 rounded-xl border border-border p-4">
-          <ActionMessage ok={state.ok} message={state.message} />
+          <ActionMessage
+            ok={state.ok}
+            message={state.message}
+            tone={
+              state.ok && isOverpaymentMessage(state.message)
+                ? "warning"
+                : "default"
+            }
+          />
+          {preSubmitOverpaymentWarning && (
+            <p
+              className="rounded-xl border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-warning"
+              role="status"
+            >
+              {preSubmitOverpaymentWarning}
+            </p>
+          )}
           <input type="hidden" name="organizationId" value={organizationId} />
           <input type="hidden" name="competitionId" value={competitionId} />
           <input type="hidden" name="seasonId" value={seasonId} />
@@ -261,9 +302,8 @@ function RecordPaymentForm({
                 type="number"
                 min="0.01"
                 step="0.01"
-                defaultValue={
-                  team.balanceDue > 0 ? String(team.balanceDue) : ""
-                }
+                value={amount}
+                onChange={(event) => setAmount(event.target.value)}
                 required
                 disabled={pending}
                 className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
@@ -411,9 +451,15 @@ function VoidEntryForm({
 
 function SeasonFinanceSummary({ teams }: { teams: SeasonFinanceTeamRow[] }) {
   const totals = summarizeSeasonFinanceTotals(teams);
+  const showCredit = totals.totalCredit > 0;
 
   return (
-    <Card className="grid gap-4 sm:grid-cols-3">
+    <Card
+      className={cn(
+        "grid gap-4",
+        showCredit ? "sm:grid-cols-2 lg:grid-cols-4" : "sm:grid-cols-3"
+      )}
+    >
       <div>
         <p className="text-xs uppercase tracking-wide text-muted">Total cargos</p>
         <p className="text-lg font-semibold">{formatMoney(totals.totalCharges)}</p>
@@ -426,6 +472,12 @@ function SeasonFinanceSummary({ teams }: { teams: SeasonFinanceTeamRow[] }) {
         <p className="text-xs uppercase tracking-wide text-muted">Total pendiente</p>
         <p className="text-lg font-semibold">{formatMoney(totals.totalPending)}</p>
       </div>
+      {showCredit && (
+        <div>
+          <p className="text-xs uppercase tracking-wide text-muted">Saldo a favor</p>
+          <p className="text-lg font-semibold">{formatMoney(totals.totalCredit)}</p>
+        </div>
+      )}
     </Card>
   );
 }

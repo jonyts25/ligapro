@@ -39,7 +39,7 @@ function humanizeKnockoutError(message: string): string {
     return message;
   }
   if (lower.includes("already has")) {
-    return "Esta temporada ya tiene un bracket o partidos que lo impiden.";
+    return "Este torneo ya tiene un bracket o partidos que lo impiden.";
   }
   if (lower.includes("not authorized")) {
     return "No tienes permiso para esta acción.";

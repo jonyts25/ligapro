@@ -36,7 +36,10 @@ export function CopySeasonTeamsPanel({
   const [fromSeasonId, setFromSeasonId] = useState(priorSeasons[0]?.seasonId ?? "");
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
-  const teams = teamsBySeason[fromSeasonId] ?? [];
+  const teams = useMemo(
+    () => teamsBySeason[fromSeasonId] ?? [],
+    [teamsBySeason, fromSeasonId]
+  );
 
   const allSelected = useMemo(
     () => teams.length > 0 && teams.every((t) => selected.has(t.teamId)),
@@ -65,8 +68,8 @@ export function CopySeasonTeamsPanel({
   return (
     <Card className="space-y-4 p-4">
       <SectionHeader
-        title="Copiar equipos de temporada anterior"
-        description="Trae equipos seleccionados de otra temporada del mismo torneo."
+        title="Copiar equipos de torneo anterior"
+        description="Trae equipos seleccionados de otro torneo de la misma competición."
       />
 
       {state.message && (
@@ -89,7 +92,7 @@ export function CopySeasonTeamsPanel({
 
         <div className="space-y-1.5">
           <label htmlFor="fromSeasonId" className="text-sm font-medium">
-            Temporada origen
+            Torneo origen
           </label>
           <select
             id="fromSeasonId"
@@ -112,7 +115,7 @@ export function CopySeasonTeamsPanel({
 
         {teams.length === 0 ? (
           <p className="text-sm text-muted">
-            No hay equipos inscritos en esa temporada.
+            No hay equipos inscritos en ese torneo.
           </p>
         ) : (
           <div className="space-y-2">
