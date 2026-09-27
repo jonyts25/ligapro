@@ -49,6 +49,18 @@ export const initialVenueActionState: VenueActionState = {
   message: null,
 };
 
+export type ReservationActionState = {
+  ok: boolean;
+  message: string | null;
+  fieldErrors?: Record<string, string>;
+  values?: Record<string, string>;
+};
+
+export const initialReservationActionState: ReservationActionState = {
+  ok: false,
+  message: null,
+};
+
 export const DAY_LABELS_ES = [
   "Domingo",
   "Lunes",
