@@ -70,6 +70,7 @@ export type SeasonPreparationLabel =
 
 export type SeasonDetail = SeasonRecord & {
   competitionName: string;
+  isYouth: boolean;
   rules: SeasonRulesRecord;
   teamCount: number;
   readiness: {

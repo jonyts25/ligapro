@@ -183,7 +183,7 @@ export async function getSeasonDetails(
   const { data: season } = await supabase
     .from("seasons")
     .select(
-      "id, competition_id, organization_id, name, slug, format_type, visibility, starts_on, ends_on, competitions(name)"
+      "id, competition_id, organization_id, name, slug, format_type, visibility, starts_on, ends_on, competitions(name, is_youth)"
     )
     .eq("id", seasonId)
     .eq("competition_id", competitionId)
@@ -216,18 +216,21 @@ export async function getSeasonDetails(
   ]);
 
   const competitionRelation = season.competitions as
-    | { name: string }
-    | { name: string }[]
+    | { name: string; is_youth: boolean }
+    | { name: string; is_youth: boolean }[]
     | null;
-  const competitionName = Array.isArray(competitionRelation)
-    ? competitionRelation[0]?.name
-    : competitionRelation?.name;
+  const competition = Array.isArray(competitionRelation)
+    ? competitionRelation[0]
+    : competitionRelation;
+  const competitionName = competition?.name;
+  const isYouth = competition?.is_youth ?? false;
 
   const teams = teamCount ?? 0;
 
   return {
     ...mapSeason(season),
     competitionName: competitionName ?? "Torneo",
+    isYouth,
     rules: rules as SeasonRulesRecord,
     teamCount: teams,
     readiness: {
