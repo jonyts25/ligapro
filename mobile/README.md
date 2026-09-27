@@ -1,56 +1,79 @@
-# Welcome to your Expo app 👋
+# Ligera — app móvil (Expo)
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+PoC de arquitectura 0.6: login y «Mis partidos» contra **ligapro-dev** vía `@supabase/supabase-js` + RLS (sin server actions de Next.js).
 
-## Get started
+## Requisitos
 
-1. Install dependencies
+- Node.js 22+
+- [Expo Go](https://expo.dev/go) en dispositivo físico, o simulador Android / iOS (macOS para simulador iOS)
 
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Instalación
 
 ```bash
-npm run reset-project
+cd mobile
+npm install
+cp .env.example .env
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Edita `mobile/.env`:
 
-### Other setup steps
+```env
+EXPO_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=<anon-key>
+```
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+Usa las mismas credenciales públicas del proyecto **ligapro-dev** (equivalente a `NEXT_PUBLIC_SUPABASE_*` en la web).
 
-## Learn more
+## Correr la app
 
-To learn more about developing your project with Expo, look at the following resources:
+```bash
+cd mobile
+npm start
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+Luego:
 
-## Join the community
+- **Expo Go:** escanea el QR (mismo Wi‑Fi que la máquina de desarrollo).
+- **Android emulador:** `a` en la terminal de Expo, o `npm run android`.
+- **iOS simulador (macOS):** `i` en la terminal, o `npm run ios`.
 
-Join our community of developers creating universal apps.
+## Pantallas incluidas (PoC)
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+1. **Login** — correo y contraseña (`signInWithPassword`). Sesión en `expo-secure-store`.
+2. **Mis partidos** — partidos donde el usuario tiene fila en `match_officials` (misma consulta RLS que describiría la ruta web `mis-partidos`; hoy no existe en Next.js).
+
+## Tipos de base de datos
+
+Fuente de verdad: `../src/types/database.ts` (generado con Supabase CLI en el repo web).
+
+La app los importa **sin copia manual** mediante alias TypeScript:
+
+```json
+"@ligapro/database": ["../src/types/database.ts"]
+```
+
+### Regenerar tipos (desde la raíz del repo)
+
+Cuando cambie el esquema en Supabase:
+
+```bash
+# Ejemplo — ajusta project-id al de ligapro-dev
+npx supabase gen types typescript --project-id <project-id> > src/types/database.ts
+```
+
+La app móvil los toma automáticamente en el siguiente `npx tsc --noEmit` (no hace falta script de copia mientras el monorepo no esté separado).
+
+## Scripts útiles
+
+| Comando | Descripción |
+| --- | --- |
+| `npm start` | Servidor de desarrollo Expo |
+| `npm run typecheck` | `tsc --noEmit` |
+| `npx expo-doctor` | Diagnóstico de dependencias Expo |
+| `npx expo export --platform ios` | Prueba de empaquetado iOS |
+| `npx expo export --platform android` | Prueba de empaquetado Android |
+
+## Seguridad
+
+- Solo variables `EXPO_PUBLIC_*` (URL + anon key).
+- **Nunca** incluir service role, `ANTHROPIC_API_KEY` ni otros secretos de servidor.
