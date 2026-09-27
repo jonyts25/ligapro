@@ -1,6 +1,6 @@
 # ADR 0019 — App nativa Expo y web Next.js (dos superficies)
 
-**Estado:** Proposed (Jonathan aprueba después)  
+**Estado:** Accepted — Aprobado por Jonathan el 2026-09-27  
 **Migration:** ninguna  
 **Reporte relacionado:** `docs/reports/0.6_SERVER_ACTIONS_INVENTORY.md`
 
