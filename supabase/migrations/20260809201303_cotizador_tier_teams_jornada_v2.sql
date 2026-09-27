@@ -1,42 +1,22 @@
 -- Migration 030b: reconcile cotizador migration history with ligapro-dev
 --
--- ligapro-dev has this version recorded in schema_migrations; the repo previously
--- only had 20260808200000_cotizador_tier_teams_jornada.sql (v1). Investigation
--- (docs/reports/0.2_REPORT.md) found no additional schema objects beyond v1:
--- database.ts (generated from dev), app RPC usage, ADRs 0015–0018, and test
--- 030 all align with v1. v2 on dev was likely applied manually via MCP as a
--- history marker or idempotent re-run, similar to harden_create_player_grants.
+-- ligapro-dev has this version recorded in supabase_migrations.schema_migrations,
+-- but 20260808200000 (v1) is NOT recorded there even though its objects exist —
+-- historically the full bundle was applied under this v2 timestamp instead of v1's.
 --
--- Fresh installs: v1 creates all objects; this migration is idempotent and
--- reaffirms authenticated-only grants on the cotizador RPC bundle.
-
-REVOKE ALL ON FUNCTION public.organization_has_premium(uuid) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.organization_has_premium(uuid) TO authenticated;
-
-REVOKE ALL ON FUNCTION public.set_organization_plan_tier(uuid, text) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.set_organization_plan_tier(uuid, text) TO authenticated;
-
-REVOKE ALL ON FUNCTION public.get_platform_organizations_billing() FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.get_platform_organizations_billing() TO authenticated;
-
-REVOKE ALL ON FUNCTION public.void_match(uuid, text) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.void_match(uuid, text) TO authenticated;
-
-REVOKE ALL ON FUNCTION public.set_season_team_status(uuid, text, text, timestamptz)
-  FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.set_season_team_status(uuid, text, text, timestamptz)
-  TO authenticated;
-
-REVOKE ALL ON FUNCTION public.enqueue_jornada_summary(uuid, integer, text) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.enqueue_jornada_summary(uuid, integer, text) TO authenticated;
-
-REVOKE ALL ON FUNCTION public.create_teams_bulk(uuid, text[]) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.create_teams_bulk(uuid, text[]) TO authenticated;
-
-REVOKE ALL ON FUNCTION public.create_players_and_add_to_roster_bulk(uuid, jsonb)
-  FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.create_players_and_add_to_roster_bulk(uuid, jsonb)
-  TO authenticated;
-
-REVOKE ALL ON TABLE public.jornada_summaries FROM PUBLIC, anon;
-GRANT SELECT, UPDATE ON TABLE public.jornada_summaries TO authenticated;
+-- Verified 2026-09-27 via Supabase MCP against ligapro-dev (akgcamaegpboewsbbevl):
+--   - schema_migrations has only 20260809201303, not 20260808200000.
+--   - jornada_summaries.content is text (not jsonb) — matches v1, not the
+--     discarded 9bf5 branch design.
+--   - pg_get_functiondef(void_match) is byte-for-byte identical to the body in
+--     20260808200000_cotizador_tier_teams_jornada.sql.
+--   - All 8 RPC signatures in the bundle (organization_has_premium,
+--     set_organization_plan_tier, get_platform_organizations_billing,
+--     void_match, set_season_team_status, enqueue_jornada_summary,
+--     create_teams_bulk, create_players_and_add_to_roster_bulk) match v1.
+--   - Grants already correct on all of them (authenticated only, no PUBLIC/anon).
+--
+-- Conclusion: v2 adds no schema. This file exists only so a from-scratch
+-- rebuild has a migration recorded under this exact version, matching dev's
+-- history. Intentionally a no-op.
+SELECT 1;
