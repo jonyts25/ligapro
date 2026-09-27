@@ -12,10 +12,14 @@ import {
 
 import { useAuth } from "@/lib/auth/session";
 import {
-  fetchMyMatches,
-  type MyMatchAssignment,
-} from "@/lib/matches/my-matches";
+  matchOfficialRoleLabel,
+  matchOfficialStatusLabel,
+} from "@/lib/matches/labels";
 import { getSupabase } from "@/lib/supabase/client";
+import {
+  fetchMyOfficialMatchAssignments,
+  type MyOfficialMatchAssignmentCore,
+} from "@ligapro/shared";
 
 function formatMatchDate(iso: string | null): string {
   if (!iso) return "Sin fecha programada";
@@ -26,27 +30,26 @@ function formatMatchDate(iso: string | null): string {
   }).format(new Date(iso));
 }
 
-function MatchRow({ item }: { item: MyMatchAssignment }) {
-  const venueLine = [item.venueName, item.fieldName].filter(Boolean).join(" · ");
-
+function MatchRow({ item }: { item: MyOfficialMatchAssignmentCore }) {
   return (
     <View style={styles.card}>
-      <Text style={styles.matchTitle}>
-        {item.homeName} vs {item.awayName}
+      <Text style={styles.matchTitle}>{item.matchupLabel}</Text>
+      <Text style={styles.meta}>
+        {item.competitionName} · {item.seasonName}
       </Text>
       <Text>{formatMatchDate(item.startsAt)}</Text>
-      <Text>{venueLine || "Cancha por confirmar"}</Text>
+      <Text>{item.venueFieldLabel}</Text>
       <Text>
-        Rol: {item.roleLabel} · Asignación: {item.assignmentStatusLabel}
+        Rol: {matchOfficialRoleLabel(item.officialRole)} · Asignación:{" "}
+        {matchOfficialStatusLabel(item.assignmentStatus)}
       </Text>
-      <Text>Partido: {item.matchStatusLabel}</Text>
     </View>
   );
 }
 
 export default function MisPartidosScreen() {
   const { user, loading, signOut } = useAuth();
-  const [items, setItems] = useState<MyMatchAssignment[]>([]);
+  const [items, setItems] = useState<MyOfficialMatchAssignmentCore[]>([]);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -54,10 +57,16 @@ export default function MisPartidosScreen() {
   const loadMatches = useCallback(async () => {
     if (!user) return;
 
-    const supabase = getSupabase();
-    const { data, error } = await fetchMyMatches(supabase, user.id);
-    setItems(data);
-    setFetchError(error);
+    try {
+      const supabase = getSupabase();
+      const data = await fetchMyOfficialMatchAssignments(supabase, user.id);
+      setItems(data);
+      setFetchError(null);
+    } catch (error) {
+      setFetchError(
+        error instanceof Error ? error.message : "Error al cargar partidos",
+      );
+    }
   }, [user]);
 
   useEffect(() => {
@@ -98,7 +107,7 @@ export default function MisPartidosScreen() {
 
       <FlatList
         data={items}
-        keyExtractor={(item) => item.assignmentId}
+        keyExtractor={(item) => item.matchOfficialId}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
@@ -157,6 +166,10 @@ const styles = StyleSheet.create({
   matchTitle: {
     fontSize: 16,
     fontWeight: "600",
+  },
+  meta: {
+    fontSize: 13,
+    color: "#666",
   },
   empty: {
     textAlign: "center",

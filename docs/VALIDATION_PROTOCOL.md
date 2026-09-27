@@ -2,6 +2,24 @@
 
 Se reutiliza en **todos** los pasos de desarrollo (0.6 en adelante).
 
+## 0. Base del branch (obligatorio antes de cualquier trabajo)
+
+Todo branch de feature **nace de `origin/main` actualizado**, no de otra rama de feature ni de un commit antiguo.
+
+```bash
+git fetch origin
+git checkout feat/<id-del-paso>-<nombre-corto>
+git rebase origin/main    # resolver conflictos si los hay
+git merge-base HEAD origin/main   # debe ser el tip de main o posterior
+```
+
+El reporte del paso (`docs/reports/<id>_REPORT.md`) **debe incluir**:
+
+- Hash de la base: salida de `git merge-base HEAD origin/main` (ej. `ac1d924…`).
+- Confirmación de que el branch no divergió de una rama feature obsoleta.
+
+Regla permanente: si `merge-base` no coincide con `origin/main`, hacer rebase antes de continuar.
+
 ## 1. Branch por paso
 
 - Formato: `feat/<id-del-paso>-<nombre-corto>` (ej. `feat/0.6-app-architecture`).
@@ -42,6 +60,8 @@ npx expo export --platform android
 - Se documenta por qué falla desde antes (comparando contra `main`).
 
 **Prohibido** reportar «pasa» sin haber corrido el comando.
+
+Para `npm run lint` y `npx tsc --noEmit`, correr **también** en `origin/main` limpio y documentar la **diferencia exacta** (errores solo en main, solo en el branch, o compartidos). El branch **no puede agregar errores nuevos** respecto a main.
 
 ## 3. Migraciones
 

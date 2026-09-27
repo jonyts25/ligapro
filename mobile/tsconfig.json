@@ -5,7 +5,9 @@
     "paths": {
       "@/*": ["./src/*"],
       "@/assets/*": ["./assets/*"],
-      "@ligapro/database": ["../src/types/database.ts"]
+      "@ligapro/database": ["../src/types/database.ts"],
+      "@ligapro/shared": ["../src/lib/shared/index.ts"],
+      "@ligapro/shared/*": ["../src/lib/shared/*"]
     }
   },
   "include": [

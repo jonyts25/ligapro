@@ -42,6 +42,16 @@ Luego:
 1. **Login** — correo y contraseña (`signInWithPassword`). Sesión en `expo-secure-store`.
 2. **Mis partidos** — partidos donde el usuario tiene fila en `match_officials` (misma consulta RLS que describiría la ruta web `mis-partidos`; hoy no existe en Next.js).
 
+## Lógica compartida con la web
+
+Núcleo de dominio en `../src/lib/shared/` (sin Next.js). Alias:
+
+```json
+"@ligapro/shared": ["../src/lib/shared/index.ts"]
+```
+
+Ejemplo: «Mis partidos» usa `fetchMyOfficialMatchAssignments` — la misma query que `getMyOfficialMatchAssignments` en web (incluye filtro de temporadas archivadas).
+
 ## Tipos de base de datos
 
 Fuente de verdad: `../src/types/database.ts` (generado con Supabase CLI en el repo web).
