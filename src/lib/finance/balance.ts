@@ -63,3 +63,21 @@ export function summarizeSeasonFinanceTotals(
 
   return { totalCharges, totalCollected, totalPending, totalCredit };
 }
+
+export function summarizeSeasonExpensesTotal(expenses: number[]): number {
+  return expenses.reduce((sum, amount) => sum + amount, 0);
+}
+
+/** Margin uses totalCollected (cash in), not totalCharges (accrued). */
+export function summarizeSeasonFinanceWithMargin(
+  teams: Array<{ totalCharges: number; totalPayments: number; balanceDue: number }>,
+  totalExpenses: number
+) {
+  const totals = summarizeSeasonFinanceTotals(teams);
+
+  return {
+    ...totals,
+    totalExpenses,
+    margin: totals.totalCollected - totalExpenses,
+  };
+}

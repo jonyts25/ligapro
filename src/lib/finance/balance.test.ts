@@ -3,7 +3,9 @@ import { describe, it } from "node:test";
 import {
   buildOverpaymentWarning,
   computeTeamBalance,
+  summarizeSeasonExpensesTotal,
   summarizeSeasonFinanceTotals,
+  summarizeSeasonFinanceWithMargin,
 } from "@/lib/finance/balance";
 
 describe("computeTeamBalance", () => {
@@ -64,5 +66,38 @@ describe("summarizeSeasonFinanceTotals", () => {
     assert.equal(totals.totalPending, 100);
     assert.equal(totals.totalCollected, 1750);
     assert.equal(totals.totalCharges, 1700);
+  });
+});
+
+describe("summarizeSeasonExpensesTotal", () => {
+  it("sums active expense amounts", () => {
+    assert.equal(summarizeSeasonExpensesTotal([500, 250.5, 100]), 850.5);
+  });
+});
+
+describe("summarizeSeasonFinanceWithMargin", () => {
+  const teams = [
+    { totalCharges: 2000, totalPayments: 1500, balanceDue: 500 },
+    { totalCharges: 1000, totalPayments: 800, balanceDue: 200 },
+  ];
+
+  it("returns margin as collected minus expenses when there are no expenses", () => {
+    const totals = summarizeSeasonFinanceWithMargin(teams, 0);
+
+    assert.equal(totals.totalCollected, 2300);
+    assert.equal(totals.totalExpenses, 0);
+    assert.equal(totals.margin, 2300);
+  });
+
+  it("subtracts expenses from collected cash for margin", () => {
+    const totals = summarizeSeasonFinanceWithMargin(teams, 700);
+
+    assert.equal(totals.margin, 1600);
+  });
+
+  it("allows negative margin when expenses exceed collected cash", () => {
+    const totals = summarizeSeasonFinanceWithMargin(teams, 3000);
+
+    assert.equal(totals.margin, -700);
   });
 });

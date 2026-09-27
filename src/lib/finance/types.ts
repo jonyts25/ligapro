@@ -5,6 +5,16 @@ export const CHARGE_TYPE_OPTIONS = [
   { value: "other", label: "Otro" },
 ] as const;
 
+export const SEASON_EXPENSE_CATEGORY_OPTIONS = [
+  { value: "cancha", label: "Cancha" },
+  { value: "arbitraje", label: "Arbitraje" },
+  { value: "premios", label: "Premios" },
+  { value: "otro", label: "Otro" },
+] as const;
+
+export type SeasonExpenseCategory =
+  (typeof SEASON_EXPENSE_CATEGORY_OPTIONS)[number]["value"];
+
 export const PAYMENT_METHOD_OPTIONS = [
   { value: "cash", label: "Efectivo" },
   { value: "transfer", label: "Transferencia" },
@@ -39,6 +49,15 @@ export type FinancePaymentRow = {
   recordedByName: string;
 };
 
+export type SeasonExpenseRow = {
+  id: string;
+  category: string;
+  description: string | null;
+  amount: number;
+  incurredAt: string;
+  recordedByName: string;
+};
+
 export type SeasonFinanceTeamRow = {
   seasonTeamId: string;
   teamName: string;
@@ -66,6 +85,13 @@ export const initialFinanceActionState: FinanceActionState = {
 
 export function chargeTypeLabel(value: string): string {
   return CHARGE_TYPE_OPTIONS.find((o) => o.value === value)?.label ?? value;
+}
+
+export function seasonExpenseCategoryLabel(value: string): string {
+  return (
+    SEASON_EXPENSE_CATEGORY_OPTIONS.find((o) => o.value === value)?.label ??
+    value
+  );
 }
 
 export function paymentMethodLabel(value: string): string {
