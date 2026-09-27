@@ -83,6 +83,7 @@ DECLARE
   venue_id uuid;
   field_id uuid;
   match_open uuid;
+  match_no_reservation uuid;
   ev_id uuid;
   ev_id2 uuid;
   dedup_key text := 'dedup-key-034-test';
@@ -264,6 +265,33 @@ BEGIN
     v_err := SQLERRM;
   END;
   INSERT INTO public.__mig034_test_results VALUES ('06_referee_void_after_window_fails', v_ok, v_err);
+
+  -- 07 referee can capture without confirmed field_reservation (fixture-only match)
+  INSERT INTO public.matches (
+    organization_id, season_id, home_season_team_id, away_season_team_id, status
+  ) VALUES (org_a, season_a, st_h, st_a, 'scheduled') RETURNING id INTO match_no_reservation;
+
+  INSERT INTO public.match_officials (
+    organization_id, match_id, profile_id, role, status
+  ) VALUES (org_a, match_no_reservation, uid_ref, 'referee', 'confirmed');
+
+  PERFORM public.__mig034_as(uid_ref);
+
+  BEGIN
+    ev_id := public.record_match_event(
+      match_no_reservation, stp_h, 'goal', 1, NULL, NULL, gen_random_uuid()::text
+    );
+    v_ok := ev_id IS NOT NULL;
+    v_err := format('ev=%s', ev_id);
+  EXCEPTION WHEN OTHERS THEN
+    v_ok := false;
+    v_err := SQLERRM;
+  END;
+  INSERT INTO public.__mig034_test_results VALUES (
+    '07_referee_capture_without_confirmed_reservation',
+    v_ok,
+    v_err
+  );
 END;
 $$;
 

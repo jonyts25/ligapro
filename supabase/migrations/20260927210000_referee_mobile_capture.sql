@@ -115,8 +115,6 @@ BEGIN
       USING ERRCODE = 'P0001';
   END IF;
 
-  PERFORM public.__assert_match_capture_window(p_match_id);
-
   SELECT stp.season_team_id, stp.registration_status
   INTO v_player_st, v_player_status
   FROM public.season_team_players stp
