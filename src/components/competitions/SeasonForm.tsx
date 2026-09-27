@@ -91,6 +91,7 @@ export function SeasonForm({
           defaultMatchDurationMinutes={rules.match_duration_minutes}
           formatLocked={formatLocked}
           matchDurationLocked={matchDurationLocked}
+          showModalitySelector={false}
         />
         <div className="space-y-1.5">
           <label htmlFor="visibility" className="block text-sm font-medium">

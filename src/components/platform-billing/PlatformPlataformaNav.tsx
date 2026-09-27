@@ -10,6 +10,7 @@ const LINKS = [
   { href: "/plataforma/facturacion", label: "Facturación" },
   { href: "/plataforma/limites", label: "Límites" },
   { href: "/plataforma/cotizador", label: "Cotizador" },
+  { href: "/plataforma/modalidades", label: "Modalidades" },
   { href: "/plataforma/finanzas", label: "Finanzas" },
   { href: "/plataforma/ventas", label: "Ventas" },
 ] as const;
