@@ -8,6 +8,7 @@ import { getSeasonTeams, getPriorSeasonsForCopy, getSeasonTeamsForCopy } from "@
 import { CopySeasonTeamsPanel } from "@/components/teams/CopySeasonTeamsPanel";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SeasonTeamList } from "@/components/teams/SeasonTeamList";
+import { ExcelSeasonImportPanel } from "@/components/teams/ExcelSeasonImportPanel";
 
 type PageProps = {
   params: Promise<{
@@ -79,6 +80,14 @@ export default async function SeasonTeamsPage({ params }: PageProps) {
         {seasonTeams.length} equipo{seasonTeams.length === 1 ? "" : "s"}{" "}
         inscrito{seasonTeams.length === 1 ? "" : "s"}
       </p>
+      {canManageActive && (
+        <ExcelSeasonImportPanel
+          organizationId={organizationId}
+          competitionId={competitionId}
+          seasonId={seasonId}
+          isYouth={season.isYouth}
+        />
+      )}
       <SeasonTeamList
         organizationId={organizationId}
         competitionId={competitionId}

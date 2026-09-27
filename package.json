@@ -7,11 +7,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --import tsx --test src/lib/*.test.ts src/lib/fixtures/**/*.test.ts src/lib/auth/**/*.test.ts src/lib/captain/**/*.test.ts src/lib/matches/**/*.test.ts src/lib/export/**/*.test.ts src/lib/knockout/**/*.test.ts src/lib/competitions/**/*.test.ts src/lib/teams/**/*.test.ts src/lib/tournament-wizard/**/*.test.ts src/lib/platform-billing/**/*.test.ts src/lib/billing/**/*.test.ts src/lib/chronicles/**/*.test.ts src/lib/finance/**/*.test.ts src/lib/venues/**/*.test.ts src/lib/season-fields/**/*.test.ts src/lib/organizations/**/*.test.ts src/components/layout/**/*.test.ts"
+    "test": "bash -O globstar -c \"node --import tsx --test src/lib/*.test.ts src/lib/fixtures/**/*.test.ts src/lib/auth/**/*.test.ts src/lib/captain/**/*.test.ts src/lib/matches/**/*.test.ts src/lib/export/**/*.test.ts src/lib/knockout/**/*.test.ts src/lib/competitions/**/*.test.ts src/lib/teams/**/*.test.ts src/lib/tournament-wizard/**/*.test.ts src/lib/platform-billing/**/*.test.ts src/lib/billing/**/*.test.ts src/lib/chronicles/**/*.test.ts src/lib/finance/**/*.test.ts src/lib/venues/**/*.test.ts src/lib/season-fields/**/*.test.ts src/lib/organizations/**/*.test.ts src/components/layout/**/*.test.ts\""
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.110.2",
+    "exceljs": "^4.4.0",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",
     "lucide-react": "^1.24.0",
