@@ -3,6 +3,8 @@
 -- =============================================================================
 -- Public read: expose whether the result is official
 -- =============================================================================
+DROP FUNCTION IF EXISTS public.get_public_match_detail(uuid, text, uuid);
+
 CREATE OR REPLACE FUNCTION public.get_public_match_detail(
   p_organization_id uuid,
   p_season_slug text,
