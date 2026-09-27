@@ -65,6 +65,8 @@ npx expo export --platform android
 
 **Prohibido** reportar «pasa» sin haber corrido el comando.
 
+El conteo de `tests` y `suites` de `npm test` **debe compararse contra el de `origin/main` antes del cambio**. Un conteo de **suites** menor al de main, aunque `pass` sea 100%, es una señal de archivos que dejaron de correr — investigar antes de reportar verde. **Nunca basta con ver `fail 0`.**
+
 Para `npm run lint` y `npx tsc --noEmit`, el branch **debe terminar en 0 errores** (sin warnings bloqueantes en lint).
 
 **Línea base verde (desde paso 0.1):** aplica desde el **2026-09-27**, commit **`e6171f6`** (`feat/0.1-cleanup-baseline`). A partir de su merge a `main`, ya no se acepta «no agregar errores respecto a main»: lint y tsc deben quedar en cero antes de declarar terminado.
