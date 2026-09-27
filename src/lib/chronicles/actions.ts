@@ -4,17 +4,9 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth/require-user";
 import { requireOrganizationAdmin } from "@/lib/auth/require-organization-admin";
-import { assertCanGenerateChronicle } from "@/lib/billing/tier-limits-queries";
-import { isAnthropicConfigured } from "@/lib/ai/call-ai";
-import { buildChroniclePrompt } from "@/lib/chronicles/build-prompt";
-import { buildChronicleTimelineForPrompt } from "@/lib/chronicles/timeline-for-prompt";
-import {
-  getLatestChronicleJobForMatch,
-  getMatchChronicle,
-} from "@/lib/chronicles/queries";
-import { runChronicleJob } from "@/lib/chronicles/run-chronicle-job";
+import { generateChronicleForMatch } from "@/lib/chronicles/generate-chronicle";
+import { getMatchChronicle } from "@/lib/chronicles/queries";
 import type { ChronicleActionState } from "@/lib/chronicles/types";
-import { getMatchCaptureContext } from "@/lib/matches/queries";
 
 async function revalidateChroniclePaths(
   organizationId: string,
@@ -39,10 +31,6 @@ async function revalidateChroniclePaths(
     );
     revalidatePath(`/publico/${organizationId}/${season.slug}`);
   }
-}
-
-function isFinishedStatus(status: string): boolean {
-  return status === "finished" || status === "walkover";
 }
 
 export async function enqueueChronicleAction(
@@ -72,105 +60,15 @@ export async function enqueueChronicleAction(
     };
   }
 
-  const pendingJob = await getLatestChronicleJobForMatch(organizationId, matchId);
-  if (
-    pendingJob &&
-    (pendingJob.status === "pending" || pendingJob.status === "processing")
-  ) {
-    return {
-      ok: false,
-      message: "Ya hay una crónica en cola o procesándose para este partido.",
-    };
-  }
-
-  const ctx = await getMatchCaptureContext(
+  const supabase = await createClient();
+  const result = await generateChronicleForMatch({
+    supabase,
     organizationId,
     competitionId,
     seasonId,
     matchId,
-    user.id,
-    "organization_admin"
-  );
-  if (!ctx) {
-    return { ok: false, message: "Partido no encontrado." };
-  }
-
-  const match = ctx.details.match;
-  if (!isFinishedStatus(match.status)) {
-    return {
-      ok: false,
-      message: "Solo se puede generar crónica en partidos finalizados.",
-    };
-  }
-
-  if (match.homeScore == null || match.awayScore == null) {
-    return {
-      ok: false,
-      message: "El partido necesita marcador oficial antes de generar la crónica.",
-    };
-  }
-
-  const supabase = await createClient();
-  const { data: competition } = await supabase
-    .from("competitions")
-    .select("is_youth")
-    .eq("id", competitionId)
-    .eq("organization_id", organizationId)
-    .maybeSingle();
-  const isYouth = competition?.is_youth ?? false;
-
-  const eventsForPrompt = buildChronicleTimelineForPrompt(ctx.timeline, isYouth);
-
-  if (!isAnthropicConfigured()) {
-    return {
-      ok: false,
-      message:
-        "ANTHROPIC_API_KEY no está configurada en el servidor. No se puede generar la crónica.",
-    };
-  }
-
-  const tierCheck = await assertCanGenerateChronicle(organizationId);
-  if (!tierCheck.ok) {
-    return { ok: false, message: tierCheck.message };
-  }
-
-  const prompt = buildChroniclePrompt({
-    homeTeamName: match.homeName,
-    awayTeamName: match.awayName,
-    homeSeasonTeamId: match.homeSeasonTeamId,
-    awaySeasonTeamId: match.awaySeasonTeamId,
-    homeScore: match.homeScore,
-    awayScore: match.awayScore,
-    events: eventsForPrompt,
-  });
-
-  const { data: job, error } = await supabase
-    .from("ai_jobs")
-    .insert({
-      organization_id: organizationId,
-      app: "ligera",
-      tipo: "cronica",
-      payload: {
-        prompt,
-        match_id: matchId,
-        tier: "basico",
-      },
-      status: "pending",
-      created_by: user.id,
-    })
-    .select("id")
-    .single();
-
-  if (error || !job) {
-    return { ok: false, message: error?.message ?? "No se pudo encolar el trabajo." };
-  }
-
-  const result = await runChronicleJob(supabase, {
-    jobId: job.id,
-    organizationId,
-    matchId,
-    prompt,
-    tier: "basico",
+    actorProfileId: user.id,
+    confirmRegenerate,
   });
 
   await revalidateChroniclePaths(
@@ -181,14 +79,15 @@ export async function enqueueChronicleAction(
   );
 
   if (!result.ok) {
-    return { ok: false, message: result.errorMessage };
+    return {
+      ok: false,
+      message: result.message,
+      needsConfirm:
+        result.message.includes("crónica publicada") && !confirmRegenerate,
+    };
   }
 
-  return {
-    ok: true,
-    message:
-      "Crónica generada. Revísala y publícala cuando esté lista.",
-  };
+  return { ok: true, message: result.message };
 }
 
 export async function setChroniclePublishedAction(

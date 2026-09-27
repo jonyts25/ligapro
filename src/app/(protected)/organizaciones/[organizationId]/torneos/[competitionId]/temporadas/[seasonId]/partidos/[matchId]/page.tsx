@@ -255,6 +255,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
           job={chronicleJob}
           chroniclesAtLimit={chroniclesAtLimit}
           chroniclesLimitMessage={chroniclesLimitMessage}
+          resultApproved={Boolean(resultReview?.approvedAt)}
         />
       )}
     </div>

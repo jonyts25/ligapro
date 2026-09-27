@@ -65,7 +65,15 @@ export function PublicMatchDetailView({
             {match.awayTeamName}
           </h1>
           {(match.status === "finished" || match.status === "walkover") && (
-            <StatusBadge label="Finalizado" variant="finished" />
+            <>
+              <StatusBadge label="Finalizado" variant="finished" />
+              {!match.isResultOfficial && (
+                <StatusBadge
+                  label="Resultado pendiente de aprobación"
+                  variant="warning"
+                />
+              )}
+            </>
           )}
         </div>
         <p className="text-sm text-text-secondary">

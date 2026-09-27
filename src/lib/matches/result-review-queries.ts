@@ -1,7 +1,32 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import type { MatchResultReviewStatus } from "@/lib/matches/result-review-types";
 import type { MatchStatusValue } from "@/lib/matches/types";
 import { resolveUpdateResultPermissions } from "@/lib/matches/update-result-permissions";
+import type { Database } from "@/types/database";
+
+export async function getMatchResultApprovalState(
+  supabase: SupabaseClient<Database>,
+  organizationId: string,
+  matchId: string
+): Promise<{ approvedAt: string | null } | null> {
+  const { data } = await supabase
+    .from("matches")
+    .select("result_approved_at")
+    .eq("id", matchId)
+    .eq("organization_id", organizationId)
+    .maybeSingle();
+
+  if (!data) return null;
+
+  return { approvedAt: data.result_approved_at };
+}
+
+export function isMatchResultOfficial(
+  approvedAt: string | null | undefined
+): boolean {
+  return approvedAt != null;
+}
 
 function profileDisplayName(row: {
   display_name: string | null;

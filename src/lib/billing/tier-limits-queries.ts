@@ -1,4 +1,6 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
+import type { Database } from "@/types/database";
 import { isSeasonArchived } from "@/lib/competitions/season-visibility";
 import {
   buildTierLimitStatus,
@@ -187,5 +189,45 @@ export async function assertCanGenerateChronicle(
 ): Promise<{ ok: true } | { ok: false; message: string }> {
   const status = await getOrganizationTierLimitStatus(organizationId);
   if (!status) return { ok: false, message: "Organización no encontrada." };
+  return evaluateTierLimit(status, "cronicas_mes");
+}
+
+export async function assertCanGenerateChronicleWithClient(
+  supabase: SupabaseClient<Database>,
+  organizationId: string
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  const { data: org, error: orgError } = await supabase
+    .from("organizations")
+    .select("subscription_tier, addon_overrides")
+    .eq("id", organizationId)
+    .maybeSingle();
+
+  if (orgError) throw new Error(orgError.message);
+  if (!org) return { ok: false, message: "Organización no encontrada." };
+
+  const monthStart = getMexicoCityMonthStartIso();
+  const { count, error: countError } = await supabase
+    .from("ai_jobs")
+    .select("id", { count: "exact", head: true })
+    .eq("organization_id", organizationId)
+    .eq("tipo", "cronica")
+    .gte("created_at", monthStart);
+
+  if (countError) throw new Error(countError.message);
+
+  const status = buildTierLimitStatus(
+    {
+      subscriptionTier: normalizeSubscriptionTier(org.subscription_tier),
+      addonOverrides: parseAddonOverrides(org.addon_overrides),
+    },
+    {
+      torneos_activos: 0,
+      sedes: 0,
+      canchas_total: 0,
+      usuarios_staff: 0,
+      cronicas_mes: count ?? 0,
+    }
+  );
+
   return evaluateTierLimit(status, "cronicas_mes");
 }

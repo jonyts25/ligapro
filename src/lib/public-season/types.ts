@@ -79,6 +79,7 @@ export type PublicMatchDetail = {
   roundLabel: string | null;
   roundNumber: number | null;
   legNumber: number | null;
+  isResultOfficial: boolean;
 };
 
 export type PublicMatchEventRow = {

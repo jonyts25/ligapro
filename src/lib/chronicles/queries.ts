@@ -1,8 +1,10 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import type {
   MatchChronicleJobRow,
   MatchChronicleRow,
 } from "@/lib/chronicles/types";
+import type { Database } from "@/types/database";
 
 type AiJobPayload = {
   match_id?: string;
@@ -10,9 +12,10 @@ type AiJobPayload = {
 
 export async function getMatchChronicle(
   organizationId: string,
-  matchId: string
+  matchId: string,
+  supabaseClient?: SupabaseClient<Database>
 ): Promise<MatchChronicleRow | null> {
-  const supabase = await createClient();
+  const supabase = supabaseClient ?? (await createClient());
   const { data } = await supabase
     .from("match_chronicles")
     .select(
@@ -37,9 +40,10 @@ export async function getMatchChronicle(
 
 export async function getLatestChronicleJobForMatch(
   organizationId: string,
-  matchId: string
+  matchId: string,
+  supabaseClient?: SupabaseClient<Database>
 ): Promise<MatchChronicleJobRow | null> {
-  const supabase = await createClient();
+  const supabase = supabaseClient ?? (await createClient());
   const { data } = await supabase
     .from("ai_jobs")
     .select("id, status, error_message, created_at, processed_at, payload")
