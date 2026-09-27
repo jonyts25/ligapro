@@ -4108,6 +4108,32 @@ export type Database = {
           suspension_type: string | null
         }[]
       }
+      get_organization_matchday: {
+        Args: { p_date: string; p_organization_id: string }
+        Returns: {
+          match_id: string
+          season_id: string
+          competition_id: string
+          season_name: string
+          competition_name: string
+          home_team_name: string
+          away_team_name: string
+          home_team_logo_path: string | null
+          away_team_logo_path: string | null
+          starts_at: string
+          venue_name: string | null
+          field_name: string | null
+          status: string
+          home_score: number | null
+          away_score: number | null
+          is_result_official: boolean
+          has_confirmed_referee: boolean
+          has_open_dispute: boolean
+          home_validated_count: number
+          away_validated_count: number
+          match_duration_minutes: number
+        }[]
+      }
       validate_match_roster: {
         Args: {
           p_match_id: string
