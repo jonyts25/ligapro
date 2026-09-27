@@ -8,6 +8,7 @@ import { CapturePermissionBadge } from "@/components/matches/CapturePermissionBa
 import { CaptureWindowStatus } from "@/components/matches/CaptureWindowStatus";
 import { MatchScoreForm } from "@/components/matches/MatchScoreForm";
 import { MatchEventForm } from "@/components/matches/MatchEventForm";
+import { MatchRosterValidationForm } from "@/components/matches/MatchRosterValidationForm";
 import { MatchTimeline } from "@/components/matches/MatchTimeline";
 import { MatchDisciplineSummary } from "@/components/matches/MatchDisciplineSummary";
 import { MatchRosterCredentials } from "@/components/matches/MatchRosterCredentials";
@@ -40,8 +41,16 @@ export default async function MatchCapturePage({ params }: PageProps) {
   );
   if (!ctx) notFound();
 
-  const { details, permissions, timeline, discipline, roster, scoreMismatch, requirePlayerVerification } =
-    ctx;
+  const {
+    details,
+    permissions,
+    timeline,
+    discipline,
+    roster,
+    participants,
+    scoreMismatch,
+    requirePlayerVerification,
+  } = ctx;
   const match = details.match;
   const base = `/organizaciones/${organizationId}/torneos/${competitionId}/temporadas/${seasonId}`;
   const matchClosed =
@@ -105,6 +114,21 @@ export default async function MatchCapturePage({ params }: PageProps) {
         awayName={match.awayName}
         canUpdate={permissions.canUpdateResult}
         closeOnlyResultUpdate={permissions.closeOnlyResultUpdate}
+      />
+
+      <MatchRosterValidationForm
+        organizationId={organizationId}
+        competitionId={competitionId}
+        seasonId={seasonId}
+        matchId={matchId}
+        homeSeasonTeamId={match.homeSeasonTeamId}
+        awaySeasonTeamId={match.awaySeasonTeamId}
+        homeName={match.homeName}
+        awayName={match.awayName}
+        roster={roster}
+        participants={participants}
+        canCapture={permissions.canCaptureEvents}
+        matchClosed={matchClosed}
       />
 
       <MatchEventForm

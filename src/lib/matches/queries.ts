@@ -17,6 +17,8 @@ import type {
   SeasonRoleValue,
 } from "@/lib/matches/types";
 import { seasonRoleLabel } from "@/lib/matches/types";
+import { getMatchParticipants } from "@/lib/matches/participation-queries";
+import type { MatchParticipantRow } from "@/lib/matches/participation-types";
 import { resolvePlayerPhotoUrlMap } from "@/lib/players/photo-url";
 
 function profileLabel(row: {
@@ -424,6 +426,7 @@ export async function getMatchCaptureContext(
   discipline: MatchDisciplineItem[];
   officials: MatchOfficialListItem[];
   roster: MatchRosterPlayer[];
+  participants: MatchParticipantRow[];
   scoreMismatch: boolean;
   requirePlayerVerification: boolean;
 } | null> {
@@ -448,7 +451,7 @@ export async function getMatchCaptureContext(
     details.match.status as MatchStatusValue
   );
 
-  const [timeline, discipline, officials, roster, seasonRules] =
+  const [timeline, discipline, officials, roster, seasonRules, participants] =
     await Promise.all([
       getMatchTimeline(organizationId, matchId),
       getMatchDiscipline(organizationId, seasonId, matchId),
@@ -459,6 +462,7 @@ export async function getMatchCaptureContext(
         details.match.awaySeasonTeamId
       ),
       getSeasonRequirePlayerVerification(seasonId),
+      getMatchParticipants(organizationId, matchId),
     ]);
 
   const { goalsFromEvents } = await import("@/lib/matches/types");
@@ -480,9 +484,9 @@ export async function getMatchCaptureContext(
     discipline,
     officials,
     roster,
+    participants,
     scoreMismatch,
-    requirePlayerVerification:
-      seasonRules,
+    requirePlayerVerification: seasonRules,
   };
 }
 
