@@ -37,6 +37,12 @@ export type SeasonRecord = {
   ends_on: string | null;
 };
 
+export type TiebreakCriterion =
+  | "goal_difference"
+  | "goals_for"
+  | "goals_against"
+  | "wins";
+
 export type SeasonRulesRecord = {
   id: string;
   season_id: string;
@@ -50,6 +56,7 @@ export type SeasonRulesRecord = {
   yellow_card_limit: number;
   suspension_matches: number;
   groups_advance_per_group: number | null;
+  tiebreak_order: TiebreakCriterion[];
 };
 
 export type SeasonListItem = SeasonRecord & {
