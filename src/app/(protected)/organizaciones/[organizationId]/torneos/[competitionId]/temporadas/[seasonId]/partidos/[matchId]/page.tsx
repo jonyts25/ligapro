@@ -19,6 +19,8 @@ import { MatchOfficialsManager } from "@/components/matches/MatchOfficialsManage
 import { MatchTimeline } from "@/components/matches/MatchTimeline";
 import { MatchDisciplineSummary } from "@/components/matches/MatchDisciplineSummary";
 import { MatchChroniclePanel } from "@/components/matches/MatchChroniclePanel";
+import { MatchResultReviewPanel } from "@/components/matches/MatchResultReviewPanel";
+import { getMatchResultReviewStatus } from "@/lib/matches/result-review-queries";
 import {
   getLatestChronicleJobForMatch,
   getMatchChronicle,
@@ -77,6 +79,16 @@ export default async function MatchDetailPage({ params }: PageProps) {
     : null;
   const matchFinished =
     match.status === "finished" || match.status === "walkover";
+  const resultReview = matchFinished
+    ? await getMatchResultReviewStatus(
+        organizationId,
+        seasonId,
+        matchId,
+        match.status,
+        user.id,
+        membership.role
+      )
+    : null;
   const [chronicle, chronicleJob] = matchFinished
     ? await Promise.all([
         getMatchChronicle(organizationId, matchId),
@@ -220,6 +232,16 @@ export default async function MatchDetailPage({ params }: PageProps) {
         canVoidEvents={canManageActive}
       />
       <MatchDisciplineSummary items={discipline} />
+
+      {resultReview && (
+        <MatchResultReviewPanel
+          organizationId={organizationId}
+          competitionId={competitionId}
+          seasonId={seasonId}
+          matchId={matchId}
+          review={resultReview}
+        />
+      )}
 
       {matchFinished && (
         <MatchChroniclePanel
