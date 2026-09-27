@@ -21,7 +21,7 @@ describe("humanizeCaptainRosterAddError", () => {
     const msg = humanizeCaptainRosterAddError(
       "Player already occupies another active roster seat in this season"
     );
-    assert.match(msg, /otro equipo en esta temporada/);
+    assert.match(msg, /otro equipo en este torneo/);
   });
 });
 

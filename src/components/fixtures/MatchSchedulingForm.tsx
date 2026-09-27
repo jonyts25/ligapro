@@ -77,31 +77,30 @@ export function MatchSchedulingForm({
 
   function refreshAvailability(nextFieldId: string, nextDate: string) {
     const key = `${nextFieldId}|${nextDate}`;
-    if (!nextFieldId || !nextDate) {
-      setIntervals([]);
-      setAvailKey("");
-      return;
-    }
-    setAvailKey(key);
     startAvail(async () => {
+      if (!nextFieldId || !nextDate) {
+        setIntervals([]);
+        setAvailKey("");
+        return;
+      }
       const next = await loadFieldAvailabilityAction(
         organizationId,
         nextFieldId,
         nextDate
       );
       setIntervals(next);
+      setAvailKey(key);
     });
   }
 
   function refreshOpenSlots(nextFieldId: string) {
     const key = `${nextFieldId}|${match.seasonId}|${match.id}`;
-    if (!nextFieldId) {
-      setOpenSlots(emptyOpenSlots);
-      setOpenSlotsKey("");
-      return;
-    }
-    setOpenSlotsKey(key);
     startOpenSlots(async () => {
+      if (!nextFieldId) {
+        setOpenSlots(emptyOpenSlots);
+        setOpenSlotsKey("");
+        return;
+      }
       const next = await loadFieldOpenSlotsAction({
         organizationId,
         fieldId: nextFieldId,
@@ -111,6 +110,7 @@ export function MatchSchedulingForm({
         slotMinutes: details.slotMinutes,
       });
       setOpenSlots(next);
+      setOpenSlotsKey(key);
     });
   }
 
@@ -118,6 +118,7 @@ export function MatchSchedulingForm({
     if (effectiveFieldId) {
       refreshOpenSlots(effectiveFieldId);
     }
+    // refreshOpenSlots schedules async state updates via startOpenSlots
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [effectiveFieldId, match.id, match.seasonId, details.slotMinutes]);
 

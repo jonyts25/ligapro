@@ -180,7 +180,7 @@ export async function assertCredentialPdfAccess(input:
     return {
       credential,
       organizationName: org?.name ?? "Organización",
-      seasonName: season?.name ?? "Temporada",
+      seasonName: season?.name ?? "Torneo",
       competitionName: competition?.name ?? "Torneo",
     };
   }
@@ -219,7 +219,7 @@ export async function assertCredentialPdfAccess(input:
   return {
     credential,
     organizationName: org?.name ?? "Organización",
-    seasonName: season?.name ?? "Temporada",
+    seasonName: season?.name ?? "Torneo",
     competitionName: competition?.name ?? "Torneo",
   };
 }

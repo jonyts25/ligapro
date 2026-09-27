@@ -213,7 +213,7 @@ export function AddRosterPlayerForm({
       <Card className="space-y-4">
         <SectionHeader
           title="Agregar jugador existente"
-          description="Un jugador activo o suspendido en otro equipo de esta temporada no puede agregarse aquí. Márcalo como inactivo allí primero."
+          description="Un jugador activo o suspendido en otro equipo de este torneo no puede agregarse aquí. Márcalo como inactivo allí primero."
         />
         <ActionMessage ok={existingState.ok} message={existingState.message} />
         <form action={existingAction} className="space-y-4">
@@ -255,7 +255,7 @@ export function AddRosterPlayerForm({
             {selectedBlocked && (
               <p className="text-sm text-warning" role="status">
                 Este jugador ya está con {selectedBlocked.occupiedByTeamName} en
-                esta temporada. Márcalo como inactivo en ese plantel para
+                este torneo. Márcalo como inactivo en ese plantel para
                 liberarlo.
               </p>
             )}
@@ -267,7 +267,7 @@ export function AddRosterPlayerForm({
             {availablePlayers.length > 0 && selectableCount === 0 && (
               <p className="text-sm text-muted">
                 Todos los jugadores listados ya ocupan plaza en otro equipo de
-                esta temporada.
+                este torneo.
               </p>
             )}
           </div>

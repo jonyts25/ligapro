@@ -23,7 +23,7 @@ export default async function PublicSeasonScorersPage({ params }: PageProps) {
     >
       <SectionHeader
         title="Goleadores"
-        description="Goles anotados capturados en la temporada."
+        description="Goles anotados capturados en el torneo."
       />
       <DataCompletenessWarning
         title="Depende de la captura"

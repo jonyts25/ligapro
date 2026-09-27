@@ -28,7 +28,7 @@ export function SeasonRosterSummary({ seasonTeam }: SeasonRosterSummaryProps) {
 
   const rows = [
     { label: "Torneo", value: seasonTeam.competitionName },
-    { label: "Temporada", value: seasonTeam.seasonName },
+    { label: "Torneo", value: seasonTeam.seasonName },
     { label: "Equipo", value: displayName },
     { label: "Jugadores activos", value: activeLabel },
     { label: "Total en plantel", value: totalLabel },
@@ -49,7 +49,7 @@ export function SeasonRosterSummary({ seasonTeam }: SeasonRosterSummaryProps) {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <SectionHeader
           title="Resumen del plantel"
-          description="Participación del equipo en esta temporada."
+          description="Participación del equipo en este torneo."
           className="mb-0"
         />
         <StatusBadge

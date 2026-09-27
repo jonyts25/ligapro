@@ -52,7 +52,7 @@ export function SeasonCard({
         href={`/organizaciones/${organizationId}/torneos/${competitionId}/temporadas/${season.id}`}
         className="inline-flex min-h-11 items-center justify-center rounded-xl border border-border px-4 text-sm font-medium text-organization-accent"
       >
-        Ver temporada
+        Ver torneo
       </Link>
     </Card>
   );

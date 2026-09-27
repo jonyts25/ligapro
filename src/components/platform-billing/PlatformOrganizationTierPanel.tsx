@@ -165,7 +165,7 @@ export function PlatformOrganizationTierPanel({
             <tr>
               <th className="px-3 py-2 font-medium">Organización</th>
               <th className="px-3 py-2 font-medium">Plan</th>
-              <th className="px-3 py-2 font-medium">Temporadas activas</th>
+              <th className="px-3 py-2 font-medium">Torneos activos</th>
               <th className="px-3 py-2 font-medium">Acción</th>
             </tr>
           </thead>

@@ -148,7 +148,7 @@ async function getCaptainTeamsViaMatches(
         organizationId: match.organization_id,
         seasonId: match.season_id,
         teamName: "Mi equipo",
-        seasonName: "Temporada",
+        seasonName: "Torneo",
         competitionId: "",
         competitionName: "Torneo",
         leadershipRole: "captain" as CaptainLeadershipRole,

@@ -4,7 +4,7 @@
  */
 
 const DEFAULT_SEAT_MESSAGE =
-  "Este jugador ya pertenece a otro equipo en esta temporada. Márcalo como inactivo en el plantel anterior antes de agregarlo aquí.";
+  "Este jugador ya pertenece a otro equipo en este torneo. Márcalo como inactivo en el plantel anterior antes de agregarlo aquí.";
 
 export function isSeasonRosterSeatConflict(error: {
   code?: string;
@@ -31,7 +31,7 @@ export function seasonRosterSeatConflictMessage(
 ): string {
   const trimmed = occupiedTeamName?.trim();
   if (trimmed) {
-    return `Este jugador ya está registrado con ${trimmed} en esta temporada. Márcalo como inactivo en ese plantel antes de agregarlo aquí.`;
+    return `Este jugador ya está registrado con ${trimmed} en este torneo. Márcalo como inactivo en ese plantel antes de agregarlo aquí.`;
   }
   return DEFAULT_SEAT_MESSAGE;
 }

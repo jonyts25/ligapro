@@ -111,7 +111,7 @@ export async function getOrganizationMembersWithScopes(
       id: scope.id,
       seasonId: scope.scope_id,
       seasonName:
-        seasonNameById.get(scope.scope_id) ?? "Temporada desconocida",
+        seasonNameById.get(scope.scope_id) ?? "Torneo desconocido",
     });
     scopesByMember.set(scope.organization_member_id, list);
   }

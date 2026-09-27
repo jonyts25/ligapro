@@ -17,7 +17,7 @@ type RosterImportSectionProps = {
   defaultSourceSeasonTeamId?: string;
 };
 
-export function RosterImportSection({
+function RosterImportSectionContent({
   organizationId,
   seasonId,
   teamId,
@@ -35,14 +35,7 @@ export function RosterImportSection({
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
-    if (!teamId) {
-      setSources([]);
-      setMaxRosterSize(null);
-      setImportRoster(false);
-      setSourceSeasonTeamId("");
-      setLoadError(null);
-      return;
-    }
+    let cancelled = false;
 
     startTransition(async () => {
       try {
@@ -51,6 +44,8 @@ export function RosterImportSection({
           seasonId,
           teamId
         );
+        if (cancelled) return;
+
         setSources(options.sources);
         setMaxRosterSize(options.maxRosterSize);
         setLoadError(null);
@@ -68,6 +63,7 @@ export function RosterImportSection({
           setImportRoster(false);
         }
       } catch {
+        if (cancelled) return;
         setSources([]);
         setMaxRosterSize(null);
         setSourceSeasonTeamId("");
@@ -75,6 +71,10 @@ export function RosterImportSection({
         setLoadError("No pudimos cargar planteles anteriores de este equipo.");
       }
     });
+
+    return () => {
+      cancelled = true;
+    };
   }, [
     organizationId,
     seasonId,
@@ -93,7 +93,6 @@ export function RosterImportSection({
       )
     : null;
 
-  if (!teamId) return null;
   if (isPending && sources.length === 0) {
     return (
       <p className="text-sm text-muted">Buscando planteles anteriores…</p>
@@ -191,4 +190,9 @@ export function RosterImportSection({
       )}
     </div>
   );
+}
+
+export function RosterImportSection(props: RosterImportSectionProps) {
+  if (!props.teamId) return null;
+  return <RosterImportSectionContent key={props.teamId} {...props} />;
 }

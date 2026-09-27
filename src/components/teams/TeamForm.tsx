@@ -136,7 +136,7 @@ export function TeamForm({ organizationId, mode, team }: TeamFormProps) {
         </div>
         <p className="text-xs text-muted">
           El nombre identifica al equipo en toda la organización. Puedes usar un
-          nombre distinto al inscribirlo en cada temporada.
+          nombre distinto al inscribirlo en cada torneo.
         </p>
         <div className="flex flex-wrap gap-3">
           <SubmitButton pending={pending} className="w-auto">

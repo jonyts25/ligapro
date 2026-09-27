@@ -35,7 +35,7 @@ export async function enqueueJornadaSummaryAction(
   const competitionId = String(formData.get("competitionId") ?? "");
   const seasonId = String(formData.get("seasonId") ?? "");
   const roundNumber = Number.parseInt(String(formData.get("roundNumber") ?? ""), 10);
-  const seasonName = String(formData.get("seasonName") ?? "Temporada");
+  const seasonName = String(formData.get("seasonName") ?? "Torneo");
   const confirmRegenerate = formData.get("confirmRegenerate") === "true";
 
   if (!organizationId || !competitionId || !seasonId || !Number.isFinite(roundNumber)) {

@@ -59,7 +59,7 @@ export default async function TeamDetailPage({ params }: PageProps) {
 
       <Card>
         <SectionHeader
-          title="Temporadas"
+          title="Torneos"
           description="Inscripciones de este equipo. El plantel vive en cada torneo."
         />
         {team.enrollments.length === 0 ? (

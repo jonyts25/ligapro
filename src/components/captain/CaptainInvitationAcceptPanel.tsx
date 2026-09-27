@@ -161,7 +161,7 @@ export function CaptainInvitationAcceptPanel({
         </div>
         {preview.seasonName && (
           <div className="flex justify-between gap-3">
-            <dt className="text-text-secondary">Temporada</dt>
+            <dt className="text-text-secondary">Torneo</dt>
             <dd>{preview.seasonName}</dd>
           </div>
         )}

@@ -241,7 +241,7 @@ export function PlatformFinancePanel({ summary }: PlatformFinancePanelProps) {
               <tr>
                 <th className="px-3 py-2 font-medium">Fecha</th>
                 <th className="px-3 py-2 font-medium">Organizacion</th>
-                <th className="px-3 py-2 font-medium">Temporada</th>
+                <th className="px-3 py-2 font-medium">Torneo</th>
                 <th className="px-3 py-2 font-medium">Monto</th>
                 <th className="px-3 py-2 font-medium">Notas</th>
                 <th className="px-3 py-2 font-medium">Estado</th>

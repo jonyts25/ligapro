@@ -4,7 +4,7 @@ export function SeasonArchivedBanner() {
   return (
     <Card className="border-warning/40 bg-warning/10 px-4 py-3">
       <p className="text-sm font-medium text-text-primary">
-        Temporada archivada
+        Torneo archivado
       </p>
       <p className="mt-1 text-sm text-text-secondary">
         Consulta en solo lectura. Los partidos, resultados, cargos y disciplina

@@ -263,14 +263,14 @@ export function PlatformCotizadorPanel() {
                 </p>
               </div>
               <div className="rounded-xl border border-border bg-surface-elevated/40 p-4">
-                <p className="text-sm text-text-secondary">Precio temporada</p>
+                <p className="text-sm text-text-secondary">Precio torneo</p>
                 <p className="mt-1 text-2xl font-semibold text-text-primary">
                   {formatCotizadorMoney(quote.seasonPrice)}
                 </p>
               </div>
               <div className="rounded-xl border border-brand/30 bg-brand/5 p-4">
                 <p className="text-sm text-text-secondary">
-                  Precio por equipo (temporada)
+                  Precio por equipo (torneo)
                 </p>
                 <p className="mt-1 text-2xl font-semibold text-text-primary">
                   {formatCotizadorMoney(quote.pricePerTeamSeason)}
