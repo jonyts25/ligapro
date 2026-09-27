@@ -2,70 +2,76 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   calculateCotizacion,
-  courtCostMultiplier,
   DEFAULT_COTIZADOR_INPUT,
-  playoffMatches,
-  portfolioDiscountRate,
-  regularMatches,
-  tierForMatchesPerMonth,
+  DEFAULT_COTIZADOR_PRICING,
+  volumeMultiplier,
 } from "@/lib/platform-billing/cotizador";
+import { calculateCotizacionLegacyV2 } from "@/lib/platform-billing/cotizador-legacy-v2";
 
-describe("cotizador por partido", () => {
-  it("calculates regular matches for 8 teams single round", () => {
-    assert.equal(regularMatches(8, 1), 28);
-    assert.equal(regularMatches(8, 2), 56);
+describe("cotizador por torneo y equipo", () => {
+  it("calculates season price as base + per team", () => {
+    const quote = calculateCotizacion(
+      { teamCount: 10, activeTournaments: 1 },
+      {
+        basePricePerTournament: 1500,
+        basePricePerTeam: 200,
+        volumeMultiplier1To2: 1,
+        volumeMultiplier3To5: 0.9,
+        volumeMultiplier6Plus: 0.8,
+      }
+    );
+
+    assert.ok(quote);
+    assert.equal(quote.seasonPrice, 1500 + 200 * 10);
+    assert.equal(quote.pricePerTeamSeason, quote.seasonPrice / 10);
   });
 
-  it("calculates playoff matches with optional third place", () => {
-    assert.equal(playoffMatches("none", false), 0);
-    assert.equal(playoffMatches("top4", false), 3);
-    assert.equal(playoffMatches("top4", true), 4);
-    assert.equal(playoffMatches("top8", false), 7);
-  });
+  it("applies volume multiplier for portfolio size", () => {
+    assert.equal(
+      volumeMultiplier(4, DEFAULT_COTIZADOR_PRICING),
+      DEFAULT_COTIZADOR_PRICING.volumeMultiplier3To5
+    );
 
-  it("assigns tier S for low volume", () => {
-    const tier = tierForMatchesPerMonth(15);
-    assert.equal(tier.tier, "S");
-    assert.equal(tier.basePrice, 900);
-  });
-
-  it("assigns tier XL with marginal pricing above 70", () => {
-    const tier = tierForMatchesPerMonth(75);
-    assert.equal(tier.tier, "XL");
-    assert.equal(tier.basePrice, 2000 + 5 * 20);
-  });
-
-  it("applies court cost band and portfolio discount", () => {
-    assert.equal(courtCostMultiplier(300), 1.0);
-    assert.equal(courtCostMultiplier(450), 1.15);
-    assert.equal(courtCostMultiplier(700), 1.3);
-    assert.equal(portfolioDiscountRate(2), 0);
-    assert.equal(portfolioDiscountRate(5), 0.12);
-  });
-
-  it("produces client-visible prices for a typical league", () => {
     const quote = calculateCotizacion({
       ...DEFAULT_COTIZADOR_INPUT,
+      teamCount: 8,
+      activeTournaments: 4,
+    });
+
+    assert.ok(quote);
+    assert.equal(
+      quote.seasonPrice,
+      (1500 + 200 * 8) * DEFAULT_COTIZADOR_PRICING.volumeMultiplier3To5
+    );
+  });
+
+  it("returns null for zero teams", () => {
+    assert.equal(
+      calculateCotizacion({ ...DEFAULT_COTIZADOR_INPUT, teamCount: 0 }),
+      null
+    );
+  });
+
+  it("contrasts legacy monthly model vs per-tournament model", () => {
+    const legacy = calculateCotizacionLegacyV2({
       teamCount: 10,
-      durationMonths: 5,
+      rounds: 1,
+      playoffBracket: "top4",
+      thirdPlaceMatch: false,
+      durationMonths: 6,
       courtCostPerMatch: 400,
       activeTournaments: 1,
     });
 
-    assert.ok(quote);
-    assert.ok(quote.monthlyPrice > 0);
-    assert.ok(quote.seasonPrice > quote.monthlyPrice);
-    assert.equal(
-      quote.pricePerTeamSeason,
-      quote.seasonPrice / 10
+    const current = calculateCotizacion(
+      { teamCount: 10, activeTournaments: 1 },
+      DEFAULT_COTIZADOR_PRICING
     );
-    assert.equal(quote.internal.regularMatches, 45);
-  });
 
-  it("returns null for fewer than 2 teams", () => {
-    assert.equal(
-      calculateCotizacion({ ...DEFAULT_COTIZADOR_INPUT, teamCount: 1 }),
-      null
-    );
+    assert.ok(legacy);
+    assert.ok(current);
+    assert.ok(legacy.monthlyPrice > 0);
+    assert.ok(current.seasonPrice > 0);
+    assert.notEqual(legacy.seasonPrice, current.seasonPrice);
   });
 });

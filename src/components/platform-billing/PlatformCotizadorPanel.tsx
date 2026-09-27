@@ -14,7 +14,7 @@ import {
   DEFAULT_COTIZADOR_INPUT,
   formatCotizadorMoney,
   type CotizadorInput,
-  type PlayoffBracket,
+  type CotizadorPricingParams,
 } from "@/lib/platform-billing/cotizador";
 import { downloadCotizadorPdf } from "@/lib/platform-billing/cotizador-pdf";
 import { cn } from "@/lib/utils/cn";
@@ -32,12 +32,6 @@ function selectInputOnClick(event: MouseEvent<HTMLInputElement>) {
 
 function parsePositiveInt(value: string, fallback: number): number {
   const parsed = Number.parseInt(value, 10);
-  if (!Number.isFinite(parsed) || parsed < 0) return fallback;
-  return parsed;
-}
-
-function parsePositiveFloat(value: string, fallback: number): number {
-  const parsed = Number.parseFloat(value);
   if (!Number.isFinite(parsed) || parsed < 0) return fallback;
   return parsed;
 }
@@ -78,12 +72,19 @@ function Field({ id, label, hint, children }: FieldProps) {
   );
 }
 
-export function PlatformCotizadorPanel() {
+type PlatformCotizadorPanelProps = {
+  pricing: CotizadorPricingParams;
+};
+
+export function PlatformCotizadorPanel({ pricing }: PlatformCotizadorPanelProps) {
   const [input, setInput] = useState<CotizadorInput>(DEFAULT_COTIZADOR_INPUT);
   const [clientName, setClientName] = useState("");
   const [internalOpen, setInternalOpen] = useState(false);
 
-  const quote = useMemo(() => calculateCotizacion(input), [input]);
+  const quote = useMemo(
+    () => calculateCotizacion(input, pricing),
+    [input, pricing]
+  );
 
   function patch(patch: Partial<CotizadorInput>) {
     setInput((prev) => ({ ...prev, ...patch }));
@@ -97,8 +98,9 @@ export function PlatformCotizadorPanel() {
             Parámetros del torneo
           </h2>
           <p className="mt-1 text-sm text-text-secondary">
-            Precio por volumen de partidos/mes. El cálculo es efímero — no se
-            guarda al recargar.
+            Precio por torneo + equipos inscritos (sin mensualidad). Tarifas
+            base: {formatCotizadorMoney(pricing.basePricePerTournament)} / torneo
+            + {formatCotizadorMoney(pricing.basePricePerTeam)} / equipo.
           </p>
         </div>
 
@@ -117,11 +119,11 @@ export function PlatformCotizadorPanel() {
           />
         </Field>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <Field id="teams" label="Equipos">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field id="teams" label="Equipos inscritos">
             <NumericInput
               id="teams"
-              min={2}
+              min={1}
               step={1}
               value={input.teamCount}
               onChange={(event) =>
@@ -132,78 +134,14 @@ export function PlatformCotizadorPanel() {
             />
           </Field>
 
-          <Field id="rounds" label="Vueltas (fase regular)">
-            <select
-              id="rounds"
-              value={input.rounds}
-              onChange={(event) =>
-                patch({ rounds: Number(event.target.value) as 1 | 2 })
-              }
-              className={inputClassName}
-            >
-              <option value={1}>1 — una vuelta</option>
-              <option value={2}>2 — ida y vuelta</option>
-            </select>
-          </Field>
-
-          <Field id="playoff" label="Liguilla (clasificados)">
-            <select
-              id="playoff"
-              value={input.playoffBracket}
-              onChange={(event) =>
-                patch({ playoffBracket: event.target.value as PlayoffBracket })
-              }
-              className={inputClassName}
-            >
-              <option value="none">Ninguna</option>
-              <option value="top4">Top 4</option>
-              <option value="top8">Top 8</option>
-              <option value="top16">Top 16</option>
-            </select>
-          </Field>
-
-          <Field id="months" label="Duración (meses)">
-            <NumericInput
-              id="months"
-              min={1}
-              step={1}
-              value={input.durationMonths}
-              onChange={(event) =>
-                patch({
-                  durationMonths: parsePositiveInt(
-                    event.target.value,
-                    input.durationMonths
-                  ),
-                })
-              }
-            />
-          </Field>
-
-          <Field id="court-cost" label="Costo de cancha reportado (MXN/partido)">
-            <NumericInput
-              id="court-cost"
-              min={0}
-              step={50}
-              value={input.courtCostPerMatch}
-              onChange={(event) =>
-                patch({
-                  courtCostPerMatch: parsePositiveFloat(
-                    event.target.value,
-                    input.courtCostPerMatch
-                  ),
-                })
-              }
-            />
-          </Field>
-
           <Field
             id="portfolio"
-            label="Torneos activos del organizador (ese mes)"
+            label="Torneos activos del organizador"
+            hint="Aplica descuento por volumen según platform_pricing_defaults."
           >
             <NumericInput
               id="portfolio"
               min={1}
-              max={10}
               step={1}
               value={input.activeTournaments}
               onChange={(event) =>
@@ -217,18 +155,6 @@ export function PlatformCotizadorPanel() {
             />
           </Field>
         </div>
-
-        <label className="flex items-center gap-3 text-sm text-text-secondary">
-          <input
-            type="checkbox"
-            checked={input.thirdPlaceMatch}
-            disabled={input.playoffBracket === "none"}
-            onChange={(event) =>
-              patch({ thirdPlaceMatch: event.target.checked })
-            }
-          />
-          Partido por el tercer lugar (solo si liguilla ≥ top 4)
-        </label>
       </Card>
 
       <Card className="space-y-4">
@@ -255,15 +181,9 @@ export function PlatformCotizadorPanel() {
 
         {quote ? (
           <div className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2">
               <div className="rounded-xl border border-border bg-surface-elevated/40 p-4">
-                <p className="text-sm text-text-secondary">Precio mensual</p>
-                <p className="mt-1 text-2xl font-semibold text-text-primary">
-                  {formatCotizadorMoney(quote.monthlyPrice)}
-                </p>
-              </div>
-              <div className="rounded-xl border border-border bg-surface-elevated/40 p-4">
-                <p className="text-sm text-text-secondary">Precio torneo</p>
+                <p className="text-sm text-text-secondary">Precio total del torneo</p>
                 <p className="mt-1 text-2xl font-semibold text-text-primary">
                   {formatCotizadorMoney(quote.seasonPrice)}
                 </p>
@@ -295,48 +215,34 @@ export function PlatformCotizadorPanel() {
                 </p>
                 <dl className="grid gap-2 sm:grid-cols-2">
                   <div>
-                    <dt className="text-text-secondary">Partidos regular</dt>
-                    <dd className="font-medium">{quote.internal.regularMatches}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-text-secondary">Partidos liguilla</dt>
-                    <dd className="font-medium">{quote.internal.playoffMatches}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-text-secondary">Total partidos</dt>
-                    <dd className="font-medium">{quote.internal.totalMatches}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-text-secondary">Partidos/mes</dt>
+                    <dt className="text-text-secondary">Base por torneo</dt>
                     <dd className="font-medium">
-                      {quote.internal.matchesPerMonth.toFixed(1)}
+                      {formatCotizadorMoney(quote.internal.tournamentBase)}
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-text-secondary">Tier</dt>
+                    <dt className="text-text-secondary">Subtotal equipos</dt>
                     <dd className="font-medium">
-                      {quote.internal.tier} —{" "}
-                      {formatCotizadorMoney(quote.internal.tierBasePrice)}/mes
+                      {formatCotizadorMoney(quote.internal.teamSubtotal)}
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-text-secondary">Banda cancha</dt>
+                    <dt className="text-text-secondary">Subtotal antes de volumen</dt>
                     <dd className="font-medium">
-                      {quote.internal.courtBandLabel} (×
-                      {quote.internal.courtMultiplier.toFixed(2)})
+                      {formatCotizadorMoney(quote.internal.subtotalBeforeVolume)}
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-text-secondary">Descuento portafolio</dt>
+                    <dt className="text-text-secondary">Multiplicador volumen</dt>
                     <dd className="font-medium">
-                      {quote.internal.portfolioBandLabel} (
-                      {(quote.internal.portfolioDiscountRate * 100).toFixed(0)}%)
+                      {quote.internal.volumeBandLabel} (×
+                      {quote.internal.volumeMultiplier.toFixed(2)})
                     </dd>
                   </div>
                   <div>
                     <dt className="text-text-secondary">Descuento en pesos</dt>
                     <dd className="font-medium">
-                      −{formatCotizadorMoney(quote.internal.portfolioDiscountAmount)}
+                      −{formatCotizadorMoney(quote.internal.volumeDiscountAmount)}
                     </dd>
                   </div>
                 </dl>
@@ -345,7 +251,7 @@ export function PlatformCotizadorPanel() {
           </div>
         ) : (
           <p className="text-sm text-text-secondary">
-            Ingresa al menos 2 equipos para calcular.
+            Ingresa al menos 1 equipo para calcular.
           </p>
         )}
       </Card>
