@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
+import { TeamCrest } from "@/components/teams/TeamCrest";
 import type { TeamListItem } from "@/lib/teams/types";
 
 type TeamCardProps = {
@@ -15,11 +16,14 @@ export function TeamCard({ organizationId, team }: TeamCardProps) {
 
   return (
     <Card className="flex flex-col gap-3">
-      <div className="min-w-0">
+      <div className="flex min-w-0 items-start gap-3">
+        <TeamCrest name={team.name} logoUrl={team.logoUrl} />
+        <div className="min-w-0">
         <h3 className="truncate text-base font-semibold text-text-primary">
           {team.name}
         </h3>
         <p className="mt-1 text-sm text-text-secondary">{enrollmentLabel}</p>
+        </div>
       </div>
       {team.latestSeasonName ? (
         <p className="text-sm text-text-secondary">

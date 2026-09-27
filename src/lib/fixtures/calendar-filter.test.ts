@@ -26,6 +26,8 @@ function round(
       awaySeasonTeamId: "away",
       homeName: "Local",
       awayName: "Visitante",
+      homeLogoUrl: null,
+      awayLogoUrl: null,
       homeScore: null,
       awayScore: null,
       isProgrammed,

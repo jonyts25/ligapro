@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { TeamMatchupTitle } from "@/components/teams/TeamMatchupTitle";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StatusBadge } from "@/components/ui/StatusBadge";
@@ -55,15 +56,16 @@ export function PublicMatchDetailView({
 
       <Card className="space-y-3">
         <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-lg font-semibold text-text-primary">
-            {match.homeTeamName}{" "}
-            {match.homeScore != null && match.awayScore != null ? (
-              <span className="font-normal text-muted">
-                {match.homeScore}–{match.awayScore}
-              </span>
-            ) : null}{" "}
-            {match.awayTeamName}
-          </h1>
+          <TeamMatchupTitle
+            as="h1"
+            titleClassName="text-lg"
+            homeName={match.homeTeamName}
+            awayName={match.awayTeamName}
+            homeLogoUrl={match.homeTeamLogoUrl}
+            awayLogoUrl={match.awayTeamLogoUrl}
+            homeScore={match.homeScore}
+            awayScore={match.awayScore}
+          />
           {(match.status === "finished" || match.status === "walkover") && (
             <>
               <StatusBadge label="Finalizado" variant="finished" />

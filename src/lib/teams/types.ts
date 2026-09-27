@@ -28,6 +28,7 @@ export type TeamRecord = {
   id: string;
   organization_id: string;
   name: string;
+  logo_path: string | null;
 };
 
 export type PlayerRecord = {
@@ -71,6 +72,7 @@ export type RosterEntryRecord = {
 export type TeamListItem = TeamRecord & {
   seasonEnrollmentCount: number;
   latestSeasonName: string | null;
+  logoUrl: string | null;
 };
 
 export type TeamDetail = TeamRecord & {

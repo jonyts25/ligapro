@@ -2822,6 +2822,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          logo_path: string | null
           name: string
           organization_id: string
           updated_at: string
@@ -2829,6 +2830,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          logo_path?: string | null
           name: string
           organization_id: string
           updated_at?: string
@@ -2836,6 +2838,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          logo_path?: string | null
           name?: string
           organization_id?: string
           updated_at?: string
@@ -3724,6 +3727,14 @@ export type Database = {
         Args: { p_logo_path: string; p_organization_id: string }
         Returns: boolean
       }
+      is_valid_team_logo_path: {
+        Args: {
+          p_logo_path: string
+          p_organization_id: string
+          p_team_id: string
+        }
+        Returns: boolean
+      }
       is_valid_player_photo_path: {
         Args: {
           p_organization_id: string
@@ -3895,6 +3906,10 @@ export type Database = {
       }
       set_organization_logo: {
         Args: { p_logo_path: string; p_organization_id: string }
+        Returns: undefined
+      }
+      set_team_logo: {
+        Args: { p_logo_path: string; p_team_id: string }
         Returns: undefined
       }
       set_platform_billing_status: {

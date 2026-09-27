@@ -1,3 +1,4 @@
+import { TeamMatchupTitle } from "@/components/teams/TeamMatchupTitle";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { matchStatusLabel } from "@/lib/matches/types";
 import { formatMatchDateTime } from "@/lib/fixtures/format";
@@ -38,15 +39,16 @@ export function MatchCaptureHeader({
           {match.roundNumber != null ? ` · Jornada ${match.roundNumber}` : ""}
           {match.legNumber ? ` · Vuelta ${match.legNumber}` : ""}
         </p>
-        <h1 className="mt-1 text-xl font-semibold text-text-primary">
-          {match.homeName}{" "}
-          <span className="text-muted">
-            {match.homeScore != null && match.awayScore != null
-              ? `${match.homeScore}–${match.awayScore}`
-              : "vs"}
-          </span>{" "}
-          {match.awayName}
-        </h1>
+        <TeamMatchupTitle
+          as="h1"
+          titleClassName="mt-1 text-xl"
+          homeName={match.homeName}
+          awayName={match.awayName}
+          homeLogoUrl={match.homeLogoUrl}
+          awayLogoUrl={match.awayLogoUrl}
+          homeScore={match.homeScore}
+          awayScore={match.awayScore}
+        />
       </div>
       <p className="text-sm text-text-secondary">
         {formatMatchDateTime(match.schedule.startsAt)}

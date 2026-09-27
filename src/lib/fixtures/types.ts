@@ -56,6 +56,8 @@ export type MatchListItem = {
   awaySeasonTeamId: string;
   homeName: string;
   awayName: string;
+  homeLogoUrl: string | null;
+  awayLogoUrl: string | null;
   homeScore: number | null;
   awayScore: number | null;
   isProgrammed: boolean;

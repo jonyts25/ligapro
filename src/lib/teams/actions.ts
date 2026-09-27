@@ -115,6 +115,46 @@ async function revalidateTeamPaths(
   }
 }
 
+async function revalidateTeamLogoSurfaces(
+  organizationId: string,
+  teamId: string
+) {
+  revalidatePath(`/organizaciones/${organizationId}/equipos`);
+  revalidatePath(`/organizaciones/${organizationId}/equipos/${teamId}`);
+  revalidatePath(
+    `/organizaciones/${organizationId}/equipos/${teamId}/editar`
+  );
+
+  const supabase = await createClient();
+  const { data: rows } = await supabase
+    .from("season_teams")
+    .select("id, season_id, seasons!inner(id, slug, competition_id, organization_id)")
+    .eq("team_id", teamId)
+    .eq("organization_id", organizationId);
+
+  for (const row of rows ?? []) {
+    const season = row.seasons as unknown as {
+      id: string;
+      slug: string;
+      competition_id: string;
+      organization_id: string;
+    } | null;
+    if (!season?.competition_id || !season?.id) continue;
+    const base = `/organizaciones/${organizationId}/torneos/${season.competition_id}/temporadas/${season.id}`;
+    revalidatePath(`${base}/equipos/${row.id}`);
+    revalidatePath(`${base}/calendario`);
+    revalidatePath(`${base}/partidos`, "layout");
+    if (season.slug) {
+      const publicBase = `/publico/${organizationId}/${season.slug}`;
+      revalidatePath(publicBase);
+      revalidatePath(`${publicBase}/calendario`);
+      revalidatePath(`${publicBase}/partidos`, "layout");
+    }
+  }
+
+  await revalidateStandingsSurfacesForTeam(organizationId, teamId);
+}
+
 async function revalidateStandingsSurfacesForTeam(
   organizationId: string,
   teamId: string
@@ -1291,6 +1331,43 @@ export async function createTeamsBulkAction(
     ok: true,
     message: `${result?.created_count ?? names.length} equipo(s) creado(s).`,
   };
+}
+
+export async function setTeamLogoAction(input: {
+  organizationId: string;
+  teamId: string;
+  logoPath: string | null;
+}): Promise<{ ok: boolean; message: string | null; previousPath: string | null }> {
+  const user = await requireUser();
+  await requireOrganizationAdmin(user.id, input.organizationId);
+
+  const supabase = await createClient();
+  const { data: current } = await supabase
+    .from("teams")
+    .select("logo_path")
+    .eq("id", input.teamId)
+    .eq("organization_id", input.organizationId)
+    .maybeSingle();
+
+  const previousPath = current?.logo_path ?? null;
+
+  const { error } = await supabase.rpc("set_team_logo", {
+    p_team_id: input.teamId,
+    // Generated Args omit NULL; RPC accepts NULL to clear logo.
+    p_logo_path: input.logoPath as string,
+  });
+
+  if (error) {
+    return {
+      ok: false,
+      message: "No pudimos actualizar el escudo. Inténtalo nuevamente.",
+      previousPath,
+    };
+  }
+
+  await revalidateTeamLogoSurfaces(input.organizationId, input.teamId);
+
+  return { ok: true, message: null, previousPath };
 }
 
 export async function createPlayersBulkAction(
