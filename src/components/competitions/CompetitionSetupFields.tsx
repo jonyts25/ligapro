@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 import {
   SEASON_FORMAT_OPTIONS,
   type CompetitionActionState,
@@ -9,6 +10,14 @@ import {
   FORMAT_LOCKED_TOOLTIP,
   MATCH_DURATION_LOCKED_TOOLTIP,
 } from "@/lib/competitions/season-edit-guards";
+import {
+  mapPresetRow,
+  mapPresetToSeasonSetupFormValues,
+  seasonSetupValuesFromRecord,
+  type SeasonSetupFormPresetValues,
+  type TournamentModality,
+  type TournamentTypePreset,
+} from "@/lib/competitions/tournament-type-presets";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { cn } from "@/lib/utils/cn";
 
@@ -20,6 +29,7 @@ type CompetitionSetupFieldsProps = {
   showAdvanced?: boolean;
   formatLocked?: boolean;
   matchDurationLocked?: boolean;
+  showModalitySelector?: boolean;
   fieldPrefix?: string;
 };
 
@@ -40,15 +50,103 @@ export function CompetitionSetupFields({
   showAdvanced = true,
   formatLocked = false,
   matchDurationLocked = false,
+  showModalitySelector = true,
 }: CompetitionSetupFieldsProps) {
   const values = state?.values;
   const [formatType, setFormatType] = useState<string>(
     String(values?.formatType ?? defaultFormatType)
   );
   const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [presets, setPresets] = useState<TournamentTypePreset[]>([]);
+  const [selectedModality, setSelectedModality] = useState<
+    "" | TournamentModality
+  >("");
+  const [setupValues, setSetupValues] = useState<SeasonSetupFormPresetValues>(
+    () =>
+      seasonSetupValuesFromRecord(values, defaultMatchDurationMinutes)
+  );
+  const [syncedValues, setSyncedValues] = useState(values);
+
+  if (values !== syncedValues) {
+    setSyncedValues(values);
+    setSetupValues(
+      seasonSetupValuesFromRecord(values, defaultMatchDurationMinutes)
+    );
+  }
+
+  useEffect(() => {
+    if (!showModalitySelector) return;
+
+    let cancelled = false;
+
+    async function loadPresets() {
+      const supabase = createClient();
+      const { data, error } = await supabase.rpc("get_tournament_type_presets");
+
+      if (cancelled || error) return;
+
+      setPresets((data ?? []).map(mapPresetRow));
+    }
+
+    void loadPresets();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [showModalitySelector]);
+
+  const presetByModality = useMemo(
+    () => new Map(presets.map((preset) => [preset.modality, preset])),
+    [presets]
+  );
+
+  function handleModalityChange(modality: "" | TournamentModality) {
+    setSelectedModality(modality);
+    if (!modality) return;
+
+    const preset = presetByModality.get(modality);
+    if (!preset) return;
+
+    setSetupValues(mapPresetToSeasonSetupFormValues(preset));
+    setAdvancedOpen(true);
+  }
+
+  function patchSetupValues(patch: Partial<SeasonSetupFormPresetValues>) {
+    setSetupValues((prev) => ({ ...prev, ...patch }));
+  }
 
   return (
     <div className="space-y-5">
+      {showModalitySelector && (
+        <div className="space-y-1.5">
+          <label htmlFor="modalityPreset" className="block text-sm font-medium">
+            Modalidad del torneo
+          </label>
+          <select
+            id="modalityPreset"
+            disabled={pending}
+            value={selectedModality}
+            onChange={(event) =>
+              handleModalityChange(
+                event.target.value as "" | TournamentModality
+              )
+            }
+            className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
+          >
+            <option value="">Sin modalidad / personalizado</option>
+            {presets.map((preset) => (
+              <option key={preset.modality} value={preset.modality}>
+                {preset.label}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs text-text-secondary">
+            Precarga duración, puntos y disciplina. Todos los campos siguen
+            siendo editables.
+          </p>
+        </div>
+      )}
+
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
           <label htmlFor="formatType" className="block text-sm font-medium">
@@ -91,9 +189,12 @@ export function CompetitionSetupFields({
             type="number"
             min={1}
             disabled={pending || matchDurationLocked}
-            defaultValue={String(
-              values?.matchDurationMinutes ?? defaultMatchDurationMinutes
-            )}
+            value={setupValues.matchDurationMinutes}
+            onChange={(event) =>
+              patchSetupValues({
+                matchDurationMinutes: Number(event.target.value),
+              })
+            }
             title={matchDurationLocked ? MATCH_DURATION_LOCKED_TOOLTIP : undefined}
             className={cn(
               "min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm",
@@ -162,7 +263,10 @@ export function CompetitionSetupFields({
                     type="number"
                     min={0}
                     disabled={pending}
-                    defaultValue={String(values?.pointsWin ?? 3)}
+                    value={setupValues.pointsWin}
+                    onChange={(event) =>
+                      patchSetupValues({ pointsWin: Number(event.target.value) })
+                    }
                     className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
                   />
                   <FieldError message={state?.fieldErrors?.pointsWin} />
@@ -177,7 +281,10 @@ export function CompetitionSetupFields({
                     type="number"
                     min={0}
                     disabled={pending}
-                    defaultValue={String(values?.pointsDraw ?? 1)}
+                    value={setupValues.pointsDraw}
+                    onChange={(event) =>
+                      patchSetupValues({ pointsDraw: Number(event.target.value) })
+                    }
                     className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
                   />
                   <FieldError message={state?.fieldErrors?.pointsDraw} />
@@ -192,7 +299,10 @@ export function CompetitionSetupFields({
                     type="number"
                     min={0}
                     disabled={pending}
-                    defaultValue={String(values?.pointsLoss ?? 0)}
+                    value={setupValues.pointsLoss}
+                    onChange={(event) =>
+                      patchSetupValues({ pointsLoss: Number(event.target.value) })
+                    }
                     className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
                   />
                   <FieldError message={state?.fieldErrors?.pointsLoss} />
@@ -203,7 +313,10 @@ export function CompetitionSetupFields({
                   type="checkbox"
                   name="allowDraws"
                   disabled={pending}
-                  defaultChecked={Boolean(values?.allowDraws ?? true)}
+                  checked={setupValues.allowDraws}
+                  onChange={(event) =>
+                    patchSetupValues({ allowDraws: event.target.checked })
+                  }
                 />
                 Permitir empates
               </label>
@@ -221,7 +334,12 @@ export function CompetitionSetupFields({
                     type="number"
                     min={0}
                     disabled={pending}
-                    defaultValue={String(values?.minimumRestMinutes ?? 0)}
+                    value={setupValues.minimumRestMinutes}
+                    onChange={(event) =>
+                      patchSetupValues({
+                        minimumRestMinutes: Number(event.target.value),
+                      })
+                    }
                     className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
                   />
                   <FieldError message={state?.fieldErrors?.minimumRestMinutes} />
@@ -239,7 +357,12 @@ export function CompetitionSetupFields({
                     type="number"
                     min={1}
                     disabled={pending}
-                    defaultValue={String(values?.yellowCardLimit ?? 5)}
+                    value={setupValues.yellowCardLimit}
+                    onChange={(event) =>
+                      patchSetupValues({
+                        yellowCardLimit: Number(event.target.value),
+                      })
+                    }
                     className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
                   />
                   <FieldError message={state?.fieldErrors?.yellowCardLimit} />
@@ -257,7 +380,12 @@ export function CompetitionSetupFields({
                     type="number"
                     min={1}
                     disabled={pending}
-                    defaultValue={String(values?.suspensionMatches ?? 1)}
+                    value={setupValues.suspensionMatches}
+                    onChange={(event) =>
+                      patchSetupValues({
+                        suspensionMatches: Number(event.target.value),
+                      })
+                    }
                     className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
                   />
                   <FieldError message={state?.fieldErrors?.suspensionMatches} />

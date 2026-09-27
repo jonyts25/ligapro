@@ -2361,9 +2361,11 @@ export type Database = {
           allow_draws: boolean
           created_at: string
           groups_advance_per_group: number | null
+          halves_count: number
           id: string
           match_duration_minutes: number
           max_roster_size: number | null
+          min_roster_size: number | null
           minimum_rest_minutes: number
           organization_id: string
           points_draw: number
@@ -2385,9 +2387,11 @@ export type Database = {
           allow_draws?: boolean
           created_at?: string
           groups_advance_per_group?: number | null
+          halves_count?: number
           id?: string
           match_duration_minutes?: number
           max_roster_size?: number | null
+          min_roster_size?: number | null
           minimum_rest_minutes?: number
           organization_id: string
           points_draw?: number
@@ -2409,9 +2413,11 @@ export type Database = {
           allow_draws?: boolean
           created_at?: string
           groups_advance_per_group?: number | null
+          halves_count?: number
           id?: string
           match_duration_minutes?: number
           max_roster_size?: number | null
+          min_roster_size?: number | null
           minimum_rest_minutes?: number
           organization_id?: string
           points_draw?: number
@@ -2913,6 +2919,66 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      tournament_type_presets: {
+        Row: {
+          allow_draws: boolean
+          created_at: string
+          halves_count: number
+          id: string
+          label: string
+          match_duration_minutes: number
+          max_roster_size: number | null
+          min_roster_size: number | null
+          minimum_rest_minutes: number
+          modality: string
+          players_on_field: number
+          points_draw: number
+          points_loss: number
+          points_win: number
+          suspension_matches: number
+          updated_at: string
+          yellow_card_limit: number
+        }
+        Insert: {
+          allow_draws?: boolean
+          created_at?: string
+          halves_count?: number
+          id?: string
+          label: string
+          match_duration_minutes: number
+          max_roster_size?: number | null
+          min_roster_size?: number | null
+          minimum_rest_minutes?: number
+          modality: string
+          players_on_field: number
+          points_draw?: number
+          points_loss?: number
+          points_win?: number
+          suspension_matches?: number
+          updated_at?: string
+          yellow_card_limit?: number
+        }
+        Update: {
+          allow_draws?: boolean
+          created_at?: string
+          halves_count?: number
+          id?: string
+          label?: string
+          match_duration_minutes?: number
+          max_roster_size?: number | null
+          min_roster_size?: number | null
+          minimum_rest_minutes?: number
+          modality?: string
+          players_on_field?: number
+          points_draw?: number
+          points_loss?: number
+          points_win?: number
+          suspension_matches?: number
+          updated_at?: string
+          yellow_card_limit?: number
+        }
+        Relationships: []
       }
       venues: {
         Row: {
@@ -3526,6 +3592,26 @@ export type Database = {
           volume_multiplier_6_plus: number
         }[]
       }
+      get_tournament_type_presets: {
+        Args: never
+        Returns: {
+          allow_draws: boolean
+          halves_count: number
+          label: string
+          match_duration_minutes: number
+          max_roster_size: number | null
+          min_roster_size: number | null
+          minimum_rest_minutes: number
+          modality: string
+          players_on_field: number
+          points_draw: number
+          points_loss: number
+          points_win: number
+          suspension_matches: number
+          updated_at: string
+          yellow_card_limit: number
+        }[]
+      }
       get_platform_sales_overview: {
         Args: never
         Returns: {
@@ -3989,6 +4075,25 @@ export type Database = {
           p_volume_multiplier_1_to_2: number
           p_volume_multiplier_3_to_5: number
           p_volume_multiplier_6_plus: number
+        }
+        Returns: undefined
+      }
+      set_tournament_type_preset: {
+        Args: {
+          p_allow_draws: boolean
+          p_halves_count: number
+          p_label: string
+          p_match_duration_minutes: number
+          p_max_roster_size: number | null
+          p_min_roster_size: number | null
+          p_minimum_rest_minutes: number
+          p_modality: string
+          p_players_on_field: number
+          p_points_draw: number
+          p_points_loss: number
+          p_points_win: number
+          p_suspension_matches: number
+          p_yellow_card_limit: number
         }
         Returns: undefined
       }
