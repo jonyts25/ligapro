@@ -49,6 +49,12 @@ export default async function FieldsPage({ params }: PageProps) {
               >
                 Disponibilidad
               </Link>
+              <Link
+                href={`/organizaciones/${organizationId}/canchas/calendario`}
+                className="inline-flex min-h-11 items-center rounded-xl border border-border px-4 text-sm font-medium text-text-secondary"
+              >
+                Calendario
+              </Link>
               <TierLimitLink
                 href={`/organizaciones/${organizationId}/canchas/nueva`}
                 disabled={canchasAtLimit}
