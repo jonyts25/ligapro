@@ -11,6 +11,7 @@ import {
   participationStatusLabel,
   type MatchParticipantRow,
 } from "@/lib/matches/participation-types";
+import { formatRosterSuspensionAlert } from "@/lib/shared/match-roster-for-capture";
 import { cn } from "@/lib/utils/cn";
 
 type MatchRosterValidationFormProps = {
@@ -65,11 +66,17 @@ function TeamParticipationList({
           const status = statusByPlayerId.get(player.seasonTeamPlayerId);
           const jersey =
             player.jerseyNumber != null ? `#${player.jerseyNumber}` : "—";
+          const suspensionAlert = formatRosterSuspensionAlert(player);
 
           return (
             <li
               key={player.seasonTeamPlayerId}
-              className="flex items-center gap-2 rounded-lg border border-border px-2 py-1.5 text-sm"
+              className={cn(
+                "flex flex-wrap items-center gap-2 rounded-lg border px-2 py-1.5 text-sm",
+                player.isSuspended
+                  ? "border-warning/50 bg-warning/10"
+                  : "border-border"
+              )}
             >
               <input
                 type="checkbox"
@@ -80,6 +87,14 @@ function TeamParticipationList({
               <span className="min-w-0 flex-1 truncate">
                 {jersey} {player.playerName}
               </span>
+              {suspensionAlert ? (
+                <span
+                  className="shrink-0 rounded-full border border-warning/30 bg-warning/15 px-2 py-0.5 text-xs font-semibold text-warning"
+                  role="status"
+                >
+                  {suspensionAlert}
+                </span>
+              ) : null}
               <span className="text-xs text-text-secondary">
                 {status ? participationStatusLabel(status) : "Sin registro"}
               </span>

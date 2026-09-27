@@ -139,6 +139,9 @@ export type MatchRosterPlayer = {
   photoPath: string | null;
   photoUrl?: string | null;
   verificationStatus: string;
+  isSuspended: boolean;
+  matchesRemaining: number;
+  suspensionType: string | null;
 };
 
 export function eventTypeLabel(value: string): string {

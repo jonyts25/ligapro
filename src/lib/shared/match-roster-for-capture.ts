@@ -12,12 +12,21 @@ export type MatchParticipationStatus =
   | "played"
   | "no_show";
 
+export type MatchRosterEligibility = {
+  isSuspended: boolean;
+  matchesRemaining: number;
+  suspensionType: string | null;
+};
+
 export type MatchRosterCapturePlayer = {
   seasonTeamPlayerId: string;
   seasonTeamId: string;
   fullName: string;
   jerseyNumber: number | null;
   participationStatus: MatchParticipationStatus | null;
+  isSuspended: boolean;
+  matchesRemaining: number;
+  suspensionType: string | null;
 };
 
 export type MatchRosterForCapture = {
@@ -35,6 +44,57 @@ export type MatchRosterForCapture = {
   homePlayers: MatchRosterCapturePlayer[];
   awayPlayers: MatchRosterCapturePlayer[];
 };
+
+const DEFAULT_ELIGIBILITY: MatchRosterEligibility = {
+  isSuspended: false,
+  matchesRemaining: 0,
+  suspensionType: null,
+};
+
+export function formatRosterSuspensionAlert(input: {
+  isSuspended: boolean;
+  matchesRemaining: number;
+}): string | null {
+  if (!input.isSuspended) return null;
+  const count = Math.max(0, input.matchesRemaining);
+  const label = count === 1 ? "partido" : "partidos";
+  return `Suspendido — ${count} ${label}`;
+}
+
+export function mapMatchRosterEligibilityRows(
+  rows: Array<{
+    season_team_player_id: string;
+    is_suspended: boolean;
+    matches_remaining: number;
+    suspension_type: string | null;
+  }> | null
+): Map<string, MatchRosterEligibility> {
+  const map = new Map<string, MatchRosterEligibility>();
+  for (const row of rows ?? []) {
+    map.set(row.season_team_player_id, {
+      isSuspended: row.is_suspended,
+      matchesRemaining: row.matches_remaining,
+      suspensionType: row.suspension_type,
+    });
+  }
+  return map;
+}
+
+export async function fetchMatchRosterEligibilityByPlayer(
+  supabase: SharedSupabaseClient,
+  matchId: string
+): Promise<Map<string, MatchRosterEligibility>> {
+  const client = supabase as SupabaseClient<Database>;
+  const { data, error } = await client.rpc("get_match_roster_eligibility", {
+    p_match_id: matchId,
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  return mapMatchRosterEligibilityRows(data ?? []);
+}
 
 function teamDisplayName(row: {
   display_name: string | null;
@@ -90,6 +150,7 @@ export function buildMatchRosterForCapture(input: {
       | null;
   }>;
   participationByPlayer: Map<string, MatchParticipationStatus>;
+  eligibilityByPlayer?: Map<string, MatchRosterEligibility>;
 }): MatchRosterForCapture {
   const teamMeta = new Map<string, { name: string; logoPath: string | null }>();
   for (const row of input.seasonTeams) {
@@ -99,12 +160,15 @@ export function buildMatchRosterForCapture(input: {
   const homeMeta = teamMeta.get(input.match.home_season_team_id);
   const awayMeta = teamMeta.get(input.match.away_season_team_id);
   const duration = input.matchDurationMinutes ?? 90;
+  const eligibilityByPlayer = input.eligibilityByPlayer ?? new Map();
 
   const mapPlayer = (
     row: (typeof input.roster)[number]
   ): MatchRosterCapturePlayer => {
     const playerRel = row.players;
     const player = Array.isArray(playerRel) ? playerRel[0] : playerRel;
+    const eligibility =
+      eligibilityByPlayer.get(row.id) ?? DEFAULT_ELIGIBILITY;
     return {
       seasonTeamPlayerId: row.id,
       seasonTeamId: row.season_team_id,
@@ -112,6 +176,9 @@ export function buildMatchRosterForCapture(input: {
       jerseyNumber: row.jersey_number,
       participationStatus:
         input.participationByPlayer.get(row.id) ?? null,
+      isSuspended: eligibility.isSuspended,
+      matchesRemaining: eligibility.matchesRemaining,
+      suspensionType: eligibility.suspensionType,
     };
   };
 
@@ -154,34 +221,40 @@ export async function fetchMatchRosterForCapture(
 
   if (!match) return null;
 
-  const [{ data: rules }, { data: seasonTeams }, { data: roster }, { data: participants }] =
-    await Promise.all([
-      client
-        .from("season_rules")
-        .select("match_duration_minutes")
-        .eq("season_id", match.season_id)
-        .eq("organization_id", match.organization_id)
-        .maybeSingle(),
-      client
-        .from("season_teams")
-        .select("id, display_name, teams(name, logo_path)")
-        .eq("organization_id", match.organization_id)
-        .in("id", [match.home_season_team_id, match.away_season_team_id]),
-      client
-        .from("season_team_players")
-        .select("id, season_team_id, jersey_number, players(full_name)")
-        .eq("organization_id", match.organization_id)
-        .in("season_team_id", [
-          match.home_season_team_id,
-          match.away_season_team_id,
-        ])
-        .neq("registration_status", "inactive")
-        .order("jersey_number", { ascending: true, nullsFirst: false }),
-      client
-        .from("match_participants")
-        .select("season_team_player_id, status")
-        .eq("match_id", matchId),
-    ]);
+  const [
+    { data: rules },
+    { data: seasonTeams },
+    { data: roster },
+    { data: participants },
+    eligibilityByPlayer,
+  ] = await Promise.all([
+    client
+      .from("season_rules")
+      .select("match_duration_minutes")
+      .eq("season_id", match.season_id)
+      .eq("organization_id", match.organization_id)
+      .maybeSingle(),
+    client
+      .from("season_teams")
+      .select("id, display_name, teams(name, logo_path)")
+      .eq("organization_id", match.organization_id)
+      .in("id", [match.home_season_team_id, match.away_season_team_id]),
+    client
+      .from("season_team_players")
+      .select("id, season_team_id, jersey_number, players(full_name)")
+      .eq("organization_id", match.organization_id)
+      .in("season_team_id", [
+        match.home_season_team_id,
+        match.away_season_team_id,
+      ])
+      .neq("registration_status", "inactive")
+      .order("jersey_number", { ascending: true, nullsFirst: false }),
+    client
+      .from("match_participants")
+      .select("season_team_player_id, status")
+      .eq("match_id", matchId),
+    fetchMatchRosterEligibilityByPlayer(client, matchId),
+  ]);
 
   const participationByPlayer = new Map<string, MatchParticipationStatus>();
   for (const row of participants ?? []) {
@@ -197,5 +270,6 @@ export async function fetchMatchRosterForCapture(
     seasonTeams: seasonTeams ?? [],
     roster: roster ?? [],
     participationByPlayer,
+    eligibilityByPlayer,
   });
 }

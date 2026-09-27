@@ -338,6 +338,9 @@ export async function getMatchRosterPlayers(
   return rows.map((row) => ({
     ...row,
     photoUrl: row.photoPath ? (photoUrls.get(row.photoPath) ?? null) : null,
+    isSuspended: false,
+    matchesRemaining: 0,
+    suspensionType: null,
   }));
 }
 
@@ -454,19 +457,46 @@ export async function getMatchCaptureContext(
     details.match.status as MatchStatusValue
   );
 
-  const [timeline, discipline, officials, roster, seasonRules, participants] =
-    await Promise.all([
-      getMatchTimeline(organizationId, matchId),
-      getMatchDiscipline(organizationId, seasonId, matchId),
-      getMatchOfficials(organizationId, matchId, seasonId),
-      getMatchRosterPlayers(
-        organizationId,
-        details.match.homeSeasonTeamId,
-        details.match.awaySeasonTeamId
-      ),
-      getSeasonRequirePlayerVerification(seasonId),
-      getMatchParticipants(organizationId, matchId),
-    ]);
+  const supabase = await createClient();
+
+  const [
+    timeline,
+    discipline,
+    officials,
+    rosterBase,
+    seasonRules,
+    participants,
+    eligibilityByPlayer,
+  ] = await Promise.all([
+    getMatchTimeline(organizationId, matchId),
+    getMatchDiscipline(organizationId, seasonId, matchId),
+    getMatchOfficials(organizationId, matchId, seasonId),
+    getMatchRosterPlayers(
+      organizationId,
+      details.match.homeSeasonTeamId,
+      details.match.awaySeasonTeamId
+    ),
+    getSeasonRequirePlayerVerification(seasonId),
+    getMatchParticipants(organizationId, matchId),
+    import("@/lib/shared/match-roster-for-capture").then(({ fetchMatchRosterEligibilityByPlayer }) =>
+      fetchMatchRosterEligibilityByPlayer(supabase, matchId)
+    ),
+  ]);
+
+  const roster = rosterBase.map((player) => {
+    const eligibility =
+      eligibilityByPlayer.get(player.seasonTeamPlayerId) ?? {
+        isSuspended: false,
+        matchesRemaining: 0,
+        suspensionType: null,
+      };
+    return {
+      ...player,
+      isSuspended: eligibility.isSuspended,
+      matchesRemaining: eligibility.matchesRemaining,
+      suspensionType: eligibility.suspensionType,
+    };
+  });
 
   const { goalsFromEvents } = await import("@/lib/matches/types");
   const fromEvents = goalsFromEvents(
