@@ -8,6 +8,8 @@ import {
   seasonTeamStatusLabel,
   seasonTeamStatusVariant,
 } from "@/lib/teams/types";
+import { TeamCrest } from "@/components/teams/TeamCrest";
+import { getTeamLogoPublicUrl } from "@/lib/teams/logo-url";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { StatusBadge } from "@/components/ui/StatusBadge";
@@ -35,7 +37,16 @@ export default async function TeamDetailPage({ params }: PageProps) {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <PageHeader
-        title={team.name}
+        title={
+          <span className="inline-flex items-center gap-3">
+            <TeamCrest
+              name={team.name}
+              logoUrl={getTeamLogoPublicUrl(team.logo_path)}
+              size="lg"
+            />
+            {team.name}
+          </span>
+        }
         description="Equipo persistente de la organización."
         actions={
           <div className="flex flex-wrap gap-2">

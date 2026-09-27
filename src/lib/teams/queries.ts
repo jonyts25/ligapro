@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getTeamLogoPublicUrl } from "@/lib/teams/logo-url";
 import {
   selectActivePlayersForImport,
   type RosterImportSource,
@@ -25,7 +26,7 @@ export async function getOrganizationTeams(
 
   const { data: teams } = await supabase
     .from("teams")
-    .select("id, organization_id, name")
+    .select("id, organization_id, name, logo_path")
     .eq("organization_id", organizationId)
     .order("name");
 
@@ -67,10 +68,12 @@ export async function getOrganizationTeams(
 
   return teams.map((team) => {
     const meta = byTeam.get(team.id);
+    const record = team as TeamRecord;
     return {
-      ...(team as TeamRecord),
+      ...record,
       seasonEnrollmentCount: meta?.count ?? 0,
       latestSeasonName: meta?.latestSeasonName ?? null,
+      logoUrl: getTeamLogoPublicUrl(record.logo_path),
     };
   });
 }
@@ -83,7 +86,7 @@ export async function getTeamDetails(
 
   const { data: team } = await supabase
     .from("teams")
-    .select("id, organization_id, name")
+    .select("id, organization_id, name, logo_path")
     .eq("id", teamId)
     .eq("organization_id", organizationId)
     .maybeSingle();
@@ -226,7 +229,7 @@ export async function getAvailableTeamsForSeason(
 
   const { data: teams } = await supabase
     .from("teams")
-    .select("id, organization_id, name")
+    .select("id, organization_id, name, logo_path")
     .eq("organization_id", organizationId)
     .order("name");
 

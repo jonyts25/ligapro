@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getTeamLogoPublicUrl } from "@/lib/teams/logo-url";
 import { mapPublicPlayerName } from "@/lib/public-season/player-names";
 import type {
   PublicDisciplineRow,
@@ -224,6 +225,8 @@ type PublicMatchDetailRpcRow = {
   match_id: string;
   home_team_name: string;
   away_team_name: string;
+  home_team_logo_path: string | null;
+  away_team_logo_path: string | null;
   status: string;
   home_score: number | null;
   away_score: number | null;
@@ -265,6 +268,8 @@ export async function getPublicMatchDetail(
     matchId: row.match_id,
     homeTeamName: row.home_team_name,
     awayTeamName: row.away_team_name,
+    homeTeamLogoUrl: getTeamLogoPublicUrl(row.home_team_logo_path),
+    awayTeamLogoUrl: getTeamLogoPublicUrl(row.away_team_logo_path),
     status: row.status,
     homeScore: row.home_score,
     awayScore: row.away_score,

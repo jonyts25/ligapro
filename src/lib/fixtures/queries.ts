@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getTeamLogoPublicUrl } from "@/lib/teams/logo-url";
 import {
   computeFieldOpenSlots,
   addDaysIso,
@@ -25,17 +26,35 @@ import {
 
 export type { FieldOpenSlot, FieldOpenSlotsResult } from "@/lib/fixtures/open-slots";
 
+type SeasonTeamDisplay = {
+  name: string;
+  logoUrl: string | null;
+};
+
+function seasonTeamDisplay(row: {
+  display_name: string | null;
+  teams:
+    | { name: string; logo_path: string | null }
+    | { name: string; logo_path: string | null }[]
+    | null;
+}): SeasonTeamDisplay {
+  const rel = row.teams;
+  const team = Array.isArray(rel) ? rel[0] : rel;
+  const name = row.display_name?.trim() || team?.name || "Equipo";
+  return {
+    name,
+    logoUrl: getTeamLogoPublicUrl(team?.logo_path ?? null),
+  };
+}
+
 function seasonTeamName(row: {
   display_name: string | null;
   teams:
-    | { name: string }
-    | { name: string }[]
+    | { name: string; logo_path: string | null }
+    | { name: string; logo_path: string | null }[]
     | null;
 }): string {
-  if (row.display_name?.trim()) return row.display_name.trim();
-  const rel = row.teams;
-  const name = Array.isArray(rel) ? rel[0]?.name : rel?.name;
-  return name ?? "Equipo";
+  return seasonTeamDisplay(row).name;
 }
 
 function mapMatchRow(
@@ -55,7 +74,7 @@ function mapMatchRow(
     field_reservation_id: string | null;
     calendar_status?: string;
   },
-  names: Map<string, string>,
+  names: Map<string, SeasonTeamDisplay>,
   reservations: Map<
     string,
     {
@@ -86,8 +105,10 @@ function mapMatchRow(
     status: row.status as MatchStatus,
     homeSeasonTeamId: row.home_season_team_id,
     awaySeasonTeamId: row.away_season_team_id,
-    homeName: names.get(row.home_season_team_id) ?? "Local",
-    awayName: names.get(row.away_season_team_id) ?? "Visitante",
+    homeName: names.get(row.home_season_team_id)?.name ?? "Local",
+    awayName: names.get(row.away_season_team_id)?.name ?? "Visitante",
+    homeLogoUrl: names.get(row.home_season_team_id)?.logoUrl ?? null,
+    awayLogoUrl: names.get(row.away_season_team_id)?.logoUrl ?? null,
     homeScore: row.home_score,
     awayScore: row.away_score,
     isProgrammed: Boolean(row.field_reservation_id && res),
@@ -110,17 +131,17 @@ function mapMatchRow(
 async function loadSeasonTeamNames(
   organizationId: string,
   seasonId: string
-): Promise<Map<string, string>> {
+): Promise<Map<string, SeasonTeamDisplay>> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("season_teams")
-    .select("id, display_name, teams(name)")
+    .select("id, display_name, teams(name, logo_path)")
     .eq("organization_id", organizationId)
     .eq("season_id", seasonId);
 
-  const map = new Map<string, string>();
+  const map = new Map<string, SeasonTeamDisplay>();
   for (const row of data ?? []) {
-    map.set(row.id, seasonTeamName(row));
+    map.set(row.id, seasonTeamDisplay(row));
   }
   return map;
 }
@@ -249,7 +270,7 @@ export async function getSeasonFixtureContext(
 
   const { data: teams } = await supabase
     .from("season_teams")
-    .select("id, display_name, registration_status, teams(name)")
+    .select("id, display_name, registration_status, teams(name, logo_path)")
     .eq("season_id", seasonId)
     .eq("organization_id", organizationId)
     .in("registration_status", ["registered", "confirmed"])
@@ -620,7 +641,7 @@ export async function getOrganizationMatchStats(
   const reservations = await loadReservations(organizationId, reservationIds);
 
   const seasonIds = [...new Set((matches ?? []).map((m) => m.season_id))];
-  const nameMaps = new Map<string, Map<string, string>>();
+  const nameMaps = new Map<string, Map<string, SeasonTeamDisplay>>();
   await Promise.all(
     seasonIds.map(async (seasonId) => {
       nameMaps.set(
@@ -650,8 +671,8 @@ export async function getOrganizationMatchStats(
         id: m.id,
         seasonId: m.season_id,
         competitionId: competitionId ?? "",
-        homeName: names?.get(m.home_season_team_id) ?? "Local",
-        awayName: names?.get(m.away_season_team_id) ?? "Visitante",
+        homeName: names?.get(m.home_season_team_id)?.name ?? "Local",
+        awayName: names?.get(m.away_season_team_id)?.name ?? "Visitante",
         startsAt: res.starts_at,
         venueName: res.venueName,
         fieldName: res.fieldName,

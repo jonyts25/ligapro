@@ -1,12 +1,26 @@
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
+import { afterEach, describe, it } from "node:test";
+import { getTeamLogoPublicUrl } from "@/lib/teams/logo-url";
 
 describe("public match detail official flag mapping", () => {
+  const originalBase = process.env.NEXT_PUBLIC_SUPABASE_URL;
+
+  afterEach(() => {
+    if (originalBase === undefined) {
+      delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+    } else {
+      process.env.NEXT_PUBLIC_SUPABASE_URL = originalBase;
+    }
+  });
+
   it("maps is_result_official from RPC row shape", () => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
     const row = {
       match_id: "match-1",
       home_team_name: "Home",
       away_team_name: "Away",
+      home_team_logo_path: "org/home-team/logo.png",
+      away_team_logo_path: null,
       status: "finished",
       home_score: 2,
       away_score: 1,
@@ -23,6 +37,8 @@ describe("public match detail official flag mapping", () => {
       matchId: row.match_id,
       homeTeamName: row.home_team_name,
       awayTeamName: row.away_team_name,
+      homeTeamLogoUrl: getTeamLogoPublicUrl(row.home_team_logo_path),
+      awayTeamLogoUrl: getTeamLogoPublicUrl(row.away_team_logo_path),
       status: row.status,
       homeScore: row.home_score,
       awayScore: row.away_score,
@@ -36,5 +52,7 @@ describe("public match detail official flag mapping", () => {
     };
 
     assert.equal(mapped.isResultOfficial, false);
+    assert.ok(mapped.homeTeamLogoUrl?.includes("team-logos"));
+    assert.equal(mapped.awayTeamLogoUrl, null);
   });
 });

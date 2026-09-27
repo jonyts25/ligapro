@@ -28,6 +28,7 @@ import {
 import { formatLimitReachedMessage } from "@/lib/billing/tier-limits";
 import { getOrganizationTierLimitStatus } from "@/lib/billing/tier-limits-queries";
 import { CapturePermissionBadge } from "@/components/matches/CapturePermissionBadge";
+import { TeamMatchupTitle } from "@/components/teams/TeamMatchupTitle";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { matchStatusLabel } from "@/lib/matches/types";
@@ -118,7 +119,18 @@ export default async function MatchDetailPage({ params }: PageProps) {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <PageHeader
-        title={`${match.homeName} vs ${match.awayName}`}
+        title={
+          <TeamMatchupTitle
+            as="span"
+            titleClassName="text-xl sm:text-2xl"
+            homeName={match.homeName}
+            awayName={match.awayName}
+            homeLogoUrl={match.homeLogoUrl}
+            awayLogoUrl={match.awayLogoUrl}
+            homeScore={match.homeScore}
+            awayScore={match.awayScore}
+          />
+        }
         description={`${details.seasonName} · ${details.competitionName}`}
         actions={
           <div className="flex flex-wrap gap-2">

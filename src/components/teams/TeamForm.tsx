@@ -13,6 +13,8 @@ import {
 } from "@/lib/teams/types";
 import { SubmitButton } from "@/components/auth/SubmitButton";
 import { Card } from "@/components/ui/Card";
+import { TeamLogoUploader } from "@/components/teams/TeamLogoUploader";
+import { getTeamLogoPublicUrl } from "@/lib/teams/logo-url";
 import { cn } from "@/lib/utils/cn";
 
 type TeamFormProps = {
@@ -33,6 +35,8 @@ export function TeamForm({ organizationId, mode, team }: TeamFormProps) {
   );
   const [bulkMode, setBulkMode] = useState(false);
   const name = String(state.values?.name ?? team?.name ?? "");
+  const currentLogoUrl =
+    mode === "edit" && team ? getTeamLogoPublicUrl(team.logo_path) : null;
 
   return (
     <Card>
@@ -108,6 +112,17 @@ export function TeamForm({ organizationId, mode, team }: TeamFormProps) {
         <input type="hidden" name="organizationId" value={organizationId} />
         {mode === "edit" && team && (
           <input type="hidden" name="teamId" value={team.id} />
+        )}
+        {mode === "edit" && team && (
+          <div className="space-y-1.5">
+            <p className="block text-sm font-medium">Escudo del equipo</p>
+            <TeamLogoUploader
+              organizationId={organizationId}
+              teamId={team.id}
+              currentLogoUrl={currentLogoUrl}
+              currentLogoPath={team.logo_path}
+            />
+          </div>
         )}
         <div className="space-y-1.5">
           <label htmlFor="name" className="block text-sm font-medium">

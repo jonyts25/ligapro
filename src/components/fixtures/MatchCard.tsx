@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
+import { TeamMatchupTitle } from "@/components/teams/TeamMatchupTitle";
 import { MatchStatusBadge } from "@/components/fixtures/MatchStatusBadge";
 import { formatMatchDateTime } from "@/lib/fixtures/format";
 import type { MatchListItem } from "@/lib/fixtures/types";
@@ -48,13 +49,15 @@ export function MatchCard({
     <Card className="space-y-3">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <p className="text-sm font-semibold text-text-primary">
-            {match.homeName}{" "}
-            <span className="font-normal text-muted">
-              {scoreText ?? "vs"}
-            </span>{" "}
-            {match.awayName}
-          </p>
+          <TeamMatchupTitle
+            homeName={match.homeName}
+            awayName={match.awayName}
+            homeLogoUrl={match.homeLogoUrl}
+            awayLogoUrl={match.awayLogoUrl}
+            homeScore={match.homeScore}
+            awayScore={match.awayScore}
+            titleClassName="text-sm"
+          />
           <p className="mt-1 text-xs text-text-secondary">
             {match.roundLabel ??
               (match.roundNumber

@@ -70,6 +70,8 @@ export type PublicMatchDetail = {
   matchId: string;
   homeTeamName: string;
   awayTeamName: string;
+  homeTeamLogoUrl: string | null;
+  awayTeamLogoUrl: string | null;
   status: string;
   homeScore: number | null;
   awayScore: number | null;
