@@ -3498,6 +3498,7 @@ export type Database = {
           field_name: string
           home_score: number
           home_team_name: string
+          is_result_official: boolean
           leg_number: number
           match_id: string
           round_label: string

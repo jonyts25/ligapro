@@ -8,6 +8,10 @@ import {
   setChroniclePublishedAction,
 } from "@/lib/chronicles/actions";
 import {
+  shouldShowChronicleElaborationMessage,
+  shouldShowChronicleGenerateButton,
+} from "@/lib/chronicles/chronicle-panel-ui";
+import {
   initialChronicleActionState,
   type MatchChronicleJobRow,
   type MatchChronicleRow,
@@ -28,6 +32,7 @@ type MatchChroniclePanelProps = {
   job: MatchChronicleJobRow | null;
   chroniclesAtLimit?: boolean;
   chroniclesLimitMessage?: string | null;
+  resultApproved: boolean;
 };
 
 const JOB_STATUS_LABEL: Record<MatchChronicleJobRow["status"], string> = {
@@ -64,6 +69,7 @@ export function MatchChroniclePanel({
   job,
   chroniclesAtLimit = false,
   chroniclesLimitMessage = null,
+  resultApproved,
 }: MatchChroniclePanelProps) {
   const router = useRouter();
   const [confirmRegenerate, setConfirmRegenerate] = useState(false);
@@ -96,6 +102,18 @@ export function MatchChroniclePanel({
   const needsConfirm =
     enqueueState.needsConfirm ||
     (chronicle?.isPublished && !confirmRegenerate);
+  const showElaborationMessage = shouldShowChronicleElaborationMessage({
+    matchFinished,
+    resultApproved,
+    chronicle,
+    job,
+  });
+  const showGenerateButton = shouldShowChronicleGenerateButton({
+    canManage,
+    resultApproved,
+    chronicle,
+    job,
+  });
 
   return (
     <Card className="space-y-4">
@@ -110,7 +128,14 @@ export function MatchChroniclePanel({
         </p>
       </div>
 
-      {canManage && (
+      {showElaborationMessage && (
+        <p className="rounded-xl border border-border bg-surface-elevated/40 px-3 py-2 text-sm text-text-secondary">
+          Crónica en elaboración — se generará automáticamente cuando el
+          resultado quede oficial.
+        </p>
+      )}
+
+      {canManage && showGenerateButton && (
         <div className="space-y-3 rounded-xl border border-border bg-surface-elevated/40 p-4">
           {(needsConfirm || enqueueState.needsConfirm) && !confirmRegenerate && (
             <p className="rounded-xl border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-text-primary">
@@ -253,13 +278,13 @@ export function MatchChroniclePanel({
             </div>
           )}
         </div>
-      ) : (
+      ) : !showElaborationMessage ? (
         <p className="text-sm text-text-secondary">
           {canManage
             ? "Aún no hay crónica generada para este partido."
             : "La crónica aparecerá aquí cuando exista y esté publicada."}
         </p>
-      )}
+      ) : null}
     </Card>
   );
 }

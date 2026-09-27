@@ -1,4 +1,6 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
+import type { Database } from "@/types/database";
 import type { MatchSchedulingDetails } from "@/lib/fixtures/types";
 import { getMatchSchedulingDetails } from "@/lib/fixtures/queries";
 import { resolveUpdateResultPermissions } from "@/lib/matches/update-result-permissions";
@@ -154,9 +156,10 @@ export async function getMatchOfficials(
 
 export async function getMatchTimeline(
   organizationId: string,
-  matchId: string
+  matchId: string,
+  supabaseClient?: SupabaseClient<Database>
 ): Promise<MatchTimelineEvent[]> {
-  const supabase = await createClient();
+  const supabase = supabaseClient ?? (await createClient());
   const { data } = await supabase
     .from("match_events")
     .select(

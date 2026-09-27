@@ -233,6 +233,7 @@ type PublicMatchDetailRpcRow = {
   round_label: string | null;
   round_number: number | null;
   leg_number: number | null;
+  is_result_official: boolean;
 };
 
 type PublicMatchEventRpcRow = {
@@ -273,6 +274,7 @@ export async function getPublicMatchDetail(
     roundLabel: row.round_label,
     roundNumber: row.round_number,
     legNumber: row.leg_number,
+    isResultOfficial: row.is_result_official,
   };
 }
 
