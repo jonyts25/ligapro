@@ -794,6 +794,7 @@ export type Database = {
       match_events: {
         Row: {
           assist_season_team_player_id: string | null
+          client_dedup_key: string | null
           created_at: string
           event_type: string
           id: string
@@ -809,6 +810,7 @@ export type Database = {
         }
         Insert: {
           assist_season_team_player_id?: string | null
+          client_dedup_key?: string | null
           created_at?: string
           event_type: string
           id?: string
@@ -824,6 +826,7 @@ export type Database = {
         }
         Update: {
           assist_season_team_player_id?: string | null
+          client_dedup_key?: string | null
           created_at?: string
           event_type?: string
           id?: string
@@ -935,6 +938,64 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      match_participants: {
+        Row: {
+          called_by_profile_id: string | null
+          created_at: string
+          id: string
+          match_id: string
+          organization_id: string
+          responded_at: string | null
+          season_team_player_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          called_by_profile_id?: string | null
+          created_at?: string
+          id?: string
+          match_id: string
+          organization_id: string
+          responded_at?: string | null
+          season_team_player_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          called_by_profile_id?: string | null
+          created_at?: string
+          id?: string
+          match_id?: string
+          organization_id?: string
+          responded_at?: string | null
+          season_team_player_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_participants_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_participants_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_participants_season_team_player_id_fkey"
+            columns: ["season_team_player_id"]
+            isOneToOne: false
+            referencedRelation: "season_team_players"
             referencedColumns: ["id"]
           },
         ]
@@ -3755,6 +3816,8 @@ export type Database = {
       }
       record_match_event: {
         Args: {
+          p_assist_season_team_player_id?: string
+          p_client_dedup_key?: string
           p_event_type: string
           p_match_id: string
           p_minute: number
@@ -4036,6 +4099,13 @@ export type Database = {
       }
       slugify_organization_name: { Args: { p_name: string }; Returns: string }
       unschedule_match: { Args: { p_match_id: string }; Returns: undefined }
+      validate_match_roster: {
+        Args: {
+          p_match_id: string
+          p_season_team_player_ids: string[]
+        }
+        Returns: Json
+      }
       update_match_result: {
         Args: {
           p_away_score: number

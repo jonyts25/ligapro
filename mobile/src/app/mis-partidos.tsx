@@ -1,9 +1,10 @@
-import { Redirect } from "expo-router";
+import { Redirect, router } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Button,
   FlatList,
+  Pressable,
   RefreshControl,
   StyleSheet,
   Text,
@@ -32,7 +33,10 @@ function formatMatchDate(iso: string | null): string {
 
 function MatchRow({ item }: { item: MyOfficialMatchAssignmentCore }) {
   return (
-    <View style={styles.card}>
+    <Pressable
+      style={styles.card}
+      onPress={() => router.push(`/partidos/${item.matchId}`)}
+    >
       <Text style={styles.matchTitle}>{item.matchupLabel}</Text>
       <Text style={styles.meta}>
         {item.competitionName} · {item.seasonName}
@@ -43,7 +47,8 @@ function MatchRow({ item }: { item: MyOfficialMatchAssignmentCore }) {
         Rol: {matchOfficialRoleLabel(item.officialRole)} · Asignación:{" "}
         {matchOfficialStatusLabel(item.assignmentStatus)}
       </Text>
-    </View>
+      <Text style={styles.openHint}>Toca para capturar</Text>
+    </Pressable>
   );
 }
 
@@ -170,6 +175,12 @@ const styles = StyleSheet.create({
   meta: {
     fontSize: 13,
     color: "#666",
+  },
+  openHint: {
+    marginTop: 8,
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#111",
   },
   empty: {
     textAlign: "center",

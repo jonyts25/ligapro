@@ -11,3 +11,10 @@ export {
   type MyOfficialMatchAssignmentCore,
 } from "./my-official-match-assignments";
 export { isSeasonArchived } from "./season-visibility";
+export {
+  buildMatchRosterForCapture,
+  fetchMatchRosterForCapture,
+  type MatchParticipationStatus,
+  type MatchRosterCapturePlayer,
+  type MatchRosterForCapture,
+} from "./match-roster-for-capture";

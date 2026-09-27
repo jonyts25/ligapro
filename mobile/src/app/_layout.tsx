@@ -14,6 +14,10 @@ export default function RootLayout() {
           name="mis-partidos"
           options={{ title: "Mis partidos" }}
         />
+        <Stack.Screen
+          name="partidos/[matchId]/index"
+          options={{ title: "Captura" }}
+        />
       </Stack>
     </AuthProvider>
   );
