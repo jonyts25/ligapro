@@ -4099,6 +4099,15 @@ export type Database = {
       }
       slugify_organization_name: { Args: { p_name: string }; Returns: string }
       unschedule_match: { Args: { p_match_id: string }; Returns: undefined }
+      get_match_roster_eligibility: {
+        Args: { p_match_id: string }
+        Returns: {
+          season_team_player_id: string
+          is_suspended: boolean
+          matches_remaining: number
+          suspension_type: string | null
+        }[]
+      }
       validate_match_roster: {
         Args: {
           p_match_id: string

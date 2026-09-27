@@ -93,6 +93,9 @@ async function fetchGuestRoster(token: string): Promise<MatchRosterPlayer[]> {
     photoPath: row.photo_path,
     verificationStatus: row.verification_status ?? "not_required",
     photoUrl: null,
+    isSuspended: false,
+    matchesRemaining: 0,
+    suspensionType: null,
   }));
 }
 

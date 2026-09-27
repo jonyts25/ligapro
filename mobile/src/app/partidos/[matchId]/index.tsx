@@ -37,6 +37,7 @@ import {
 } from "@/lib/sync/offline-queue";
 import {
   fetchMatchRosterForCapture,
+  formatRosterSuspensionAlert,
   type MatchRosterCapturePlayer,
   type MatchRosterForCapture,
 } from "@ligapro/shared";
@@ -534,27 +535,37 @@ export default function MatchCaptureScreen() {
             Marca quién está presente. Quien no se seleccione quedará como
             no_show al validar.
           </Text>
-          {[...roster.homePlayers, ...roster.awayPlayers].map((player) => (
-            <Pressable
-              key={player.seasonTeamPlayerId}
-              style={[
-                styles.playerRow,
-                selectedPlayed.has(player.seasonTeamPlayerId) &&
-                  styles.playerRowSelected,
-              ]}
-              onPress={() => togglePlayed(player.seasonTeamPlayerId)}
-            >
-              <Text style={styles.playerText}>{playerLabel(player)}</Text>
-              <Text style={styles.playerMeta}>
-                {player.seasonTeamId === roster.homeSeasonTeamId
-                  ? roster.homeTeamName
-                  : roster.awayTeamName}
-                {player.participationStatus
-                  ? ` · ${player.participationStatus}`
-                  : ""}
-              </Text>
-            </Pressable>
-          ))}
+          {[...roster.homePlayers, ...roster.awayPlayers].map((player) => {
+            const suspensionAlert = formatRosterSuspensionAlert(player);
+
+            return (
+              <Pressable
+                key={player.seasonTeamPlayerId}
+                style={[
+                  styles.playerRow,
+                  player.isSuspended && styles.playerRowSuspended,
+                  selectedPlayed.has(player.seasonTeamPlayerId) &&
+                    styles.playerRowSelected,
+                ]}
+                onPress={() => togglePlayed(player.seasonTeamPlayerId)}
+              >
+                <View style={styles.playerRowHeader}>
+                  <Text style={styles.playerText}>{playerLabel(player)}</Text>
+                  {suspensionAlert ? (
+                    <Text style={styles.suspensionBadge}>{suspensionAlert}</Text>
+                  ) : null}
+                </View>
+                <Text style={styles.playerMeta}>
+                  {player.seasonTeamId === roster.homeSeasonTeamId
+                    ? roster.homeTeamName
+                    : roster.awayTeamName}
+                  {player.participationStatus
+                    ? ` · ${player.participationStatus}`
+                    : ""}
+                </Text>
+              </Pressable>
+            );
+          })}
           <Button title="Validar plantel" onPress={validateRosterNow} />
           {pendingRoster ? (
             <Text style={styles.pending}>Validación pendiente de envío</Text>
@@ -890,13 +901,36 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 6,
   },
+  playerRowSuspended: {
+    borderColor: "#f79009",
+    backgroundColor: "#fffaeb",
+  },
   playerRowSelected: {
     borderColor: "#111",
     backgroundColor: "#f5f5f5",
   },
+  playerRowHeader: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: 8,
+  },
   playerText: {
     fontSize: 16,
     fontWeight: "600",
+    flexShrink: 1,
+  },
+  suspensionBadge: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#b54708",
+    backgroundColor: "#fef0c7",
+    borderWidth: 1,
+    borderColor: "#f79009",
+    borderRadius: 999,
+    overflow: "hidden",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
   },
   playerMeta: {
     fontSize: 12,

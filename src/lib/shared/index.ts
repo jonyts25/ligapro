@@ -13,8 +13,12 @@ export {
 export { isSeasonArchived } from "./season-visibility";
 export {
   buildMatchRosterForCapture,
+  fetchMatchRosterEligibilityByPlayer,
   fetchMatchRosterForCapture,
+  formatRosterSuspensionAlert,
+  mapMatchRosterEligibilityRows,
   type MatchParticipationStatus,
   type MatchRosterCapturePlayer,
+  type MatchRosterEligibility,
   type MatchRosterForCapture,
 } from "./match-roster-for-capture";
