@@ -5,7 +5,7 @@ import type { Database } from "@ligapro/database";
 const PLAYER_PHOTO_BUCKET = "player-photos";
 const SIGNED_URL_TTL_SECONDS = 3600;
 
-export async function resolveOwnPlayerPhotoUrl(
+export async function resolvePlayerPhotoUrl(
   supabase: SupabaseClient<Database>,
   playerId: string,
 ): Promise<string | null> {

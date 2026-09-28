@@ -1,14 +1,8 @@
-/**
- * Builds a WhatsApp deep-link for notifying the opponent captain.
- * Phone must be E.164 digits only (no +).
- */
-export function buildCaptainWhatsAppLink(
-  phone: string,
-  message: string
-): string {
-  const digits = phone.replace(/\D/g, "");
-  return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
-}
+export {
+  buildCaptainWhatsAppLink,
+  buildMatchCaptainContactMessage,
+  buildPlayerClaimWhatsAppMessage,
+} from "../shared/captain-whatsapp";
 
 export function buildAdminRosterContactMessage(competitionName: string): string {
   return `Hola, soy el administrador de ${competitionName}. Te contacto por tu participación en el torneo.`;

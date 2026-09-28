@@ -21,6 +21,10 @@ export default function RootLayout() {
         />
         <Stack.Screen name="perfil" options={{ title: "Mi perfil" }} />
         <Stack.Screen
+          name="mi-equipo/[seasonTeamId]/index"
+          options={{ title: "Mi equipo" }}
+        />
+        <Stack.Screen
           name="partidos/[matchId]/index"
           options={{ title: "Captura" }}
         />

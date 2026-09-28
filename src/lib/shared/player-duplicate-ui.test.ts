@@ -6,7 +6,7 @@ import {
   normalizePlayerPhoneForSearch,
   shouldPromptDuplicateConfirmation,
   type PotentialDuplicatePlayer,
-} from "@/lib/teams/player-duplicate-ui";
+} from "./player-duplicate-ui";
 
 const sampleDuplicate: PotentialDuplicatePlayer = {
   playerId: "player-1",
@@ -15,7 +15,7 @@ const sampleDuplicate: PotentialDuplicatePlayer = {
   teamsCount: 2,
 };
 
-describe("player duplicate UI helpers", () => {
+describe("player duplicate UI helpers (shared)", () => {
   it("normalizePlayerPhoneForSearch returns null for blank phone", () => {
     assert.equal(normalizePlayerPhoneForSearch(""), null);
     assert.equal(normalizePlayerPhoneForSearch("   "), null);
@@ -34,14 +34,8 @@ describe("player duplicate UI helpers", () => {
   });
 
   it("duplicateConfirmationMessage includes name, teams count, and claim state", () => {
-    assert.match(
-      duplicateConfirmationMessage(sampleDuplicate),
-      /Juan Pérez/
-    );
-    assert.match(
-      duplicateConfirmationMessage(sampleDuplicate),
-      /2 equipos/
-    );
+    assert.match(duplicateConfirmationMessage(sampleDuplicate), /Juan Pérez/);
+    assert.match(duplicateConfirmationMessage(sampleDuplicate), /2 equipos/);
     assert.match(
       duplicateConfirmationMessage({
         ...sampleDuplicate,
