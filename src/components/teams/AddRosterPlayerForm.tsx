@@ -6,6 +6,8 @@ import {
   createPlayerAndAddAction,
   createPlayersBulkAction,
 } from "@/lib/teams/actions";
+import { DuplicatePlayerConfirmationCard } from "@/components/teams/DuplicatePlayerConfirmationCard";
+import { shouldPromptDuplicateConfirmation } from "@/lib/teams/player-duplicate-ui";
 import {
   initialTeamsActionState,
   type AvailablePlayerOption,
@@ -88,8 +90,19 @@ export function AddRosterPlayerForm({
   const [selectedPlayerId, setSelectedPlayerId] = useState(
     String(existingState.values?.playerId ?? "")
   );
+  const [dismissedDuplicatePrompt, setDismissedDuplicatePrompt] = useState(false);
 
   const createValues = createState.values;
+  const pendingDuplicate = createState.potentialDuplicates?.[0] ?? null;
+  const showDuplicateCard =
+    !dismissedDuplicatePrompt &&
+    createState.needsDuplicateConfirmation === true &&
+    pendingDuplicate !== null &&
+    shouldPromptDuplicateConfirmation(
+      String(createValues?.phone ?? ""),
+      createState.potentialDuplicates ?? []
+    );
+
   const selectableCount = availablePlayers.filter((p) => p.selectable).length;
   const selectedBlocked = useMemo(
     () =>
@@ -128,8 +141,24 @@ export function AddRosterPlayerForm({
             </button>
           </div>
         </div>
-        <ActionMessage ok={createState.ok} message={createState.message} />
+        <ActionMessage
+          ok={createState.ok}
+          message={showDuplicateCard ? null : createState.message}
+        />
         <ActionMessage ok={bulkState.ok} message={bulkState.message} />
+        {showDuplicateCard && pendingDuplicate ? (
+          <DuplicatePlayerConfirmationCard
+            organizationId={organizationId}
+            competitionId={competitionId}
+            seasonId={seasonId}
+            seasonTeamId={seasonTeamId}
+            duplicate={pendingDuplicate}
+            fullName={String(createValues?.fullName ?? "")}
+            jerseyNumber={String(createValues?.jerseyNumber ?? "")}
+            phone={String(createValues?.phone ?? "")}
+            onDismiss={() => setDismissedDuplicatePrompt(true)}
+          />
+        ) : null}
         {bulkMode ? (
           <form action={bulkAction} className="space-y-4">
             <input type="hidden" name="organizationId" value={organizationId} />
@@ -201,6 +230,29 @@ export function AddRosterPlayerForm({
               )}
             />
             <FieldError message={createState.fieldErrors?.jerseyNumber} />
+          </div>
+
+          <div className="space-y-1.5">
+            <label htmlFor="createPhone" className="block text-sm font-medium">
+              Teléfono / WhatsApp{" "}
+              <span className="font-normal text-muted">(opcional)</span>
+            </label>
+            <input
+              id="createPhone"
+              name="phone"
+              type="tel"
+              disabled={createPending}
+              defaultValue={String(createValues?.phone ?? "")}
+              placeholder="5551234567"
+              className={cn(
+                "min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none",
+                "focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
+              )}
+            />
+            <p className="text-xs text-muted">
+              Si coincide con un jugador existente en esta organización, te
+              pediremos confirmación antes de crear uno nuevo.
+            </p>
           </div>
 
           <SubmitButton pending={createPending} className="w-auto">

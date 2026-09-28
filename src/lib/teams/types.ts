@@ -116,6 +116,13 @@ export type SeasonRosterStats = {
   teamsWithCaptain: number;
 };
 
+export type PotentialDuplicatePlayerRow = {
+  playerId: string;
+  fullName: string;
+  isClaimed: boolean;
+  teamsCount: number;
+};
+
 export type TeamsActionState = {
   ok: boolean;
   message: string | null;
@@ -123,6 +130,8 @@ export type TeamsActionState = {
   values?: Record<string, string | number | boolean | null>;
   inviteUrl?: string | null;
   whatsAppHref?: string | null;
+  potentialDuplicates?: PotentialDuplicatePlayerRow[];
+  needsDuplicateConfirmation?: boolean;
 };
 
 export const initialTeamsActionState: TeamsActionState = {

@@ -10,8 +10,10 @@ import {
   SEASON_TEAM_STATUS_OPTIONS,
   type RosterRegistrationStatus,
   type SeasonTeamRegistrationStatus,
+  type PotentialDuplicatePlayerRow,
   type TeamsActionState,
 } from "@/lib/teams/types";
+import { normalizePlayerPhoneForSearch } from "@/lib/teams/player-duplicate-ui";
 import {
   isSeasonRosterSeatConflict,
   seasonRosterSeatConflictMessage,
@@ -475,7 +477,14 @@ export async function createPlayerAndAddAction(
 
   const fullName = String(formData.get("fullName") ?? "");
   const jerseyRaw = String(formData.get("jerseyNumber") ?? "");
-  const values = { fullName, jerseyNumber: jerseyRaw, mode: "create" };
+  const phoneRaw = String(formData.get("phone") ?? "").trim();
+  const forceCreateNew = String(formData.get("forceCreateNew") ?? "") === "true";
+  const values = {
+    fullName,
+    jerseyNumber: jerseyRaw,
+    phone: phoneRaw,
+    mode: "create",
+  };
 
   const nameError = validateName(fullName, "nombre del jugador");
   if (nameError) {
@@ -498,11 +507,39 @@ export async function createPlayerAndAddAction(
   }
 
   const supabase = await createClient();
+
+  if (!forceCreateNew && normalizePlayerPhoneForSearch(phoneRaw)) {
+    try {
+      const potentialDuplicates = await fetchPotentialDuplicates(
+        supabase,
+        organizationId,
+        phoneRaw
+      );
+      if (potentialDuplicates.length > 0) {
+        return {
+          ok: false,
+          needsDuplicateConfirmation: true,
+          potentialDuplicates,
+          message:
+            "Encontramos un jugador con el mismo teléfono en esta organización. Confirma si es la misma persona.",
+          values,
+        };
+      }
+    } catch {
+      return {
+        ok: false,
+        message: "No pudimos verificar posibles duplicados. Inténtalo de nuevo.",
+        values,
+      };
+    }
+  }
+
   const { error } = await supabase.rpc("create_player_and_add_to_roster", {
     p_season_team_id: seasonTeamId,
     p_full_name: fullName.trim(),
     p_jersey_number: jersey.value ?? undefined,
     p_registration_status: "active",
+    p_phone: phoneRaw || undefined,
   });
 
   if (error) {
@@ -523,7 +560,74 @@ export async function createPlayerAndAddAction(
   return {
     ok: true,
     message: "Jugador creado y agregado al plantel.",
-    values: { fullName: "", jerseyNumber: "", mode: "create" },
+    values: { fullName: "", jerseyNumber: "", phone: "", mode: "create" },
+  };
+}
+
+export async function addExistingPlayerFromDuplicateAction(
+  _prev: TeamsActionState,
+  formData: FormData
+): Promise<TeamsActionState> {
+  const user = await requireUser();
+  const organizationId = String(formData.get("organizationId") ?? "");
+  const competitionId = String(formData.get("competitionId") ?? "");
+  const seasonId = String(formData.get("seasonId") ?? "");
+  const seasonTeamId = String(formData.get("seasonTeamId") ?? "");
+  await requireOrganizationAdmin(user.id, organizationId);
+
+  const playerId = String(formData.get("playerId") ?? "");
+  const jerseyRaw = String(formData.get("jerseyNumber") ?? "");
+  const phoneRaw = String(formData.get("phone") ?? "").trim();
+  const values = { playerId, jerseyNumber: jerseyRaw, phone: phoneRaw, mode: "duplicate" };
+
+  if (!playerId) {
+    return {
+      ok: false,
+      message: "Selecciona el jugador existente.",
+      fieldErrors: { playerId: "Jugador requerido." },
+      values,
+    };
+  }
+
+  const jersey = parseOptionalJersey(jerseyRaw);
+  if (jersey.error) {
+    return {
+      ok: false,
+      message: jersey.error,
+      fieldErrors: { jerseyNumber: jersey.error },
+      values,
+    };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("add_existing_player_to_roster", {
+    p_player_id: playerId,
+    p_season_team_id: seasonTeamId,
+    p_jersey_number: jersey.value ?? undefined,
+    p_registration_status: "active",
+  });
+
+  if (error) {
+    return {
+      ok: false,
+      message: isSeasonRosterSeatConflict(error)
+        ? seasonRosterSeatConflictMessage()
+        : error.message.includes("already on this roster")
+          ? "Ese jugador ya está en este plantel."
+          : "No pudimos agregar al jugador existente. Revisa el dorsal e inténtalo de nuevo.",
+      values,
+    };
+  }
+
+  await revalidateTeamPaths(organizationId, {
+    competitionId,
+    seasonId,
+    seasonTeamId,
+  });
+  return {
+    ok: true,
+    message: "Jugador existente agregado al plantel.",
+    values: { fullName: "", jerseyNumber: "", phone: "", mode: "create" },
   };
 }
 
@@ -887,6 +991,44 @@ function buildCaptainInviteWhatsAppHref(
   return buildCaptainWhatsAppLink(digits, message);
 }
 
+function buildPlayerClaimWhatsAppHref(
+  phoneRaw: string,
+  inviteUrl: string,
+  teamLabel: string
+): string | null {
+  const digits = phoneRaw.replace(/\D/g, "");
+  if (!digits) return null;
+  const message = `Hola, te invitamos a reclamar tu perfil de jugador en ${teamLabel} (${PLATFORM_NAME}). Acepta aquí: ${inviteUrl}`;
+  return buildCaptainWhatsAppLink(digits, message);
+}
+
+async function fetchPotentialDuplicates(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  organizationId: string,
+  phone: string
+): Promise<PotentialDuplicatePlayerRow[]> {
+  const normalized = normalizePlayerPhoneForSearch(phone);
+  if (!normalized) {
+    return [];
+  }
+
+  const { data, error } = await supabase.rpc("find_potential_duplicate_player", {
+    p_organization_id: organizationId,
+    p_phone: normalized,
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return (data ?? []).map((row) => ({
+    playerId: row.player_id,
+    fullName: row.full_name,
+    isClaimed: row.is_claimed,
+    teamsCount: row.teams_count,
+  }));
+}
+
 async function fetchPendingInvitationToken(
   supabase: Awaited<ReturnType<typeof createClient>>,
   seasonTeamPlayerId: string
@@ -1034,6 +1176,81 @@ export async function createCaptainPlayerWithInvitationAction(
     inviteUrl,
     whatsAppHref,
     values: { fullName: "", email: "", phone: "", jerseyNumber: "" },
+  };
+}
+
+export async function invitePlayerToRosterAction(
+  _prev: TeamsActionState,
+  formData: FormData
+): Promise<TeamsActionState> {
+  const user = await requireUser();
+  const organizationId = String(formData.get("organizationId") ?? "");
+  const competitionId = String(formData.get("competitionId") ?? "");
+  const seasonId = String(formData.get("seasonId") ?? "");
+  const seasonTeamId = String(formData.get("seasonTeamId") ?? "");
+  const rosterId = String(formData.get("rosterId") ?? "");
+  const teamLabel = String(formData.get("teamLabel") ?? "tu equipo");
+  await requireOrganizationAdmin(user.id, organizationId);
+
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const phoneRaw = String(formData.get("phone") ?? "").trim();
+  const values = { email, phone: phoneRaw };
+
+  if (!email || !email.includes("@")) {
+    return {
+      ok: false,
+      message: "Indica un correo electrónico válido.",
+      fieldErrors: { email: "Correo requerido." },
+      values,
+    };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("invite_player_to_roster", {
+    p_season_team_player_id: rosterId,
+    p_email: email,
+  });
+
+  if (error) {
+    return {
+      ok: false,
+      message: humanizeCaptainInvitationAdminError(error.message),
+      values,
+    };
+  }
+
+  const phoneSaveError = await savePlayerPhoneForRosterEntry(
+    supabase,
+    organizationId,
+    rosterId,
+    phoneRaw
+  );
+
+  const token = await fetchPendingInvitationToken(supabase, rosterId);
+  const inviteUrl = token
+    ? `${getPublicSiteUrl()}/invitacion/${token}`
+    : null;
+  const whatsAppHref =
+    inviteUrl && phoneRaw
+      ? buildPlayerClaimWhatsAppHref(phoneRaw, inviteUrl, teamLabel)
+      : null;
+
+  await revalidateTeamPaths(organizationId, {
+    competitionId,
+    seasonId,
+    seasonTeamId,
+  });
+
+  return {
+    ok: true,
+    message: phoneSaveError
+      ? `${inviteUrl ? "Invitación creada. Comparte el enlace con el jugador." : "Invitación enviada."} ${phoneSaveError}`
+      : inviteUrl
+        ? "Invitación creada. Comparte el enlace con el jugador."
+        : "Invitación enviada.",
+    inviteUrl,
+    whatsAppHref,
+    values: { email: "", phone: "" },
   };
 }
 
