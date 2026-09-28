@@ -51,6 +51,7 @@ export type SeasonRulesRecord = {
   points_draw: number;
   points_loss: number;
   allow_draws: boolean;
+  allow_public_team_registration: boolean;
   match_duration_minutes: number;
   minimum_rest_minutes: number;
   yellow_card_limit: number;

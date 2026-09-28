@@ -5,6 +5,7 @@ import {
   type PendingDisputeSource,
   type PendingFinanceSource,
   type PendingMatchSource,
+  type PendingTeamRegistrationRequestSource,
 } from "@/lib/dashboard/pending-items-core";
 import { displaySeasonTeamName } from "@/lib/teams/types";
 
@@ -47,6 +48,7 @@ export async function getOrganizationPendingItems(
     { data: disputeRows },
     { data: financeRows },
     { data: confirmedReferees },
+    { data: registrationRequestRows },
   ] = await Promise.all([
     supabase
       .from("field_reservations")
@@ -128,6 +130,20 @@ export async function getOrganizationPendingItems(
       .eq("organization_id", organizationId)
       .eq("role", "referee")
       .eq("status", "confirmed"),
+    supabase
+      .from("season_team_registration_requests")
+      .select(
+        `
+        id,
+        team_name,
+        contact_name,
+        contact_email,
+        season_id,
+        seasons!inner(id, name, competition_id, visibility)
+      `
+      )
+      .eq("organization_id", organizationId)
+      .eq("status", "pending"),
   ]);
 
   const confirmedRefereeMatchIds = new Set(
@@ -291,11 +307,33 @@ export async function getOrganizationPendingItems(
     });
   }
 
+  const teamRegistrationRequests: PendingTeamRegistrationRequestSource[] = [];
+  for (const row of registrationRequestRows ?? []) {
+    const season = row.seasons as {
+      id: string;
+      name: string;
+      competition_id: string;
+      visibility: string;
+    };
+    if (season.visibility === "archived") continue;
+
+    teamRegistrationRequests.push({
+      requestId: row.id,
+      seasonId: row.season_id,
+      competitionId: season.competition_id,
+      seasonName: season.name,
+      teamName: row.team_name,
+      contactName: row.contact_name,
+      contactEmail: row.contact_email,
+    });
+  }
+
   return buildOrganizationPendingItems({
     organizationId,
     matches: [...matchMap.values()],
     disputes,
     financeRows: finance,
+    teamRegistrationRequests,
     nowMs,
     windowStartMs: nowMs,
     windowEndMs,

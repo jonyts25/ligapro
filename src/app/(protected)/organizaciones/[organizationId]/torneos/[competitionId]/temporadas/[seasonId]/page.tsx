@@ -16,6 +16,7 @@ import { SeasonArchivePanel } from "@/components/competitions/SeasonArchivePanel
 import { SeasonDeletePanel } from "@/components/competitions/SeasonDeletePanel";
 import { SeasonPublishPanel } from "@/components/competitions/SeasonPublishPanel";
 import { SeasonStandingsNav } from "@/components/standings/SeasonStandingsNav";
+import { countPendingTeamRegistrationRequests } from "@/lib/teams/registration-requests";
 import {
   canDeleteSeason,
   canManageActiveSeason,
@@ -53,6 +54,10 @@ export default async function SeasonDetailPage({ params }: PageProps) {
   const archived = isSeasonArchived(season.visibility);
   const deletable = canManage && canDeleteSeason(season);
   const publicHref = `/publico/${organizationId}/${season.slug}`;
+  const pendingRegistrationRequests =
+    canManage && season.visibility === "public"
+      ? await countPendingTeamRegistrationRequests(organizationId, seasonId)
+      : 0;
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -122,6 +127,27 @@ export default async function SeasonDetailPage({ params }: PageProps) {
           <StatusBadge label="Pendiente de equipos" variant="warning" />
         )}
       </Card>
+
+      {canManage && pendingRegistrationRequests > 0 && (
+        <Card className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-semibold text-text-primary">
+              Solicitudes de inscripción pendientes
+            </h2>
+            <p className="text-sm text-text-secondary">
+              {pendingRegistrationRequests}{" "}
+              {pendingRegistrationRequests === 1 ? "solicitud" : "solicitudes"}{" "}
+              por revisar.
+            </p>
+          </div>
+          <Link
+            href={`/organizaciones/${organizationId}/torneos/${competitionId}/temporadas/${seasonId}/inscripciones-equipo`}
+            className="inline-flex min-h-11 items-center rounded-xl bg-brand px-4 text-sm font-semibold text-brand-foreground"
+          >
+            Revisar solicitudes
+          </Link>
+        </Card>
+      )}
 
       {canManageActive && !archived && (
         <SeasonPublishPanel
