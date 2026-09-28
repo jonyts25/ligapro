@@ -144,16 +144,19 @@ export default function PlayerProfileScreen() {
   useEffect(() => {
     if (!user || !selectedTeam) return;
 
+    const profileId = user.id;
+    const profileEmail = user.email;
+    const teamPlayerId = selectedTeam.playerId;
     let cancelled = false;
 
     async function loadTeamPlayerDetails() {
       const supabase = getSupabase();
       const [{ data: profile }, { data: player }] = await Promise.all([
-        supabase.from("profiles").select("display_name").eq("id", user.id).maybeSingle(),
+        supabase.from("profiles").select("display_name").eq("id", profileId).maybeSingle(),
         supabase
           .from("players")
           .select("full_name, photo_path")
-          .eq("id", selectedTeam!.playerId)
+          .eq("id", teamPlayerId)
           .maybeSingle(),
       ]);
 
@@ -162,11 +165,11 @@ export default function PlayerProfileScreen() {
       const name =
         player?.full_name?.trim() ||
         profile?.display_name?.trim() ||
-        user.email?.split("@")[0] ||
+        profileEmail?.split("@")[0] ||
         "Jugador";
       setDisplayName(name);
 
-      const signedUrl = await resolveOwnPlayerPhotoUrl(supabase, selectedTeam!.playerId);
+      const signedUrl = await resolveOwnPlayerPhotoUrl(supabase, teamPlayerId);
       if (!cancelled) {
         setPhotoUrl(signedUrl);
       }
