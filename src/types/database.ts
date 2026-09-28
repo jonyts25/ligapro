@@ -2375,6 +2375,7 @@ export type Database = {
       season_rules: {
         Row: {
           allow_draws: boolean
+          allow_public_team_registration: boolean
           created_at: string
           groups_advance_per_group: number | null
           halves_count: number
@@ -2402,6 +2403,7 @@ export type Database = {
         }
         Insert: {
           allow_draws?: boolean
+          allow_public_team_registration?: boolean
           created_at?: string
           groups_advance_per_group?: number | null
           halves_count?: number
@@ -2429,6 +2431,7 @@ export type Database = {
         }
         Update: {
           allow_draws?: boolean
+          allow_public_team_registration?: boolean
           created_at?: string
           groups_advance_per_group?: number | null
           halves_count?: number
@@ -2600,6 +2603,89 @@ export type Database = {
             columns: ["season_team_id"]
             isOneToOne: false
             referencedRelation: "season_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      season_team_registration_requests: {
+        Row: {
+          contact_email: string
+          contact_name: string
+          contact_phone: string | null
+          created_at: string
+          created_season_team_id: string | null
+          id: string
+          organization_id: string
+          rejection_reason: string | null
+          requested_group_name: string | null
+          reviewed_at: string | null
+          reviewed_by_profile_id: string | null
+          season_id: string
+          status: string
+          team_name: string
+          updated_at: string
+        }
+        Insert: {
+          contact_email: string
+          contact_name: string
+          contact_phone?: string | null
+          created_at?: string
+          created_season_team_id?: string | null
+          id?: string
+          organization_id: string
+          rejection_reason?: string | null
+          requested_group_name?: string | null
+          reviewed_at?: string | null
+          reviewed_by_profile_id?: string | null
+          season_id: string
+          status?: string
+          team_name: string
+          updated_at?: string
+        }
+        Update: {
+          contact_email?: string
+          contact_name?: string
+          contact_phone?: string | null
+          created_at?: string
+          created_season_team_id?: string | null
+          id?: string
+          organization_id?: string
+          rejection_reason?: string | null
+          requested_group_name?: string | null
+          reviewed_at?: string | null
+          reviewed_by_profile_id?: string | null
+          season_id?: string
+          status?: string
+          team_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "season_team_registration_requests_created_season_team_id_fkey"
+            columns: ["created_season_team_id"]
+            isOneToOne: false
+            referencedRelation: "season_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "season_team_registration_requests_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "season_team_registration_requests_reviewed_by_profile_id_fkey"
+            columns: ["reviewed_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "season_team_registration_requests_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
             referencedColumns: ["id"]
           },
         ]
@@ -3368,6 +3454,10 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      approve_team_registration_request: {
+        Args: { p_request_id: string }
+        Returns: string
+      }
       approve_match_result: {
         Args: { p_match_id: string }
         Returns: {
@@ -3990,6 +4080,10 @@ export type Database = {
         Returns: boolean
       }
       is_member_of: { Args: { p_org_id: string }; Returns: boolean }
+      is_public_team_registration_open: {
+        Args: { p_organization_id: string; p_season_slug: string }
+        Returns: boolean
+      }
       is_platform_staff: { Args: { p_profile_id: string }; Returns: boolean }
       is_team_leader_for_roster_player: {
         Args: { p_profile_id?: string; p_season_team_player_id: string }
@@ -4296,6 +4390,26 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      reject_team_registration_request: {
+        Args: { p_reason: string; p_request_id: string }
+        Returns: {
+          contact_email: string
+          contact_name: string
+          contact_phone: string | null
+          created_at: string
+          created_season_team_id: string | null
+          id: string
+          organization_id: string
+          rejection_reason: string | null
+          requested_group_name: string | null
+          reviewed_at: string | null
+          reviewed_by_profile_id: string | null
+          season_id: string
+          status: string
+          team_name: string
+          updated_at: string
+        }
+      }
       set_season_team_captain: {
         Args: { p_player_id: string; p_season_team_id: string }
         Returns: {
@@ -4442,6 +4556,18 @@ export type Database = {
           p_organization_id: string
         }
         Returns: undefined
+      }
+      submit_team_registration_request: {
+        Args: {
+          p_contact_email: string
+          p_contact_name: string
+          p_contact_phone?: string
+          p_organization_id: string
+          p_requested_group_name?: string
+          p_season_slug: string
+          p_team_name: string
+        }
+        Returns: string
       }
       update_season_tiebreak_order: {
         Args: { p_season_id: string; p_tiebreak_order: string[] }

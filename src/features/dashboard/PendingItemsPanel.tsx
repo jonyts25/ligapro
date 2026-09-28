@@ -19,7 +19,8 @@ function categoryVariant(
   }
   if (
     categoryId === "matches_without_referee" ||
-    categoryId === "teams_with_balance_due"
+    categoryId === "teams_with_balance_due" ||
+    categoryId === "pending_team_registration_requests"
   ) {
     return "warning";
   }

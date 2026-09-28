@@ -57,14 +57,26 @@ export function SeasonPublishPanel({
             {state.message}
           </p>
         )}
-        <Link
-          href={publicHref}
-          className="inline-flex min-h-11 items-center rounded-xl border border-border px-4 text-sm font-medium text-organization-accent"
-          target="_blank"
-          rel="noreferrer"
-        >
-          Abrir página pública
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href={publicHref}
+            className="inline-flex min-h-11 items-center rounded-xl border border-border px-4 text-sm font-medium text-organization-accent"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Abrir página pública
+          </Link>
+          {season.rules.allow_public_team_registration && (
+            <Link
+              href={`${publicHref}/inscribir`}
+              className="inline-flex min-h-11 items-center rounded-xl border border-border px-4 text-sm font-medium text-text-secondary"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Formulario de inscripción
+            </Link>
+          )}
+        </div>
       </Card>
     );
   }

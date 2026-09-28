@@ -36,6 +36,16 @@ export type PendingFinanceSource = {
   balanceDue: number;
 };
 
+export type PendingTeamRegistrationRequestSource = {
+  requestId: string;
+  seasonId: string;
+  competitionId: string;
+  seasonName: string;
+  teamName: string;
+  contactName: string;
+  contactEmail: string;
+};
+
 export type PendingItemRow = {
   id: string;
   label: string;
@@ -49,7 +59,8 @@ export type PendingItemsCategory = {
     | "results_not_captured"
     | "results_pending_approval"
     | "open_disputes"
-    | "teams_with_balance_due";
+    | "teams_with_balance_due"
+    | "pending_team_registration_requests";
   title: string;
   totalCount: number;
   items: PendingItemRow[];
@@ -85,6 +96,14 @@ export function buildSeasonFinanceHref(
   seasonId: string
 ): string {
   return `/organizaciones/${organizationId}/torneos/${competitionId}/temporadas/${seasonId}/finanzas`;
+}
+
+export function buildSeasonTeamRegistrationRequestsHref(
+  organizationId: string,
+  competitionId: string,
+  seasonId: string
+): string {
+  return `/organizaciones/${organizationId}/torneos/${competitionId}/temporadas/${seasonId}/inscripciones-equipo`;
 }
 
 function matchLabel(match: PendingMatchSource): string {
@@ -304,11 +323,40 @@ export function buildTeamsWithBalanceDueCategory(
   };
 }
 
+export function buildPendingTeamRegistrationRequestsCategory(
+  organizationId: string,
+  requests: PendingTeamRegistrationRequestSource[]
+): PendingItemsCategory {
+  const sorted = [...requests].sort((a, b) =>
+    a.teamName.localeCompare(b.teamName)
+  );
+
+  const { totalCount, items } = limitCategoryItems(sorted, (row) => ({
+    id: row.requestId,
+    label: row.teamName,
+    detail: `${row.seasonName} · ${row.contactName}`,
+    href: buildSeasonTeamRegistrationRequestsHref(
+      organizationId,
+      row.competitionId,
+      row.seasonId
+    ),
+  }));
+
+  return {
+    id: "pending_team_registration_requests",
+    title: "Solicitudes de equipo pendientes",
+    totalCount,
+    items,
+    viewAllHref: null,
+  };
+}
+
 export function buildOrganizationPendingItems(input: {
   organizationId: string;
   matches: PendingMatchSource[];
   disputes: PendingDisputeSource[];
   financeRows: PendingFinanceSource[];
+  teamRegistrationRequests?: PendingTeamRegistrationRequestSource[];
   nowMs?: number;
   windowStartMs?: number;
   windowEndMs?: number;
@@ -334,6 +382,10 @@ export function buildOrganizationPendingItems(input: {
     buildResultsPendingApprovalCategory(input.organizationId, input.matches),
     buildOpenDisputesCategory(input.organizationId, input.disputes),
     buildTeamsWithBalanceDueCategory(input.organizationId, input.financeRows),
+    buildPendingTeamRegistrationRequestsCategory(
+      input.organizationId,
+      input.teamRegistrationRequests ?? []
+    ),
   ];
 
   return {

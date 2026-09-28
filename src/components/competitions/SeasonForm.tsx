@@ -158,6 +158,27 @@ export function SeasonForm({
         </div>
       </Card>
 
+      {isPublicEdit && (
+        <Card className="space-y-3">
+          <SectionHeader
+            title="Registro público de equipos"
+            description="Permite que visitantes sin cuenta soliciten inscribir un equipo nuevo desde la página pública."
+          />
+          <label className="flex cursor-pointer items-start gap-3">
+            <input
+              type="checkbox"
+              name="allowPublicTeamRegistration"
+              disabled={pending}
+              defaultChecked={rules.allow_public_team_registration}
+              className="mt-1 h-4 w-4 rounded border-border"
+            />
+            <span className="text-sm text-text-primary">
+              Permitir registro público de equipos
+            </span>
+          </label>
+        </Card>
+      )}
+
       <Card>
         <SeasonTiebreakOrderFields
           initialOrder={rules.tiebreak_order}

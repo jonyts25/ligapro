@@ -5,9 +5,11 @@ import {
   buildMatchesWithoutRefereeCategory,
   buildOpenDisputesCategory,
   buildOrganizationPendingItems,
+  buildPendingTeamRegistrationRequestsCategory,
   buildResultsNotCapturedCategory,
   buildResultsPendingApprovalCategory,
   buildTeamsWithBalanceDueCategory,
+  type PendingTeamRegistrationRequestSource,
   type PendingDisputeSource,
   type PendingFinanceSource,
   type PendingMatchSource,
@@ -130,6 +132,27 @@ describe("buildTeamsWithBalanceDueCategory", () => {
   });
 });
 
+describe("buildPendingTeamRegistrationRequestsCategory", () => {
+  it("maps pending registration requests to season review links", () => {
+    const rows: PendingTeamRegistrationRequestSource[] = [
+      {
+        requestId: "req-1",
+        seasonId: "season-1",
+        competitionId: "comp-1",
+        seasonName: "Apertura 2026",
+        teamName: "Halcones FC",
+        contactName: "Capitán H",
+        contactEmail: "capitan@halcones.local",
+      },
+    ];
+
+    const category = buildPendingTeamRegistrationRequestsCategory(ORG, rows);
+    assert.equal(category.id, "pending_team_registration_requests");
+    assert.equal(category.totalCount, 1);
+    assert.match(category.items[0]?.href ?? "", /inscripciones-equipo$/);
+  });
+});
+
 describe("buildOrganizationPendingItems", () => {
   it("returns allClear when every category is empty", () => {
     const result = buildOrganizationPendingItems({
@@ -143,7 +166,7 @@ describe("buildOrganizationPendingItems", () => {
     });
 
     assert.equal(result.allClear, true);
-    assert.equal(result.categories.length, 5);
+    assert.equal(result.categories.length, 6);
   });
 
   it("aggregates multiple non-empty categories", () => {

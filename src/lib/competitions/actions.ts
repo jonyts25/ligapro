@@ -102,6 +102,7 @@ async function revalidateCompetitionPaths(
       revalidatePath(`${publicBase}/posiciones`);
       revalidatePath(`${publicBase}/goleadores`);
       revalidatePath(`${publicBase}/disciplina`);
+      revalidatePath(`${publicBase}/inscribir`);
     }
   }
 }
@@ -279,6 +280,8 @@ function parseSeasonForm(formData: FormData) {
     yellowCardLimit: String(formData.get("yellowCardLimit") ?? "5"),
     suspensionMatches: String(formData.get("suspensionMatches") ?? "1"),
     groupsAdvancePerGroup: String(formData.get("groupsAdvancePerGroup") ?? ""),
+    allowPublicTeamRegistration:
+      formData.get("allowPublicTeamRegistration") === "on",
   };
 
   const fieldErrors: Record<string, string> = {};
@@ -384,6 +387,19 @@ async function syncGroupsAdvancePerGroup(
       groups_advance_per_group:
         formatType === "groups_knockout" ? groupsAdvancePerGroup : null,
     })
+    .eq("season_id", seasonId)
+    .eq("organization_id", organizationId);
+}
+
+async function syncPublicTeamRegistration(
+  seasonId: string,
+  organizationId: string,
+  allowPublicTeamRegistration: boolean
+) {
+  const supabase = await createClient();
+  await supabase
+    .from("season_rules")
+    .update({ allow_public_team_registration: allowPublicTeamRegistration })
     .eq("season_id", seasonId)
     .eq("organization_id", organizationId);
 }
@@ -547,6 +563,14 @@ export async function updateSeasonAction(
     effectiveParsed.formatType,
     effectiveParsed.groupsAdvancePerGroup
   );
+
+  if (isSeasonPubliclyVisible(seasonDetails.visibility)) {
+    await syncPublicTeamRegistration(
+      seasonId,
+      organizationId,
+      values.allowPublicTeamRegistration
+    );
+  }
 
   await revalidateCompetitionPaths(organizationId, competitionId, seasonId);
   return {
