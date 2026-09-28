@@ -3308,6 +3308,15 @@ export type Database = {
         Args: { p_token: string }
         Returns: string
       }
+      add_existing_player_to_roster: {
+        Args: {
+          p_jersey_number?: number
+          p_player_id: string
+          p_registration_status?: string
+          p_season_team_id: string
+        }
+        Returns: string
+      }
       add_player_to_season_team: {
         Args: {
           p_jersey_number?: number
@@ -3943,7 +3952,20 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      find_potential_duplicate_player: {
+        Args: { p_organization_id: string; p_phone: string }
+        Returns: {
+          full_name: string
+          is_claimed: boolean
+          player_id: string
+          teams_count: number
+        }[]
+      }
       invite_captain_to_roster: {
+        Args: { p_email: string; p_season_team_player_id: string }
+        Returns: string
+      }
+      invite_player_to_roster: {
         Args: { p_email: string; p_season_team_player_id: string }
         Returns: string
       }

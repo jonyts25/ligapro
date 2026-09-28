@@ -24,7 +24,7 @@ import {
   buildAdminRosterContactMessage,
   buildCaptainWhatsAppLink,
 } from "@/lib/captain/whatsapp";
-import { InviteCaptainToRosterForm } from "@/components/teams/InviteCaptainToRosterForm";
+import { InvitePlayerToRosterForm } from "@/components/teams/InvitePlayerToRosterForm";
 
 type RosterPlayerCardProps = {
   organizationId: string;
@@ -129,7 +129,6 @@ export function RosterPlayerCard({
     (nextStatus === "inactive" || nextStatus === "suspended");
   const showInviteForm =
     canManage &&
-    (player.is_captain || player.is_vice_captain) &&
     player.registration_status === "active" &&
     !player.profile_id;
   const whatsAppContactHref = player.phone
@@ -364,7 +363,7 @@ export function RosterPlayerCard({
       )}
 
       {showInviteForm && (
-        <InviteCaptainToRosterForm
+        <InvitePlayerToRosterForm
           organizationId={organizationId}
           competitionId={competitionId}
           seasonId={seasonId}
@@ -372,7 +371,6 @@ export function RosterPlayerCard({
           rosterId={player.id}
           teamLabel={teamLabel}
           playerName={player.full_name}
-          roleLabel={player.is_captain ? "capitán" : "subcapitán"}
         />
       )}
     </Card>
