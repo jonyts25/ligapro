@@ -3,7 +3,7 @@
 -- PREREQUISITE: apply supabase/migrations/20261001100000_player_claim_and_phone_dedup.sql
 --
 -- Run:
---   npx supabase db query --linked -f supabase/tests/041_player_claim_and_phone_dedup.sql
+--   npx supabase db query --linked -f supabase/tests/042_player_claim_and_phone_dedup.sql
 
 DROP TABLE IF EXISTS public.__mig041_claim_test_results;
 CREATE TABLE public.__mig041_claim_test_results (
@@ -270,7 +270,7 @@ BEGIN
   WHERE NOT passed;
 
   IF v_failed > 0 THEN
-    RAISE EXCEPTION '041_player_claim_and_phone_dedup: % test(s) failed', v_failed;
+    RAISE EXCEPTION '042_player_claim_and_phone_dedup: % test(s) failed', v_failed;
   END IF;
 END;
 $$;
