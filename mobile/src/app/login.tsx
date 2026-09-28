@@ -33,7 +33,7 @@ export default function LoginScreen() {
   }
 
   if (!loading && session) {
-    return <Redirect href="/mis-partidos" />;
+    return <Redirect href="/" />;
   }
 
   async function handleSubmit() {
@@ -47,7 +47,7 @@ export default function LoginScreen() {
       return;
     }
 
-    router.replace("/mis-partidos");
+    router.replace("/");
   }
 
   return (
@@ -84,7 +84,7 @@ export default function LoginScreen() {
 
       <SocialAuthButtons
         onError={setError}
-        onSuccess={() => router.replace("/mis-partidos")}
+        onSuccess={() => router.replace("/")}
       />
 
       <Pressable onPress={() => router.push("/register")}>
