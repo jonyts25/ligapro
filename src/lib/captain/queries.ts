@@ -2,6 +2,14 @@ import { createClient } from "@/lib/supabase/server";
 import {
   hasCaptainTeamAccess,
 } from "@/lib/auth/get-captain-teams";
+import {
+  fetchCaptainRosterCore,
+  fetchCaptainUpcomingMatchesCore,
+  fetchOpponentCaptainPhoneCore,
+  mapReservationRows,
+  mapSeasonTeamNameRows,
+  type CaptainMatchCore,
+} from "@/lib/shared/captain-portal";
 import type {
   CaptainInvitationPreview,
   CaptainMatchListItem,
@@ -38,21 +46,7 @@ async function loadSeasonTeamNames(
     .select("id, display_name, teams(name)")
     .in("id", seasonTeamIds);
 
-  const map = new Map<string, string>();
-  for (const row of data ?? []) {
-    const teamRel = row.teams as
-      | { name: string }
-      | { name: string }[]
-      | null;
-    const teamName = Array.isArray(teamRel)
-      ? teamRel[0]?.name
-      : teamRel?.name;
-    map.set(
-      row.id,
-      row.display_name?.trim() || teamName || "Equipo"
-    );
-  }
-  return map;
+  return mapSeasonTeamNameRows((data ?? []) as Parameters<typeof mapSeasonTeamNameRows>[0]);
 }
 
 async function loadReservations(
@@ -74,25 +68,29 @@ async function loadReservations(
     .select("id, starts_at, fields(name, venues(name))")
     .in("id", reservationIds);
 
-  const map = new Map<
-    string,
-    { startsAt: string; venueName: string | null; fieldName: string | null }
-  >();
-  for (const row of data ?? []) {
-    const fieldRel = row.fields as
-      | { name: string; venues: { name: string } | { name: string }[] | null }
-      | { name: string; venues: { name: string } | { name: string }[] | null }[]
-      | null;
-    const field = Array.isArray(fieldRel) ? fieldRel[0] : fieldRel;
-    const venueRel = field?.venues ?? null;
-    const venue = Array.isArray(venueRel) ? venueRel[0] : venueRel;
-    map.set(row.id, {
-      startsAt: row.starts_at,
-      venueName: venue?.name ?? null,
-      fieldName: field?.name ?? null,
-    });
-  }
-  return map;
+  return mapReservationRows((data ?? []) as Parameters<typeof mapReservationRows>[0]);
+}
+
+function toCaptainMatchListItem(match: CaptainMatchCore): CaptainMatchListItem {
+  return {
+    id: match.id,
+    seasonId: match.seasonId,
+    organizationId: match.organizationId,
+    roundNumber: match.roundNumber,
+    legNumber: match.legNumber,
+    calendarStatus: match.calendarStatus,
+    status: match.status,
+    homeSeasonTeamId: match.homeSeasonTeamId,
+    awaySeasonTeamId: match.awaySeasonTeamId,
+    homeName: match.homeName,
+    awayName: match.awayName,
+    isOwnHome: match.isOwnHome,
+    opponentName: match.opponentName,
+    startsAt: match.startsAt,
+    venueName: match.venueName,
+    fieldName: match.fieldName,
+    isProgrammed: match.isProgrammed,
+  };
 }
 
 export async function getCaptainTeamContext(
@@ -188,70 +186,14 @@ export async function getCaptainUpcomingMatches(
   if (!allowed) return [];
 
   const supabase = await createClient();
-  const { data: matches } = await supabase
-    .from("matches")
-    .select(
-      "id, season_id, organization_id, home_season_team_id, away_season_team_id, round_number, leg_number, calendar_status, field_reservation_id, status"
-    )
-    .eq("season_id", team.seasonId)
-    .or(
-      `home_season_team_id.eq.${team.seasonTeamId},away_season_team_id.eq.${team.seasonTeamId}`
-    )
-    .order("round_number", { ascending: true });
+  const matches = await fetchCaptainUpcomingMatchesCore(
+    supabase,
+    team.seasonTeamId,
+    team.seasonId,
+    limit
+  );
 
-  if (!matches?.length) return [];
-
-  const teamIds = new Set<string>();
-  const reservationIds: string[] = [];
-  for (const m of matches) {
-    teamIds.add(m.home_season_team_id);
-    teamIds.add(m.away_season_team_id);
-    if (m.field_reservation_id) reservationIds.push(m.field_reservation_id);
-  }
-
-  const [names, reservations] = await Promise.all([
-    loadSeasonTeamNames([...teamIds]),
-    loadReservations(reservationIds),
-  ]);
-
-  const now = Date.now();
-  return matches
-    .map((m) => {
-      const res = m.field_reservation_id
-        ? reservations.get(m.field_reservation_id)
-        : undefined;
-      const { opponentName: opp, isOwnHome } = opponentName(
-        m,
-        team.seasonTeamId,
-        names
-      );
-      return {
-        id: m.id,
-        seasonId: m.season_id,
-        organizationId: m.organization_id,
-        roundNumber: m.round_number,
-        legNumber: m.leg_number,
-        calendarStatus:
-          m.calendar_status === "confirmado" ? "confirmado" : "programado",
-        status: m.status,
-        homeSeasonTeamId: m.home_season_team_id,
-        awaySeasonTeamId: m.away_season_team_id,
-        homeName: names.get(m.home_season_team_id) ?? "Local",
-        awayName: names.get(m.away_season_team_id) ?? "Visitante",
-        isOwnHome,
-        opponentName: opp,
-        startsAt: res?.startsAt ?? null,
-        venueName: res?.venueName ?? null,
-        fieldName: res?.fieldName ?? null,
-        isProgrammed: Boolean(m.field_reservation_id && res),
-      } satisfies CaptainMatchListItem;
-    })
-    .filter((m) => {
-      if (!m.startsAt) return m.status === "scheduled";
-      const t = new Date(m.startsAt).getTime();
-      return !Number.isNaN(t) && t >= now;
-    })
-    .slice(0, limit);
+  return matches.map(toCaptainMatchListItem);
 }
 
 export async function getCaptainMatchDetail(
@@ -266,7 +208,7 @@ export async function getCaptainMatchDetail(
   const { data: m } = await supabase
     .from("matches")
     .select(
-      "id, season_id, organization_id, home_season_team_id, away_season_team_id, round_number, leg_number, calendar_status, field_reservation_id, status"
+      "id, season_id, organization_id, home_season_team_id, away_season_team_id, round_number, leg_number, calendar_status, field_reservation_id, status, home_score, away_score"
     )
     .eq("id", matchId)
     .maybeSingle();
@@ -338,26 +280,11 @@ export async function getCaptainRoster(
   }
 
   const supabase = await createClient();
-  const [{ data: rosterRows }, { data: rules }, { data: seasonTeam }] =
-    await Promise.all([
-    supabase
-      .from("season_team_players")
-      .select(
-        "id, player_id, jersey_number, is_captain, is_vice_captain, registration_status, players(full_name, photo_path, verification_status)"
-      )
-      .eq("season_team_id", team.seasonTeamId)
-      .order("jersey_number", { ascending: true, nullsFirst: false }),
-    supabase
-      .from("season_rules")
-      .select("require_player_verification")
-      .eq("season_id", team.seasonId)
-      .maybeSingle(),
-    supabase
-      .from("season_teams")
-      .select("roster_locked_by_captain")
-      .eq("id", team.seasonTeamId)
-      .maybeSingle(),
-  ]);
+  const core = await fetchCaptainRosterCore(
+    supabase,
+    team.seasonTeamId,
+    team.seasonId
+  );
 
   const { data: marks } = await supabase
     .from("season_team_player_payment_marks")
@@ -372,51 +299,31 @@ export async function getCaptainRoster(
   );
 
   const { resolvePlayerPhotoUrlMap } = await import("@/lib/players/photo-url");
-  const photoPaths = (rosterRows ?? []).map((row) => {
-    const playerRel = row.players as
-      | { photo_path: string | null }
-      | { photo_path: string | null }[]
-      | null;
-    const player = Array.isArray(playerRel) ? playerRel[0] : playerRel;
-    return player?.photo_path ?? null;
-  });
-  const photoUrls = await resolvePlayerPhotoUrlMap(photoPaths);
+  const photoUrls = await resolvePlayerPhotoUrlMap(
+    core.roster.map((row) => row.photoPath)
+  );
 
-  const roster = (rosterRows ?? []).map((row) => {
-    const playerRel = row.players as
-      | {
-          full_name: string;
-          photo_path: string | null;
-          verification_status: string;
-        }
-      | {
-          full_name: string;
-          photo_path: string | null;
-          verification_status: string;
-        }[]
-      | null;
-    const player = Array.isArray(playerRel) ? playerRel[0] : playerRel;
+  const roster = core.roster.map((row) => {
     const mark = markMap.get(row.id);
-    const photoPath = player?.photo_path ?? null;
     return {
       id: row.id,
-      playerId: row.player_id,
-      fullName: player?.full_name ?? "Jugador",
-      jerseyNumber: row.jersey_number,
-      isCaptain: row.is_captain,
-      isViceCaptain: row.is_vice_captain,
-      registrationStatus: row.registration_status,
+      playerId: row.playerId,
+      fullName: row.fullName,
+      jerseyNumber: row.jerseyNumber,
+      isCaptain: row.isCaptain,
+      isViceCaptain: row.isViceCaptain,
+      registrationStatus: row.registrationStatus,
       markedPaid: mark?.markedPaid ?? false,
       paymentNotes: mark?.notes ?? null,
-      photoUrl: photoPath ? (photoUrls.get(photoPath) ?? null) : null,
-      verificationStatus: player?.verification_status ?? "not_required",
+      photoUrl: row.photoPath ? (photoUrls.get(row.photoPath) ?? null) : null,
+      verificationStatus: row.verificationStatus,
     };
   });
 
   return {
     roster,
-    requirePlayerVerification: rules?.require_player_verification ?? false,
-    rosterLockedByCaptain: seasonTeam?.roster_locked_by_captain ?? false,
+    requirePlayerVerification: core.requirePlayerVerification,
+    rosterLockedByCaptain: core.rosterLockedByCaptain,
   };
 }
 
@@ -473,50 +380,8 @@ export async function getOpponentCaptainPhone(
   _team: CaptainTeamLink,
   match: CaptainMatchListItem
 ): Promise<string | null> {
-  const opponentTeamId = match.isOwnHome
-    ? match.awaySeasonTeamId
-    : match.homeSeasonTeamId;
-
   const supabase = await createClient();
-  const { data: leaders } = await supabase
-    .from("season_team_players")
-    .select("is_captain, is_vice_captain, players(profile_id)")
-    .eq("season_team_id", opponentTeamId)
-    .eq("registration_status", "active")
-    .or("is_captain.eq.true,is_vice_captain.eq.true");
-
-  if (!leaders?.length) return null;
-
-  const sorted = [...leaders].sort((a, b) => {
-    if (a.is_captain && !b.is_captain) return -1;
-    if (!a.is_captain && b.is_captain) return 1;
-    return 0;
-  });
-
-  const profileIds = sorted
-    .map((row) => {
-      const player = row.players as { profile_id: string | null } | null;
-      return player?.profile_id ?? null;
-    })
-    .filter((id): id is string => Boolean(id));
-
-  if (profileIds.length === 0) return null;
-
-  const { data: profiles } = await supabase
-    .from("profiles")
-    .select("id, phone")
-    .in("id", profileIds);
-
-  const phoneById = new Map(
-    (profiles ?? []).map((p) => [p.id, p.phone] as const)
-  );
-
-  for (const id of profileIds) {
-    const phone = phoneById.get(id)?.trim();
-    if (phone) return phone;
-  }
-
-  return null;
+  return fetchOpponentCaptainPhoneCore(supabase, match);
 }
 
 export async function getCaptainProfile(profileId: string): Promise<{

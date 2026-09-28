@@ -14,7 +14,6 @@ import {
 
 import {
   buildAdminOrganizationUrl,
-  buildCaptainPortalUrl,
   buildPublicSeasonUrl,
 } from "@/lib/person/site-urls";
 import { useAuth } from "@/lib/auth/session";
@@ -198,9 +197,10 @@ export default function PersonHomeScreen() {
           </Pressable>
           {playerTeams.map((team) => {
             const isLeader = team.isCaptain || team.isViceCaptain;
-            const webUrl = isLeader
-              ? buildCaptainPortalUrl(team.seasonTeamId)
-              : buildPublicSeasonUrl(team.organizationId, team.seasonSlug);
+            const webUrl = buildPublicSeasonUrl(
+              team.organizationId,
+              team.seasonSlug,
+            );
 
             return (
               <View key={team.seasonTeamPlayerId} style={styles.card}>
@@ -216,10 +216,19 @@ export default function PersonHomeScreen() {
                   {team.competitionName} · {team.seasonName}
                 </Text>
                 <Text style={styles.meta}>{team.organizationName}</Text>
-                <Button
-                  title={isLeader ? "Abrir portal de capitán" : "Ver temporada pública"}
-                  onPress={() => void openWebUrl(webUrl)}
-                />
+                {isLeader ? (
+                  <Button
+                    title="Gestionar mi equipo"
+                    onPress={() =>
+                      router.push(`/mi-equipo/${team.seasonTeamId}`)
+                    }
+                  />
+                ) : (
+                  <Button
+                    title="Ver temporada pública"
+                    onPress={() => void openWebUrl(webUrl)}
+                  />
+                )}
               </View>
             );
           })}

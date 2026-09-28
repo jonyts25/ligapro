@@ -1,4 +1,4 @@
-function siteOrigin(): string {
+export function siteOrigin(): string {
   const configured = process.env.EXPO_PUBLIC_SITE_URL?.trim().replace(/\/$/, "");
   return configured ?? "http://localhost:3000";
 }

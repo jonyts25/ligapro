@@ -12,7 +12,7 @@ import {
 } from "react-native";
 
 import { useAuth } from "@/lib/auth/session";
-import { resolveOwnPlayerPhotoUrl } from "@/lib/players/photo-url";
+import { resolvePlayerPhotoUrl } from "@/lib/players/photo-url";
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabase/client";
 import {
   fetchMyPlayerStats,
@@ -169,7 +169,7 @@ export default function PlayerProfileScreen() {
         "Jugador";
       setDisplayName(name);
 
-      const signedUrl = await resolveOwnPlayerPhotoUrl(supabase, teamPlayerId);
+      const signedUrl = await resolvePlayerPhotoUrl(supabase, teamPlayerId);
       if (!cancelled) {
         setPhotoUrl(signedUrl);
       }

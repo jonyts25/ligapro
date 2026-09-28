@@ -19,12 +19,36 @@ export {
   type PersonPlayerTeam,
 } from "./person-contexts";
 export {
+  buildCaptainWhatsAppLink,
+  buildMatchCaptainContactMessage,
+  buildPlayerClaimWhatsAppMessage,
+} from "./captain-whatsapp";
+export {
+  fetchCaptainRosterCore,
+  fetchCaptainUpcomingMatchesCore,
+  fetchOpponentCaptainPhoneCore,
+  fetchSeasonTeamSeasonId,
+  formatCaptainMatchScore,
+  mapCaptainMatchRows,
+  mapReservationRows,
+  mapSeasonTeamNameRows,
+  registrationStatusLabel,
+  type CaptainMatchCore,
+  type CaptainRosterPlayerCore,
+} from "./captain-portal";
+export {
   fetchMyPlayerStats,
   mapPlayerStatsRows,
   sumPlayerStatsTotals,
   type PlayerStatsRow,
   type PlayerStatsTotals,
 } from "./player-stats";
+export {
+  duplicateConfirmationMessage,
+  normalizePlayerPhoneForSearch,
+  shouldPromptDuplicateConfirmation,
+  type PotentialDuplicatePlayer,
+} from "./player-duplicate-ui";
 export { isSeasonArchived } from "./season-visibility";
 export {
   buildMatchRosterForCapture,
