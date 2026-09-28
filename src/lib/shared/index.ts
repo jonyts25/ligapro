@@ -18,6 +18,13 @@ export {
   type PersonContexts,
   type PersonPlayerTeam,
 } from "./person-contexts";
+export {
+  fetchMyPlayerStats,
+  mapPlayerStatsRows,
+  sumPlayerStatsTotals,
+  type PlayerStatsRow,
+  type PlayerStatsTotals,
+} from "./player-stats";
 export { isSeasonArchived } from "./season-visibility";
 export {
   buildMatchRosterForCapture,

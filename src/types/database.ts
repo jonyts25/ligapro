@@ -4355,6 +4355,18 @@ export type Database = {
           suspension_type: string | null
         }[]
       }
+      get_my_player_stats: {
+        Args: { p_season_team_player_ids: string[] }
+        Returns: {
+          season_team_player_id: string
+          matches_played: number
+          goals: number
+          assists: number
+          own_goals: number
+          yellow_cards: number
+          red_cards: number
+        }[]
+      }
       get_organization_matchday: {
         Args: { p_date: string; p_organization_id: string }
         Returns: {

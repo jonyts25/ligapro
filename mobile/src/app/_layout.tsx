@@ -19,6 +19,7 @@ export default function RootLayout() {
           name="eliminar-cuenta"
           options={{ title: "Eliminar cuenta" }}
         />
+        <Stack.Screen name="perfil" options={{ title: "Mi perfil" }} />
         <Stack.Screen
           name="partidos/[matchId]/index"
           options={{ title: "Captura" }}

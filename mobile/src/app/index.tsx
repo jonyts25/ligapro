@@ -187,6 +187,15 @@ export default function PersonHomeScreen() {
       {playerTeams.length > 0 ? (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Tus equipos</Text>
+          <Pressable
+            style={styles.profileCard}
+            onPress={() => router.push("/perfil")}
+          >
+            <Text style={styles.profileCardTitle}>Mi perfil</Text>
+            <Text style={styles.profileCardHint}>
+              Estadísticas de partidos, goles y tarjetas por equipo.
+            </Text>
+          </Pressable>
           {playerTeams.map((team) => {
             const isLeader = team.isCaptain || team.isViceCaptain;
             const webUrl = isLeader
@@ -265,6 +274,23 @@ const styles = StyleSheet.create({
   sectionHint: {
     fontSize: 13,
     color: "#666",
+  },
+  profileCard: {
+    borderWidth: 1,
+    borderColor: "#175cd3",
+    borderRadius: 8,
+    padding: 12,
+    gap: 4,
+    backgroundColor: "#f5f9ff",
+  },
+  profileCardTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#175cd3",
+  },
+  profileCardHint: {
+    fontSize: 13,
+    color: "#475467",
   },
   card: {
     borderWidth: 1,
