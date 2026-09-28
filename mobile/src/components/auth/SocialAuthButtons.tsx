@@ -21,11 +21,19 @@ type SocialAuthButtonsProps = {
 };
 
 function googleClientIdsConfigured(): boolean {
-  return Boolean(
-    process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID &&
-      process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID &&
-      process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
-  );
+  if (!process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID) {
+    return false;
+  }
+
+  if (Platform.OS === "ios") {
+    return Boolean(process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID);
+  }
+
+  if (Platform.OS === "android") {
+    return Boolean(process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID);
+  }
+
+  return true;
 }
 
 function mapProviderError(provider: "google" | "apple", message: string): string {
