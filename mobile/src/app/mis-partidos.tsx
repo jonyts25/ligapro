@@ -105,7 +105,13 @@ export default function MisPartidosScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.email}>{user?.email}</Text>
-        <Button title="Salir" onPress={() => signOut()} />
+        <View style={styles.headerActions}>
+          <Button
+            title="Cuenta"
+            onPress={() => router.push("/eliminar-cuenta")}
+          />
+          <Button title="Salir" onPress={() => signOut()} />
+        </View>
       </View>
 
       {fetchError ? <Text style={styles.error}>{fetchError}</Text> : null}
@@ -150,6 +156,11 @@ const styles = StyleSheet.create({
   email: {
     flex: 1,
     fontSize: 14,
+  },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   list: {
     padding: 16,
