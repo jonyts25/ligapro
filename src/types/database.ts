@@ -3403,6 +3403,13 @@ export type Database = {
         }[]
       }
       can_capture_match: { Args: { p_match_id: string }; Returns: boolean }
+      can_delete_own_account: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          blocking_organization_names: string[] | null
+          can_delete: boolean
+        }[]
+      }
       can_view_player_photo: { Args: { p_player_id: string }; Returns: boolean }
       configure_knockout_round: {
         Args: { p_is_two_legs: boolean; p_round_id: string }

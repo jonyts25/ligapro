@@ -10,9 +10,14 @@ export default function RootLayout() {
       <Stack>
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="login" options={{ title: "Iniciar sesión" }} />
+        <Stack.Screen name="register" options={{ title: "Registro" }} />
         <Stack.Screen
           name="mis-partidos"
           options={{ title: "Mis partidos" }}
+        />
+        <Stack.Screen
+          name="eliminar-cuenta"
+          options={{ title: "Eliminar cuenta" }}
         />
         <Stack.Screen
           name="partidos/[matchId]/index"

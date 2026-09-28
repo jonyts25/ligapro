@@ -14,12 +14,15 @@ import { SocialAuthButtons } from "@/components/auth/SocialAuthButtons";
 import { useAuth } from "@/lib/auth/session";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
 
-export default function LoginScreen() {
-  const { session, loading, signIn } = useAuth();
+export default function RegisterScreen() {
+  const { session, loading, signUp } = useAuth();
+  const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   if (!isSupabaseConfigured()) {
     return (
@@ -39,7 +42,25 @@ export default function LoginScreen() {
   async function handleSubmit() {
     setSubmitting(true);
     setError(null);
-    const result = await signIn(email, password);
+    setSuccess(null);
+
+    if (!displayName.trim()) {
+      setError("El nombre es obligatorio.");
+      setSubmitting(false);
+      return;
+    }
+    if (password.length < 8) {
+      setError("La contraseña debe tener al menos 8 caracteres.");
+      setSubmitting(false);
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError("Las contraseñas no coinciden.");
+      setSubmitting(false);
+      return;
+    }
+
+    const result = await signUp(email, password, displayName);
     setSubmitting(false);
 
     if (result.error) {
@@ -47,14 +68,28 @@ export default function LoginScreen() {
       return;
     }
 
-    router.replace("/mis-partidos");
+    if (result.hasSession) {
+      router.replace("/mis-partidos");
+      return;
+    }
+
+    setSuccess(
+      "Cuenta creada. Si el proyecto requiere confirmación de correo, revisa tu bandeja antes de entrar.",
+    );
   }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Ligera</Text>
-      <Text style={styles.subtitle}>Inicia sesión contra ligapro-dev</Text>
+      <Text style={styles.title}>Crear cuenta</Text>
+      <Text style={styles.subtitle}>Regístrate en ligapro-dev</Text>
 
+      <TextInput
+        autoCapitalize="words"
+        placeholder="Nombre"
+        style={styles.input}
+        value={displayName}
+        onChangeText={setDisplayName}
+      />
       <TextInput
         autoCapitalize="none"
         autoComplete="email"
@@ -66,20 +101,30 @@ export default function LoginScreen() {
       />
       <TextInput
         autoCapitalize="none"
-        autoComplete="password"
+        autoComplete="password-new"
         placeholder="Contraseña"
         secureTextEntry
         style={styles.input}
         value={password}
         onChangeText={setPassword}
       />
+      <TextInput
+        autoCapitalize="none"
+        autoComplete="password-new"
+        placeholder="Confirmar contraseña"
+        secureTextEntry
+        style={styles.input}
+        value={confirmPassword}
+        onChangeText={setConfirmPassword}
+      />
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
+      {success ? <Text style={styles.success}>{success}</Text> : null}
 
       {submitting ? (
         <ActivityIndicator />
       ) : (
-        <Button title="Entrar" onPress={handleSubmit} />
+        <Button title="Registrarme" onPress={handleSubmit} />
       )}
 
       <SocialAuthButtons
@@ -87,8 +132,8 @@ export default function LoginScreen() {
         onSuccess={() => router.replace("/mis-partidos")}
       />
 
-      <Pressable onPress={() => router.push("/register")}>
-        <Text style={styles.link}>¿No tienes cuenta? Regístrate</Text>
+      <Pressable onPress={() => router.push("/login")}>
+        <Text style={styles.link}>¿Ya tienes cuenta? Inicia sesión</Text>
       </Pressable>
     </View>
   );
@@ -121,6 +166,10 @@ const styles = StyleSheet.create({
   },
   error: {
     color: "#b42318",
+    textAlign: "center",
+  },
+  success: {
+    color: "#027a48",
     textAlign: "center",
   },
   link: {
