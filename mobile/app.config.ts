@@ -33,14 +33,14 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
   );
 
-  // SDK 57 `expo-auth-session` Google provider redirects standalone/bare
-  // builds to `${Application.applicationId}:/oauthredirect`. That scheme has
-  // to be registered or iOS cannot reopen the app. The reversed client ID is
-  // the scheme Google documents for the iOS OAuth client (and the alternative
-  // commented in Google.ts).
+  // `ios.scheme` replaces the root `scheme` on iOS (it does not merge),
+  // so "ligera" has to be listed here or ligera:// stops opening the app.
+  // SDK 57 `expo-auth-session` Google redirects standalone/bare builds to
+  // `${Application.applicationId}:/oauthredirect`. The reversed client ID is
+  // the scheme Google documents for the iOS OAuth client.
   const iosSchemes = [
     ...new Set(
-      [iosReversedClientId, "mx.ligera.app"].filter(
+      ["ligera", iosReversedClientId, "mx.ligera.app"].filter(
         (scheme): scheme is string => Boolean(scheme),
       ),
     ),
