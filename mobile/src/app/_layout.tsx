@@ -8,7 +8,7 @@ export default function RootLayout() {
     <AuthProvider>
       <StatusBar style="auto" />
       <Stack>
-        <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="index" options={{ title: "Inicio" }} />
         <Stack.Screen name="login" options={{ title: "Iniciar sesión" }} />
         <Stack.Screen name="register" options={{ title: "Registro" }} />
         <Stack.Screen
