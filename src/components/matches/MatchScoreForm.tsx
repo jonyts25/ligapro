@@ -10,6 +10,7 @@ import {
   matchStatusLabel,
   type MatchStatusValue,
 } from "@/lib/matches/types";
+import { SCORE_MISMATCH_CONFIRM_MESSAGE } from "@/lib/matches/score-from-events";
 import { SubmitButton } from "@/components/auth/SubmitButton";
 import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/utils/cn";
@@ -27,6 +28,10 @@ type MatchScoreFormProps = {
   canUpdate: boolean;
   closeOnlyResultUpdate?: boolean;
   guestInviteToken?: string;
+  eventHome: number;
+  eventAway: number;
+  scoringEventCount: number;
+  scoreManualOverride: boolean;
 };
 
 export function MatchScoreForm({
@@ -42,6 +47,10 @@ export function MatchScoreForm({
   canUpdate,
   closeOnlyResultUpdate = false,
   guestInviteToken,
+  eventHome,
+  eventAway,
+  scoringEventCount,
+  scoreManualOverride,
 }: MatchScoreFormProps) {
   const [state, action, pending] = useActionState(
     guestInviteToken ? guestUpdateMatchResultAction : updateMatchResultAction,
@@ -51,6 +60,14 @@ export function MatchScoreForm({
     currentStatus
   );
   const [confirmReopen, setConfirmReopen] = useState(false);
+  const [confirmMismatch, setConfirmMismatch] = useState(false);
+  const calculated = scoringEventCount > 0 && !scoreManualOverride;
+  const [homeInput, setHomeInput] = useState(
+    String(calculated ? eventHome : (homeScore ?? 0))
+  );
+  const [awayInput, setAwayInput] = useState(
+    String(calculated ? eventAway : (awayScore ?? 0))
+  );
 
   if (!canUpdate) return null;
 
@@ -58,8 +75,12 @@ export function MatchScoreForm({
     currentStatus,
     closeOnlyResultUpdate
   );
+  const statusValue = String(state.values?.status ?? selectedStatus);
   const reopening =
-    currentStatus === "finished" && selectedStatus === "in_progress";
+    currentStatus === "finished" && statusValue === "in_progress";
+  const scoresDiffer =
+    scoringEventCount > 0 &&
+    (Number(homeInput) !== eventHome || Number(awayInput) !== eventAway);
 
   return (
     <Card className="space-y-4">
@@ -87,6 +108,11 @@ export function MatchScoreForm({
           </>
         )}
         <input type="hidden" name="matchId" value={matchId} />
+        {calculated && (
+          <p className="text-sm text-text-secondary">
+            Calculado a partir de {scoringEventCount} goles capturados.
+          </p>
+        )}
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <label htmlFor="homeScore" className="text-sm font-medium">
@@ -99,9 +125,11 @@ export function MatchScoreForm({
               min={0}
               step={1}
               required
-              defaultValue={
-                state.values?.homeScore ?? homeScore ?? 0
-              }
+              value={homeInput}
+              onChange={(event) => {
+                setHomeInput(event.target.value);
+                setConfirmMismatch(false);
+              }}
               disabled={pending}
               className="min-h-11 w-full rounded-xl border border-border bg-surface px-3 text-sm"
             />
@@ -117,9 +145,11 @@ export function MatchScoreForm({
               min={0}
               step={1}
               required
-              defaultValue={
-                state.values?.awayScore ?? awayScore ?? 0
-              }
+              value={awayInput}
+              onChange={(event) => {
+                setAwayInput(event.target.value);
+                setConfirmMismatch(false);
+              }}
               disabled={pending}
               className="min-h-11 w-full rounded-xl border border-border bg-surface px-3 text-sm"
             />
@@ -132,7 +162,7 @@ export function MatchScoreForm({
           <select
             id="status"
             name="status"
-            value={String(state.values?.status ?? selectedStatus)}
+            value={statusValue}
             disabled={pending}
             onChange={(event) => {
               const next = event.target.value as MatchStatusValue;
@@ -148,6 +178,20 @@ export function MatchScoreForm({
             ))}
           </select>
         </div>
+        {scoresDiffer && (
+          <label className="flex items-start gap-2 rounded-xl border border-warning/40 bg-warning/10 px-3 py-3 text-sm text-text-secondary">
+            <input
+              type="checkbox"
+              name="confirmScoreMismatch"
+              value="1"
+              checked={confirmMismatch}
+              onChange={(event) => setConfirmMismatch(event.target.checked)}
+              disabled={pending}
+              className="mt-1"
+            />
+            <span>{SCORE_MISMATCH_CONFIRM_MESSAGE}</span>
+          </label>
+        )}
         {reopening && (
           <div className="space-y-3 rounded-xl border border-warning/40 bg-warning/10 px-3 py-3 text-sm text-text-secondary">
             <p>
@@ -166,9 +210,25 @@ export function MatchScoreForm({
             </label>
           </div>
         )}
-        <SubmitButton pending={pending} disabled={reopening && !confirmReopen}>
+        <SubmitButton
+          pending={pending}
+          disabled={
+            (reopening && !confirmReopen) || (scoresDiffer && !confirmMismatch)
+          }
+        >
           Guardar marcador
         </SubmitButton>
+        {scoreManualOverride && scoringEventCount > 0 && (
+          <button
+            type="submit"
+            name="recalculateFromEvents"
+            value="1"
+            disabled={pending}
+            className="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-border px-4 text-sm font-medium"
+          >
+            Volver a calcular desde eventos
+          </button>
+        )}
       </form>
     </Card>
   );

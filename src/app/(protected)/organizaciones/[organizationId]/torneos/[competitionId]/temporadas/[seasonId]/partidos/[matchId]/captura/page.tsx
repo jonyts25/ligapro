@@ -12,6 +12,7 @@ import { MatchRosterValidationForm } from "@/components/matches/MatchRosterValid
 import { MatchTimeline } from "@/components/matches/MatchTimeline";
 import { MatchDisciplineSummary } from "@/components/matches/MatchDisciplineSummary";
 import { MatchRosterCredentials } from "@/components/matches/MatchRosterCredentials";
+import { scoreFromTimeline } from "@/lib/matches/score-from-events";
 import type { MatchStatusValue } from "@/lib/matches/types";
 
 type PageProps = {
@@ -49,6 +50,7 @@ export default async function MatchCapturePage({ params }: PageProps) {
     roster,
     participants,
     scoreMismatch,
+    scoreManualOverride,
     requirePlayerVerification,
   } = ctx;
   const match = details.match;
@@ -57,6 +59,11 @@ export default async function MatchCapturePage({ params }: PageProps) {
     match.status === "finished" ||
     match.status === "cancelled" ||
     match.status === "walkover";
+  const eventScore = scoreFromTimeline(
+    timeline,
+    match.homeSeasonTeamId,
+    match.awaySeasonTeamId
+  );
 
   return (
     <div className="mx-auto max-w-xl space-y-5 pb-10">
@@ -90,30 +97,6 @@ export default async function MatchCapturePage({ params }: PageProps) {
         canCaptureEvents={permissions.canCaptureEvents}
         captureWindowOpen={permissions.captureWindowOpen}
         captureWindowBypass={permissions.captureWindowBypass}
-      />
-
-      {scoreMismatch && (
-        <p
-          className="rounded-xl border border-warning/40 bg-warning/10 px-3 py-2 text-sm"
-          role="status"
-        >
-          Revisa el marcador oficial: los eventos registrados no coinciden con
-          el resultado.
-        </p>
-      )}
-
-      <MatchScoreForm
-        organizationId={organizationId}
-        competitionId={competitionId}
-        seasonId={seasonId}
-        matchId={matchId}
-        currentStatus={match.status as MatchStatusValue}
-        homeScore={match.homeScore}
-        awayScore={match.awayScore}
-        homeName={match.homeName}
-        awayName={match.awayName}
-        canUpdate={permissions.canUpdateResult}
-        closeOnlyResultUpdate={permissions.closeOnlyResultUpdate}
       />
 
       <MatchRosterValidationForm
@@ -167,6 +150,35 @@ export default async function MatchCapturePage({ params }: PageProps) {
         events={timeline}
         canVoidEvents={permissions.canVoidEvents}
       />
+
+      {scoreMismatch && (
+        <p
+          className="rounded-xl border border-warning/40 bg-warning/10 px-3 py-2 text-sm"
+          role="status"
+        >
+          Revisa el marcador oficial: los eventos registrados no coinciden con
+          el resultado.
+        </p>
+      )}
+
+      <MatchScoreForm
+        organizationId={organizationId}
+        competitionId={competitionId}
+        seasonId={seasonId}
+        matchId={matchId}
+        currentStatus={match.status as MatchStatusValue}
+        homeScore={match.homeScore}
+        awayScore={match.awayScore}
+        homeName={match.homeName}
+        awayName={match.awayName}
+        canUpdate={permissions.canUpdateResult}
+        closeOnlyResultUpdate={permissions.closeOnlyResultUpdate}
+        eventHome={eventScore.home}
+        eventAway={eventScore.away}
+        scoringEventCount={eventScore.scoringEventCount}
+        scoreManualOverride={scoreManualOverride}
+      />
+
       <MatchDisciplineSummary items={discipline} />
     </div>
   );

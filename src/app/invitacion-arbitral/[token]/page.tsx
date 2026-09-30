@@ -6,6 +6,7 @@ import { MatchScoreForm } from "@/components/matches/MatchScoreForm";
 import { MatchEventForm } from "@/components/matches/MatchEventForm";
 import { MatchTimeline } from "@/components/matches/MatchTimeline";
 import { Card } from "@/components/ui/Card";
+import { scoreFromTimeline } from "@/lib/matches/score-from-events";
 type PageProps = {
   params: Promise<{ token: string }>;
 };
@@ -31,6 +32,11 @@ export default async function GuestOfficialInvitationPage({ params }: PageProps)
     snapshot.status === "finished" ||
     snapshot.status === "cancelled" ||
     snapshot.status === "walkover";
+  const eventScore = scoreFromTimeline(
+    timeline,
+    snapshot.homeSeasonTeamId,
+    snapshot.awaySeasonTeamId
+  );
 
   if (context.needsName) {
     return (
@@ -62,21 +68,6 @@ export default async function GuestOfficialInvitationPage({ params }: PageProps)
         captureWindowBypass={permissions.captureWindowBypass}
       />
 
-      <MatchScoreForm
-        organizationId={invite.organizationId}
-        competitionId={invite.competitionId}
-        seasonId={invite.seasonId}
-        matchId={invite.matchId}
-        currentStatus={snapshot.status}
-        homeScore={snapshot.homeScore}
-        awayScore={snapshot.awayScore}
-        homeName={snapshot.homeName}
-        awayName={snapshot.awayName}
-        canUpdate={permissions.canUpdateResult}
-        closeOnlyResultUpdate={permissions.closeOnlyResultUpdate}
-        guestInviteToken={token}
-      />
-
       <MatchEventForm
         organizationId={invite.organizationId}
         competitionId={invite.competitionId}
@@ -100,6 +91,25 @@ export default async function GuestOfficialInvitationPage({ params }: PageProps)
         matchId={invite.matchId}
         events={timeline}
         canVoidEvents={false}
+      />
+
+      <MatchScoreForm
+        organizationId={invite.organizationId}
+        competitionId={invite.competitionId}
+        seasonId={invite.seasonId}
+        matchId={invite.matchId}
+        currentStatus={snapshot.status}
+        homeScore={snapshot.homeScore}
+        awayScore={snapshot.awayScore}
+        homeName={snapshot.homeName}
+        awayName={snapshot.awayName}
+        canUpdate={permissions.canUpdateResult}
+        closeOnlyResultUpdate={permissions.closeOnlyResultUpdate}
+        guestInviteToken={token}
+        eventHome={eventScore.home}
+        eventAway={eventScore.away}
+        scoringEventCount={eventScore.scoringEventCount}
+        scoreManualOverride={snapshot.scoreManualOverride}
       />
     </div>
   );

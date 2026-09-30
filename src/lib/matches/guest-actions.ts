@@ -9,8 +9,13 @@ import {
   type CaptureActionState,
   type MatchEventType,
   type MatchStatusValue,
+  type MatchTimelineEvent,
 } from "@/lib/matches/types";
 import { humanizeCaptureError } from "@/lib/matches/capture-errors";
+import {
+  resolveScoreManualSave,
+  scoreFromTimeline,
+} from "@/lib/matches/score-from-events";
 import {
   classifyGuestInviteError,
   validateGuestUpdateResultAuthorization,
@@ -117,12 +122,60 @@ export async function guestUpdateMatchResultAction(
     return { ok: false, message: authCheck.message };
   }
 
+  const { data: timelineRows, error: timelineError } = await supabase.rpc(
+    "get_guest_match_timeline",
+    { p_token: token }
+  );
+  if (timelineError) {
+    return humanError(timelineError.message);
+  }
+
+  const eventScore = scoreFromTimeline(
+    (timelineRows ?? []).map(
+      (row): MatchTimelineEvent => ({
+        id: row.event_id,
+        eventType: row.event_type as MatchEventType,
+        minute: row.minute,
+        notes: row.notes,
+        createdAt: row.created_at,
+        playerName: row.player_name,
+        teamName: row.team_name,
+        seasonTeamId: row.season_team_id,
+        seasonTeamPlayerId: row.season_team_player_id,
+        voidedAt: row.voided_at,
+        voidReason: row.void_reason,
+      })
+    ),
+    snapshot[0]!.home_season_team_id,
+    snapshot[0]!.away_season_team_id
+  );
+
+  const scoreDecision = resolveScoreManualSave({
+    submittedHome: Number(homeRaw),
+    submittedAway: Number(awayRaw),
+    eventHome: eventScore.home,
+    eventAway: eventScore.away,
+    scoringEventCount: eventScore.scoringEventCount,
+    recalculateFromEvents: formData.get("recalculateFromEvents") === "1",
+    confirmMismatch:
+      formData.get("confirmScoreMismatch") === "1" ||
+      formData.get("confirmScoreMismatch") === "on",
+  });
+  if (!scoreDecision.ok) {
+    return {
+      ok: false,
+      message: scoreDecision.message,
+      values: { status: statusRaw, homeScore: homeRaw, awayScore: awayRaw },
+    };
+  }
+
   const { error } = await supabase.rpc("guest_update_match_result", {
     p_token: token,
     p_match_id: matchId,
     p_status: statusRaw,
-    p_home_score: Number(homeRaw),
-    p_away_score: Number(awayRaw),
+    p_home_score: scoreDecision.homeScore,
+    p_away_score: scoreDecision.awayScore,
+    p_score_manual_override: scoreDecision.scoreManualOverride,
   });
 
   if (error) {
