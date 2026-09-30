@@ -1351,6 +1351,7 @@ export type Database = {
           season_group_id: string | null
           season_id: string
           sequence_in_round: number | null
+          score_manual_override: boolean
           status: string
           updated_at: string
           void_reason: string | null
@@ -1377,6 +1378,7 @@ export type Database = {
           result_review_opened_at?: string | null
           round_number?: number | null
           season_group_id?: string | null
+          score_manual_override?: boolean
           season_id: string
           sequence_in_round?: number | null
           status?: string
@@ -1405,6 +1407,7 @@ export type Database = {
           round_label?: string | null
           round_number?: number | null
           season_group_id?: string | null
+          score_manual_override?: boolean
           season_id?: string
           sequence_in_round?: number | null
           status?: string
@@ -3567,6 +3570,7 @@ export type Database = {
           home_score: number | null
           home_season_team_id: string
           match_id: string
+          score_manual_override: boolean
           starts_at: string | null
           status: string
         }[]
@@ -3617,6 +3621,7 @@ export type Database = {
           p_away_score: number
           p_home_score: number
           p_match_id: string
+          p_score_manual_override?: boolean
           p_status: string
           p_token: string
         }
@@ -4519,6 +4524,7 @@ export type Database = {
           p_away_score: number
           p_home_score: number
           p_match_id: string
+          p_score_manual_override?: boolean
           p_status: string
         }
         Returns: {

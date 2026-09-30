@@ -434,6 +434,7 @@ export async function getMatchCaptureContext(
   roster: MatchRosterPlayer[];
   participants: MatchParticipantRow[];
   scoreMismatch: boolean;
+  scoreManualOverride: boolean;
   requirePlayerVerification: boolean;
 } | null> {
   const details = await getMatchSchedulingDetails(
@@ -498,6 +499,13 @@ export async function getMatchCaptureContext(
     };
   });
 
+  const { data: scoreFlag } = await supabase
+    .from("matches")
+    .select("score_manual_override")
+    .eq("id", matchId)
+    .eq("organization_id", organizationId)
+    .maybeSingle();
+
   const { goalsFromEvents } = await import("@/lib/matches/types");
   const fromEvents = goalsFromEvents(
     timeline,
@@ -519,6 +527,7 @@ export async function getMatchCaptureContext(
     roster,
     participants,
     scoreMismatch,
+    scoreManualOverride: scoreFlag?.score_manual_override ?? false,
     requirePlayerVerification: seasonRules,
   };
 }

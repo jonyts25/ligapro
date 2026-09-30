@@ -26,6 +26,7 @@ export type GuestMatchSnapshot = {
   homeSeasonTeamId: string;
   awaySeasonTeamId: string;
   startsAt: string | null;
+  scoreManualOverride: boolean;
 };
 
 export type GuestMatchCaptureContext = {
@@ -123,6 +124,7 @@ async function fetchGuestMatchSnapshot(
     homeSeasonTeamId: row.home_season_team_id,
     awaySeasonTeamId: row.away_season_team_id,
     startsAt: row.starts_at,
+    scoreManualOverride: row.score_manual_override,
   };
 }
 

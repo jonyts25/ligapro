@@ -18,6 +18,10 @@ import {
   type SeasonRoleValue,
 } from "@/lib/matches/types";
 import { humanizeCaptureError } from "@/lib/matches/capture-errors";
+import {
+  resolveScoreManualSave,
+  scoreFromTimeline,
+} from "@/lib/matches/score-from-events";
 import { computeGuestOfficialInviteExpiry } from "@/lib/matches/guest-official";
 import { validateUpdateResultAuthorization } from "@/lib/matches/update-result-permissions";
 import { getPublicSiteUrl } from "@/lib/site-url";
@@ -441,7 +445,9 @@ export async function updateMatchResultAction(
   const supabase = await createClient();
   const { data: match } = await supabase
     .from("matches")
-    .select("id, status, season_id, organization_id")
+    .select(
+      "id, status, season_id, organization_id, home_season_team_id, away_season_team_id"
+    )
     .eq("id", matchId)
     .eq("organization_id", organizationId)
     .eq("season_id", seasonId)
@@ -500,11 +506,67 @@ export async function updateMatchResultAction(
     return { ok: false, message: authCheck.message };
   }
 
+  const { data: eventRows, error: eventsError } = await supabase
+    .from("match_events")
+    .select(
+      "event_type, voided_at, season_team_players!season_team_player_id(season_team_id)"
+    )
+    .eq("match_id", matchId)
+    .eq("organization_id", organizationId);
+
+  if (eventsError) {
+    return humanError(eventsError.message);
+  }
+
+  const eventScore = scoreFromTimeline(
+    (eventRows ?? []).map((row) => {
+      const team = row.season_team_players;
+      const seasonTeamId = Array.isArray(team)
+        ? (team[0]?.season_team_id ?? "")
+        : team.season_team_id;
+      return {
+        id: "",
+        eventType: row.event_type as MatchEventType,
+        minute: 0,
+        notes: null,
+        createdAt: "",
+        playerName: "",
+        teamName: "",
+        seasonTeamId,
+        seasonTeamPlayerId: "",
+        voidedAt: row.voided_at,
+        voidReason: null,
+      };
+    }),
+    match.home_season_team_id,
+    match.away_season_team_id
+  );
+
+  const scoreDecision = resolveScoreManualSave({
+    submittedHome: homeScore,
+    submittedAway: awayScore,
+    eventHome: eventScore.home,
+    eventAway: eventScore.away,
+    scoringEventCount: eventScore.scoringEventCount,
+    recalculateFromEvents: formData.get("recalculateFromEvents") === "1",
+    confirmMismatch:
+      formData.get("confirmScoreMismatch") === "1" ||
+      formData.get("confirmScoreMismatch") === "on",
+  });
+  if (!scoreDecision.ok) {
+    return {
+      ok: false,
+      message: scoreDecision.message,
+      values: { status: statusRaw, homeScore: homeRaw, awayScore: awayRaw },
+    };
+  }
+
   const { error } = await supabase.rpc("update_match_result", {
     p_match_id: matchId,
     p_status: statusRaw,
-    p_home_score: homeScore,
-    p_away_score: awayScore,
+    p_home_score: scoreDecision.homeScore,
+    p_away_score: scoreDecision.awayScore,
+    p_score_manual_override: scoreDecision.scoreManualOverride,
   });
 
   if (error) {
