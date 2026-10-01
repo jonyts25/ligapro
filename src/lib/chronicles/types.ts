@@ -43,4 +43,7 @@ export type BuildChroniclePromptInput = {
   homeScore: number;
   awayScore: number;
   events: MatchTimelineEvent[];
+  venueName?: string | null;
+  fieldName?: string | null;
+  roundLabel?: string | null;
 };

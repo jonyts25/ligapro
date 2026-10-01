@@ -1,7 +1,7 @@
 import { callAI } from "@/lib/ai/call-ai";
 
 const CHRONICLE_SYSTEM_PROMPT =
-  "Sigues instrucciones exactamente y respondes solo con el JSON pedido, sin texto adicional.";
+  "Sigues instrucciones exactamente y respondes solo con el JSON pedido, sin texto adicional. Usa solo los datos del mensaje: no inventes lugar, asistencias, jugadas, lesiones ni declaraciones.";
 
 /**
  * Punto único de swap de proveedor de generación de texto (ADR-0016 §3.4).
