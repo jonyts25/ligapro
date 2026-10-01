@@ -94,6 +94,38 @@ describe("buildChroniclePrompt", () => {
     });
 
     assert.match(prompt, /Sin goles registrados/);
+    assert.match(prompt, /Usa SOLO los datos de este mensaje/);
+    assert.doesNotMatch(prompt, /cancha/i);
+    assert.doesNotMatch(prompt, /Cancha:/);
+    assert.doesNotMatch(prompt, /Jornada:/);
+  });
+
+  it("includes the field, venue and round when they are provided", () => {
+    const prompt = buildChroniclePrompt({
+      homeTeamName: "Local FC",
+      awayTeamName: "Visit FC",
+      homeSeasonTeamId: "home-st",
+      awaySeasonTeamId: "away-st",
+      homeScore: 1,
+      awayScore: 0,
+      events: [],
+      fieldName: "Cancha 1",
+      venueName: "Unidad Norte",
+      roundLabel: "Jornada 4",
+    });
+
+    assert.match(prompt, /Usa SOLO los datos de este mensaje/);
+    assert.match(
+      prompt,
+      /No inventes lugar \(estadio, afición, clima\), asistencias, jugadas, lesiones, ni declaraciones/
+    );
+    assert.match(
+      prompt,
+      /Si mencionas dónde se jugó, usa exactamente el nombre de la cancha que te doy/
+    );
+    assert.match(prompt, /Cancha: Cancha 1/);
+    assert.match(prompt, /Sede: Unidad Norte/);
+    assert.match(prompt, /Jornada: Jornada 4/);
   });
 });
 

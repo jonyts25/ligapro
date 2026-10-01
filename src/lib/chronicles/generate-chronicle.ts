@@ -66,6 +66,47 @@ async function loadMatchTeamNames(
   return { homeName, awayName };
 }
 
+function nestedName(
+  value: { name: string } | { name: string }[] | null | undefined
+): string | null {
+  const row = Array.isArray(value) ? value[0] : value;
+  const name = row?.name?.trim();
+  return name ? name : null;
+}
+
+async function loadMatchPlace(
+  supabase: SupabaseClient<Database>,
+  fieldReservationId: string | null
+): Promise<{ fieldName: string | null; venueName: string | null }> {
+  if (!fieldReservationId) {
+    return { fieldName: null, venueName: null };
+  }
+
+  const { data } = await supabase
+    .from("field_reservations")
+    .select("fields(name, venues(name))")
+    .eq("id", fieldReservationId)
+    .maybeSingle();
+
+  const fieldRel = data?.fields as
+    | {
+        name: string;
+        venues: { name: string } | { name: string }[] | null;
+      }
+    | {
+        name: string;
+        venues: { name: string } | { name: string }[] | null;
+      }[]
+    | null
+    | undefined;
+  const field = Array.isArray(fieldRel) ? fieldRel[0] : fieldRel;
+
+  return {
+    fieldName: field?.name?.trim() || null,
+    venueName: nestedName(field?.venues),
+  };
+}
+
 export async function generateChronicleForMatch(
   params: GenerateChronicleParams
 ): Promise<GenerateChronicleResult> {
@@ -116,7 +157,7 @@ export async function generateChronicleForMatch(
   const { data: match } = await supabase
     .from("matches")
     .select(
-      "id, status, home_score, away_score, home_season_team_id, away_season_team_id"
+      "id, status, home_score, away_score, home_season_team_id, away_season_team_id, round_label, field_reservation_id"
     )
     .eq("id", matchId)
     .eq("organization_id", organizationId)
@@ -178,6 +219,8 @@ export async function generateChronicleForMatch(
     return { ok: false, message: tierCheck.message };
   }
 
+  const place = await loadMatchPlace(supabase, match.field_reservation_id);
+
   const prompt = buildChroniclePrompt({
     homeTeamName: teamNames.homeName,
     awayTeamName: teamNames.awayName,
@@ -186,6 +229,9 @@ export async function generateChronicleForMatch(
     homeScore: match.home_score,
     awayScore: match.away_score,
     events: eventsForPrompt,
+    venueName: place.venueName,
+    fieldName: place.fieldName,
+    roundLabel: match.round_label,
   });
 
   const { data: job, error } = await supabase

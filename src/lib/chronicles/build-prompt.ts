@@ -88,10 +88,15 @@ function buildCardLines(events: MatchTimelineEvent[]): CardPromptLine[] {
     }));
 }
 
+function presentText(value: string | null | undefined): string | null {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
+}
+
 /**
- * Local models often misread "empató"/"tomó ventaja" even with explicit scores
- * in the prompt. Human review before publish is mandatory — more prompt rules
- * did not fix this in live testing (see ADR-0013).
+ * La revisión humana antes de publicar sigue siendo obligatoria.
+ * Las reglas de fidelidad se agregaron para el proveedor Anthropic.
+ * Con el modelo local (qwen3.5 vía Ollama, ADR-0013) agregar reglas no ayudó.
  */
 export function buildChroniclePrompt(input: BuildChroniclePromptInput): string {
   const goals = buildGoalLines(
@@ -121,12 +126,35 @@ export function buildChroniclePrompt(input: BuildChroniclePromptInput): string {
           .join("\n")
       : "- (Sin tarjetas registradas)";
 
+  const fieldName = presentText(input.fieldName);
+  const venueName = presentText(input.venueName);
+  const roundLabel = presentText(input.roundLabel);
+  const fidelityRules = [
+    "- Usa SOLO los datos de este mensaje. No inventes lugar (estadio, afición, clima), asistencias, jugadas, lesiones, ni declaraciones.",
+    fieldName
+      ? "- Si mencionas dónde se jugó, usa exactamente el nombre de la cancha que te doy."
+      : null,
+  ]
+    .filter((line): line is string => line != null)
+    .join("\n");
+
+  const contextLines = [
+    roundLabel ? `Jornada: ${roundLabel}` : null,
+    fieldName ? `Cancha: ${fieldName}` : null,
+    venueName ? `Sede: ${venueName}` : null,
+  ].filter((line): line is string => line != null);
+  const contextSection =
+    contextLines.length > 0 ? `\n${contextLines.join("\n")}\n` : "\n";
+
   return `Eres un cronista deportivo escribiendo para una liga amateur de fútbol en México. Escribe una crónica breve (120-180 palabras), en español, con tono cercano y emocionante.
 
 REGLA MÁS IMPORTANTE: usa el "marcador tras este gol" de cada evento tal cual te lo doy. NO calcules ni infieras el marcador tú mismo. NO digas que un equipo "empató" o "igualó" salvo que el marcador tras ese gol muestre números iguales.
 
-Partido: ${input.homeTeamName} (EQUIPO LOCAL, juega en casa) vs ${input.awayTeamName} (EQUIPO VISITANTE)
+REGLAS DE FIDELIDAD:
+${fidelityRules}
 
+Partido: ${input.homeTeamName} (EQUIPO LOCAL, juega en casa) vs ${input.awayTeamName} (EQUIPO VISITANTE)
+${contextSection}
 Goles en orden:
 ${goalLines}
 
