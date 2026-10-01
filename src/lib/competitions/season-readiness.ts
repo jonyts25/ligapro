@@ -1,9 +1,12 @@
 import type { SeasonDetail } from "@/lib/competitions/types";
 
+export type SeasonReadinessLevel = "required" | "recommended";
+
 export type SeasonReadinessItem = {
   label: string;
   value: string;
   ok: boolean;
+  level: SeasonReadinessLevel;
 };
 
 export function getSeasonReadinessItems(
@@ -19,21 +22,27 @@ export function getSeasonReadinessItems(
       label: "Canchas activas",
       value: String(readiness.effectiveActiveFields),
       ok: readiness.effectiveActiveFields > 0,
+      level: "required",
     },
     {
       label: "Equipos inscritos",
       value: String(readiness.teamCount),
-      ok: readiness.teamCount > 0,
+      ok: isLeague ? readiness.teamCount >= 2 : readiness.teamCount > 0,
+      level: "required",
     },
     {
       label: "Jugadores en planteles",
       value: String(readiness.activePlayerCount),
       ok: readiness.activePlayerCount > 0,
+      level: "required",
     },
     {
       label: "Equipos con capitán",
-      value: String(readiness.teamsWithCaptain),
-      ok: readiness.teamsWithCaptain > 0,
+      value: `${readiness.teamsWithCaptain}/${readiness.teamCount}`,
+      ok:
+        readiness.teamCount > 0 &&
+        readiness.teamsWithCaptain >= readiness.teamCount,
+      level: "recommended",
     },
     ...(isLeague
       ? [
@@ -43,6 +52,7 @@ export function getSeasonReadinessItems(
               ? `Sí (${readiness.totalMatches})`
               : "No",
             ok: readiness.fixtureGenerated,
+            level: "required" as const,
           },
           {
             label: "Partidos programados",
@@ -51,11 +61,13 @@ export function getSeasonReadinessItems(
               readiness.fixtureGenerated &&
               readiness.pendingMatches === 0 &&
               readiness.totalMatches > 0,
+            level: "required" as const,
           },
           {
             label: "Partidos pendientes",
             value: String(readiness.pendingMatches),
             ok: readiness.fixtureGenerated && readiness.pendingMatches === 0,
+            level: "required" as const,
           },
         ]
       : []),
@@ -70,7 +82,9 @@ export function getSeasonReadinessStatus(
   items: SeasonReadinessItem[];
 } {
   const items = getSeasonReadinessItems(season);
-  const pendingLabels = items.filter((item) => !item.ok).map((item) => item.label);
+  const pendingLabels = items
+    .filter((item) => item.level === "required" && !item.ok)
+    .map((item) => item.label);
   return {
     complete: pendingLabels.length === 0,
     pendingLabels,

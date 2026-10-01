@@ -41,7 +41,30 @@ describe("getSeasonReadinessStatus", () => {
     );
     assert.equal(status.complete, false);
     assert.ok(status.pendingLabels.includes("Equipos inscritos"));
-    assert.ok(status.pendingLabels.includes("Equipos con capitán"));
+    assert.equal(status.pendingLabels.includes("Equipos con capitán"), false);
+  });
+
+  it("shows captains as an amber warning and still allows publish", () => {
+    const status = getSeasonReadinessStatus(
+      baseSeason({ teamCount: 4, teamsWithCaptain: 1 })
+    );
+    const captains = status.items.find(
+      (item) => item.label === "Equipos con capitán"
+    );
+
+    assert.equal(captains?.value, "1/4");
+    assert.equal(captains?.ok, false);
+    assert.equal(captains?.level, "recommended");
+    assert.equal(status.complete, true);
+    assert.equal(status.pendingLabels.includes("Equipos con capitán"), false);
+  });
+
+  it("requires at least two enrolled teams for round robin", () => {
+    const items = getSeasonReadinessItems(baseSeason({ teamCount: 1 }));
+    const teams = items.find((item) => item.label === "Equipos inscritos");
+
+    assert.equal(teams?.ok, false);
+    assert.equal(teams?.level, "required");
   });
 
   it("omits fixture items for knockout format", () => {
