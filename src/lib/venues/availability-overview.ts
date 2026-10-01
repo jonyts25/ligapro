@@ -1,3 +1,4 @@
+import { FIXTURE_TIMEZONE } from "@/lib/fixtures/types";
 import { createClient } from "@/lib/supabase/server";
 import { DAY_LABELS_ES } from "@/lib/venues/types";
 
@@ -151,11 +152,13 @@ export async function getFieldAvailabilityOverview(
         hour: "2-digit",
         minute: "2-digit",
         hour12: false,
+        timeZone: FIXTURE_TIMEZONE,
       }),
       endsAt: ends.toLocaleTimeString("es-MX", {
         hour: "2-digit",
         minute: "2-digit",
         hour12: false,
+        timeZone: FIXTURE_TIMEZONE,
       }),
       label: "Ocupado (partido/reserva)",
       detail: seasonName,

@@ -3,7 +3,7 @@ import { TeamMatchupTitle } from "@/components/teams/TeamMatchupTitle";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { formatMatchDateTime } from "@/lib/fixtures/format";
+import { formatDateTimeMx, formatMatchDateTime } from "@/lib/fixtures/format";
 import type {
   PublicMatchDetail,
   PublicMatchEventRow,
@@ -155,7 +155,7 @@ export function PublicMatchDetailView({
           </h2>
           <Card className="space-y-2">
             <p className="text-xs text-text-secondary">
-              {new Date(chronicle.generatedAt).toLocaleString("es-MX")}
+              {formatDateTimeMx(chronicle.generatedAt)}
             </p>
             <div className="text-sm leading-relaxed text-text-primary whitespace-pre-wrap">
               {chronicle.content}

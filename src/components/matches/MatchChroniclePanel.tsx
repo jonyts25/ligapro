@@ -17,6 +17,7 @@ import {
   type MatchChronicleRow,
 } from "@/lib/chronicles/types";
 import { SubmitButton } from "@/components/auth/SubmitButton";
+import { formatDateTimeMx } from "@/lib/fixtures/format";
 import { TierLimitNotice } from "@/components/billing/TierLimitControls";
 import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/utils/cn";
@@ -196,7 +197,7 @@ export function MatchChroniclePanel({
                   {JOB_STATUS_LABEL[job.status]}
                 </span>
                 <span className="text-xs text-muted">
-                  {new Date(job.createdAt).toLocaleString("es-MX")}
+                  {formatDateTimeMx(job.createdAt)}
                 </span>
               </div>
               {job.errorMessage && (
@@ -240,7 +241,7 @@ export function MatchChroniclePanel({
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-xs text-text-secondary">
               Generada{" "}
-              {new Date(chronicle.generatedAt).toLocaleString("es-MX")}
+              {formatDateTimeMx(chronicle.generatedAt)}
               {chronicle.modelUsed ? ` · ${chronicle.modelUsed}` : ""}
             </p>
             <span

@@ -1,12 +1,18 @@
 import { FIXTURE_TIMEZONE } from "@/lib/fixtures/types";
 
+const MX_DATE_TIME_FORMAT = new Intl.DateTimeFormat("es-MX", {
+  timeZone: FIXTURE_TIMEZONE,
+  dateStyle: "medium",
+  timeStyle: "short",
+});
+
 export function formatMatchDateTime(iso: string | null): string {
   if (!iso) return "Sin programación";
-  return new Intl.DateTimeFormat("es-MX", {
-    timeZone: FIXTURE_TIMEZONE,
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(iso));
+  return MX_DATE_TIME_FORMAT.format(new Date(iso));
+}
+
+export function formatDateTimeMx(iso: string): string {
+  return MX_DATE_TIME_FORMAT.format(new Date(iso));
 }
 
 export function addMinutesToLocalPreview(
