@@ -52,18 +52,22 @@ export function SeasonReadinessCard({
       />
       <ul className="space-y-3">
         {items.map((item) => (
-          <li
-            key={item.label}
-            className="flex items-center justify-between gap-3 text-sm"
-          >
-            <span className="text-text-secondary">{item.label}</span>
-            <div className="flex items-center gap-2">
-              <span className="font-medium text-text-primary">{item.value}</span>
-              <StatusBadge
-                label={item.ok ? "Listo" : "Pendiente"}
-                variant={item.ok ? "success" : "warning"}
-              />
+          <li key={item.label} className="space-y-1 text-sm">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-text-secondary">{item.label}</span>
+              <div className="flex items-center gap-2">
+                <span className="font-medium text-text-primary">{item.value}</span>
+                <StatusBadge
+                  label={item.ok ? "Listo" : "Pendiente"}
+                  variant={item.ok ? "success" : "warning"}
+                />
+              </div>
             </div>
+            {item.label === "Equipos con capitán" && !item.ok ? (
+              <p className="text-xs text-text-secondary">
+                Asigna un capitán desde el plantel de cada equipo (botón «Asignar capitán»). No requiere correo.
+              </p>
+            ) : null}
           </li>
         ))}
       </ul>
